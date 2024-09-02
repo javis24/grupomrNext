@@ -1,18 +1,19 @@
-import { Sequelize } from 'sequelize';
+import mysql from 'mysql2/promise';
 
-const sequelize = new Sequelize(process.env.MYSQL_DATABASE, process.env.MYSQL_USER, process.env.MYSQL_PASSWORD, {
-  host: process.env.MYSQL_HOST,
-  port: 3306, 
-  dialect: 'mysql',
-  logging: false, 
-});
+async function testConnection() {
+  try {
+    const connection = await mysql.createConnection({
+      host: process.env.MYSQL_HOST,
+      user: process.env.MYSQL_USER,
+      password: process.env.MYSQL_PASSWORD,
+      database: process.env.MYSQL_DATABASE,
+      port: 3306,
+    });
+    console.log('Connected to MySQL');
+    await connection.end();
+  } catch (err) {
+    console.error('Error connecting to MySQL:', err);
+  }
+}
 
-sequelize.authenticate()
-  .then(() => {
-    console.log('Connection has been established successfully.');
-  })
-  .catch(err => {
-    console.error('Unable to connect to the database:', err);
-  });
-
-export default sequelize;
+testConnection();
