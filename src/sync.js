@@ -7,6 +7,8 @@ import './models/ProductModel.js';
 import './models/EventModel.js';
 import './models/TrafficLightModel.js';
 
+console.log("Sync script started");
+
 async function syncDatabase() {
   try {
     await db.sync({ alter: true });
@@ -16,4 +18,6 @@ async function syncDatabase() {
   }
 }
 
-syncDatabase();
+syncDatabase().then(() => {
+  console.log("Sync script finished");
+});
