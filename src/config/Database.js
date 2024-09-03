@@ -1,14 +1,9 @@
 import { Sequelize } from 'sequelize';
 
-const sequelize = new Sequelize(
-  process.env.MYSQLDATABASE,   
-  process.env.MYSQLUSER,       
-  process.env.MYSQLPASSWORD,    
-  {
-    host: process.env.MYSQLHOST, 
-    dialect: 'mysql',             
-    logging: console.log,         
-  }
-);
+const db = new Sequelize('u684594548_gmr_auth', 'u684594548_gmr_authJavis', 'LuisJaviers28k', {
+    host: '82.180.138.103', 
+    dialect: 'mysql',
+    logging: console.log, 
+});
 
-export default sequelize;
+export default db;
