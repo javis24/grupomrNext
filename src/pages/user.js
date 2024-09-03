@@ -1,6 +1,7 @@
 // src/pages/manage.js
 import UserList from '@/components/UserList';
 import Sidebar from '@/components/Sidebar';
+import '../app/globals.css';
 
 
 export default function User() {
