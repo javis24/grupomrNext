@@ -1,9 +1,25 @@
-// src/app/dashboard/page.js
 import '../app/globals.css';
 import Sidebar from '@/components/Sidebar';
-//import CalendarWithEvents from '@/components/CalendarWithEvents';
+import jwt from 'jsonwebtoken';
+import { useEffect, useState } from 'react';
+
 export default function Dashboard() {
-    return (
+  const [userData, setUserData] = useState({});
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+        try {
+            const decoded = jwt.decode(token);
+            setUserData(decoded);
+        } catch (error) {
+            console.error("Error decoding token:", error);
+        }
+    }
+}, []);
+
+
+  return (
     <div className="flex min-h-screen bg-[#0e1624] text-white">
       {/* Sidebar */}
       <Sidebar />
@@ -29,9 +45,10 @@ export default function Dashboard() {
             <p className="text-2xl font-bold mt-2">$6,642</p>
             <p className="text-green-400 mt-1">18% more than previous week</p>
           </div>
-          <div className="bg-[#1f2937] p-4 rounded-lg shadow-lg">
-        
-          </div>
+          <section className="bg-[#1f2937] p-4 rounded-lg shadow-lg mb-8">
+          <h2 className="text-xl font-semibold">Welcome, {userData.role || "User"}</h2>
+          <p className="text-lg">Hello {userData.name || "there"}! Welcome to your dashboard.</p>
+      </section>
         </section>
         <section className="bg-[#1f2937] p-4 rounded-lg shadow-lg">
           <h2 className="text-xl font-semibold mb-4">Latest Transactions</h2>

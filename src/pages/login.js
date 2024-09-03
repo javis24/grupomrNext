@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 import '../app/globals.css';
 
 export default function Login() {
-    const [name, setName] = useState('');  
+    const [name, setName] = useState('');  // Cambiar email por name
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const router = useRouter();
@@ -12,7 +12,7 @@ export default function Login() {
     const handleLogin = async (e) => {
         e.preventDefault();
         try {
-            const { data } = await axios.post('/api/login', { name, password });  
+            const { data } = await axios.post('/api/login', { name, password });  // Usar name en lugar de email
             console.log(data); 
     
             // Almacenar el token en localStorage
@@ -21,7 +21,7 @@ export default function Login() {
             // Redireccionar al dashboard
             router.push('/dashboard'); 
         } catch (error) {
-            setError('Failed to login. Please check your credentials.'); 
+            setError('Failed to login. Please check your credentials.');
         }
     };
 
