@@ -1,9 +1,12 @@
 import { Sequelize } from 'sequelize';
+import dotenv from 'dotenv';
 
-const db = new Sequelize('u684594548_gmr_auth', 'u684594548_gmr_authJavis', 'LuisJaviers28k', {
-    host: '82.180.138.103', 
+dotenv.config(); 
+
+const db = new Sequelize(process.env.MYSQL_DATABASE, process.env.MYSQL_USER, process.env.MYSQL_PASSWORD, {
+    host: process.env.MYSQL_HOST,
     dialect: 'mysql',
-    logging: console.log, 
+    logging: console.log,  
 });
 
 export default db;
