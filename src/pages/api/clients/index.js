@@ -3,18 +3,20 @@ import { authenticateToken } from '../../../lib/auth';
 
 export default async function handler(req, res) {
     if (req.method === 'GET') {
+        // Manejo de la autenticación y obtención de clientes
         authenticateToken(req, res, async () => {
             try {
                 const clients = await Clients.findAll();
-                res.status(200).json(clients);
+                res.status(200).json(clients); // Respuesta exitosa
             } catch (error) {
                 console.error('Error fetching clients:', error);
-                res.status(500).json({ message: 'Error fetching clients' });
+                res.status(500).json({ message: 'Error fetching clients' }); // Error en la consulta
             }
         });
     } else if (req.method === 'POST') {
+        // Creación de un nuevo cliente
         authenticateToken(req, res, async () => {
-            const { role: userRole, id: userId } = req.user;
+            const { role: userRole, id: userId } = req.user; // Extrae el rol y el id del usuario autenticado
 
             if (userRole !== 'admin' && userRole !== 'gerencia') {
                 return res.status(403).json({ message: "No tienes permiso para crear clientes" });
@@ -42,6 +44,7 @@ export default async function handler(req, res) {
             }
         });
     } else if (req.method === 'PUT') {
+        // Actualización de un cliente
         authenticateToken(req, res, async () => {
             const { role: userRole, id: userId } = req.user;
 
@@ -62,7 +65,6 @@ export default async function handler(req, res) {
                     return res.status(404).json({ message: "Cliente no encontrado" });
                 }
 
-                // Actualizar cliente
                 client.fullName = fullName || client.fullName;
                 client.contactName = contactName || client.contactName;
                 client.contactPhone = contactPhone || client.contactPhone;
@@ -76,6 +78,7 @@ export default async function handler(req, res) {
             }
         });
     } else {
+        // Manejar el caso de un método no permitido
         res.setHeader('Allow', ['GET', 'POST', 'PUT']);
         res.status(405).end(`Method ${req.method} Not Allowed`);
     }
