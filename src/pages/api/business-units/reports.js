@@ -1,33 +1,36 @@
-// src/pages/api/business-units/reports.js
+import jwt from 'jsonwebtoken'; // Importa jsonwebtoken
 import { authenticateToken } from '../../../lib/auth';
 import BusinessUnit from '../../../models/BusinessUnitModel';
+import Company from '../../../models/CompanyModel';
 
 export default async function handler(req, res) {
     if (req.method === 'POST') {
         authenticateToken(req, res, async () => {
-            const { unitName, description, total } = req.body;
+            const { description, total, unitName } = req.body;
 
-            if (!unitName || !description || !total) {
-                return res.status(400).json({ message: "All fields are required" });
+            if (!description || !total || !unitName) {
+                return res.status(400).json({ message: "Todos los campos son necesarios" });
             }
 
             try {
-                // Buscar la unidad de negocio por nombre
-                const businessUnit = await BusinessUnit.findOne({ where: { name: unitName } });
-
-                if (!businessUnit) {
-                    return res.status(404).json({ message: "Business Unit not found" });
+                // Asocia la unidad de negocio con la compañía del usuario autenticado
+                const company = await Company.findOne({ where: { userId: req.user.id } });
+                if (!company) {
+                    return res.status(404).json({ message: "Compañía no encontrada para este usuario" });
                 }
 
-                // Actualizar la descripción y el total en la unidad de negocio
-                businessUnit.description = description;
-                businessUnit.total = total;
-                await businessUnit.save();
+                // Crea el reporte de la unidad de negocio
+                const newReport = await BusinessUnit.create({
+                    name: unitName,
+                    description,
+                    total,
+                    companyId: company.id,
+                });
 
-                res.status(200).json({ message: 'Report submitted successfully', data: businessUnit });
+                res.status(201).json(newReport);
             } catch (error) {
-                console.error('Error saving report:', error);
-                res.status(500).json({ message: 'Failed to submit report' });
+                console.error('Error al crear reporte:', error);
+                res.status(500).json({ message: 'Error al crear reporte' });
             }
         });
     } else {
