@@ -1,8 +1,23 @@
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import jwt from 'jsonwebtoken';
 
 export default function Sidebar() {
   const router = useRouter();
+  const [userRole, setUserRole] = useState('');
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const decoded = jwt.decode(token);
+        setUserRole(decoded.role);
+      } catch (error) {
+        console.error('Error decoding token:', error);
+      }
+    }
+  }, []);
 
   const logout = () => {
     // Eliminar el token JWT de localStorage
@@ -19,11 +34,13 @@ export default function Sidebar() {
       </div>
       <nav>
         <ul>
-          <li className="mb-4">
-            <Link href="/user" className="flex items-center p-2 rounded hover:bg-[#374151]">
-              Asesores Comerciales
-            </Link>
-          </li>
+          {(userRole === 'admin' || userRole === 'gerencia') && (
+            <li className="mb-4">
+              <Link href="/user" className="flex items-center p-2 rounded hover:bg-[#374151]">
+                Asesores Comerciales
+              </Link>
+            </li>
+          )}
           <li className="mb-4">
             <Link href="/reportes-unidad-negocio" className="flex items-center p-2 rounded hover:bg-[#374151]">
               Reportes Unidad Negocio

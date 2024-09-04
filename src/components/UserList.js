@@ -104,7 +104,7 @@ export default function UserList() {
             <tr key={user.id} className="hover:bg-[#374151]">
               <td className="px-4 py-2 flex items-center">
                 <img
-                  src={user.avatar || '/default-avatar.png'}
+                  src={user.avatar || '/logo_mr.png'}
                   alt={user.name}
                   className="h-10 w-10 rounded-full mr-2"
                 />

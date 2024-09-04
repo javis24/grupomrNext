@@ -1,12 +1,25 @@
-// src/components/CreateUser.js
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
+import jwt from 'jsonwebtoken';
 
 export default function CreateUser() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('');
+  const [userRole, setUserRole] = useState('');
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      try {
+        const decoded = jwt.decode(token);
+        setUserRole(decoded.role);
+      } catch (error) {
+        console.error('Error decoding token:', error);
+      }
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,6 +39,11 @@ export default function CreateUser() {
       console.error('There was an error creating the user!', error);
     }
   };
+
+  // Si el usuario no tiene el rol adecuado, mostrar un mensaje de acceso denegado
+  if (userRole !== 'admin' && userRole !== 'gerencia') {
+    return <p>No tienes permiso para crear usuarios.</p>;
+  }
 
   return (
     <div className="p-4 bg-white rounded-lg shadow-lg">
