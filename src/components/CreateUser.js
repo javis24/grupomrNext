@@ -14,31 +14,36 @@ export default function CreateUser() {
     if (token) {
       try {
         const decoded = jwt.decode(token);
+        console.log("Token decodificado:", decoded);  
         setUserRole(decoded.role);
       } catch (error) {
         console.error('Error decoding token:', error);
       }
     }
   }, []);
+  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("Datos para enviar:", { name, email, password, role }); // Verificar datos antes de enviar
     try {
-      await axios.post('/api/users', {
+      const response = await axios.post('/api/users', {
         name,
         email,
         password,
         role,
       });
+      console.log('Respuesta del servidor:', response.data);  // Verificar respuesta del servidor
       alert('User created successfully!');
       setName('');
       setEmail('');
       setPassword('');
       setRole('');
     } catch (error) {
-      console.error('There was an error creating the user!', error);
+      console.error('There was an error creating the user!', error.response?.data || error.message);
     }
   };
+  
 
   // Si el usuario no tiene el rol adecuado, mostrar un mensaje de acceso denegado
   if (userRole !== 'admin' && userRole !== 'gerencia') {
@@ -80,19 +85,19 @@ export default function CreateUser() {
           />
         </div>
         <div className="mb-4">
-          <label className="block text-gray-700">Role</label>
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value)}
-            className="w-full p-2 border rounded"
-            required
-          >
-            <option value="">Select Role</option>
-            <option value="admin">Admin</option>
-            <option value="vendedor">Vendedor</option>
-            <option value="gerencia">Gerencia</option>
-            <option value="coordinador">Coordinador</option>
-          </select>
+          <label className="block text-gray-700">Rolee</label>
+                <select
+        value={role}
+        onChange={(e) => setRole(e.target.value)}
+        className="w-full p-2 border rounded"
+        required
+      >
+        <option value="">Select Role</option>
+        <option value="admin">Admin</option>
+        <option value="vendedor">Vendedor</option>
+        <option value="gerencia">Gerencia</option>
+        <option value="coordinador">Coordinador</option>
+      </select>
         </div>
         <button
           type="submit"
