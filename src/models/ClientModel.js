@@ -1,68 +1,77 @@
-import { Sequelize } from 'sequelize';
-import db from '../config/Database.js';
-import Users from './UserModel.js';
+import { Sequelize } from "sequelize";
+import db from "../config/Database.js";
+import Users from "./UserModel.js";
 
 const { DataTypes } = Sequelize;
 
-const Servicios = db.define('servicios', {
-    programacion: {
+const Clients = db.define('clients', {
+    uuid: {
         type: DataTypes.STRING,
-        allowNull: false
+        defaultValue: DataTypes.UUIDV4,
+        allowNull: false,
+        validate: {
+            notEmpty: true
+        }
     },
-    equipo: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
-    numeroEconomico: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
-    contenido: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
-    manifiesto: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
-    generado: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
-    renta2024: {
-        type: DataTypes.DECIMAL(10, 2),
-        allowNull: false
-    },
-    recoleccion: {
-        type: DataTypes.DECIMAL(10, 2),
-        allowNull: false
-    },
-    disposicion: {
-        type: DataTypes.DECIMAL(10, 2),
-        allowNull: true
-    },
-    contacto: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
-    telefono: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
-    email: {
+    fullName: {
         type: DataTypes.STRING,
         allowNull: false,
         validate: {
-            isEmail: true
+            notEmpty: true,
+            len: [3, 100]
         }
     },
-    ubicacion: {
+    companyName: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false,
+        validate: {
+            notEmpty: true,
+            len: [2, 100]
+        }
     },
-    rfc: {
+    businessTurn: {
         type: DataTypes.STRING,
-        allowNull: false
+        allowNull: false,
+        validate: {
+            notEmpty: true
+        }
+    },
+    address: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        validate: {
+            notEmpty: true,
+            len: [5, 255]
+        }
+    },
+    contactName: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        validate: {
+            len: [0, 100]
+        }
+    },
+    contactPhone: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        validate: {
+            len: [0, 20]
+        }
+    },
+    email: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        validate: {
+            isEmail: true,
+            notEmpty: false
+        }
+    },
+    position: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        validate: {
+            len: [0, 100]
+        }
     },
     userId: {
         type: DataTypes.INTEGER,
@@ -75,10 +84,7 @@ const Servicios = db.define('servicios', {
     freezeTableName: true
 });
 
-// Relación con Users: Un Usuario (Users) tiene muchos Servicios
-Users.hasMany(Servicios, { foreignKey: 'userId' });
+Users.hasMany(Clients);
+Clients.belongsTo(Users, { foreignKey: 'userId' });
 
-// Un Servicio pertenece a un Usuario (Users)
-Servicios.belongsTo(Users, { foreignKey: 'userId' });
-
-export default Servicios;
+export default Clients;
