@@ -1,4 +1,4 @@
-import Servicios from '../../../models/ServiciosModel'; // Asegúrate de tener bien importado el modelo
+import Servicios from '../../../models/ServicioModel'; // Asegúrate de tener bien importado el modelo
 import { authenticateToken } from '../../../lib/auth'; // Si usas autenticación con JWT
 
 export default async function handler(req, res) {

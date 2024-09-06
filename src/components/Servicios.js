@@ -53,7 +53,7 @@ export default function ServiceList() {
   const fetchServices = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('/api/servicios', {
+      const response = await axios.get('/api/servicios/servicios', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setServices(response.data);
