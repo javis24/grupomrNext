@@ -7,30 +7,34 @@ export default async function handler(req, res) {
 
   if (req.method === 'PUT') {
     authenticateToken(req, res, async () => {
-      const { fullName, contactName, contactPhone, position, userId } = req.body;
+      const { fullName, companyName, businessTurn, address, contactName, contactPhone, email, position, userId } = req.body;
 
-      if (!fullName || !userId) {
-        return res.status(400).json({ message: "Full Name and User ID are required" });
+      if (!fullName || !companyName || !businessTurn || !address || !userId) {
+        return res.status(400).json({ message: "Full Name, Company Name, Business Turn, Address y User ID son requeridos" });
       }
 
       try {
         const client = await Clients.findByPk(id);
         if (!client) {
-          return res.status(404).json({ message: 'Client not found' });
+          return res.status(404).json({ message: 'Cliente no encontrado' });
         }
 
-        client.fullName = fullName;
+        client.fullName = fullName || client.fullName;
+        client.companyName = companyName || client.companyName;
+        client.businessTurn = businessTurn || client.businessTurn;
+        client.address = address || client.address;
         client.contactName = contactName || client.contactName;
         client.contactPhone = contactPhone || client.contactPhone;
+        client.email = email || client.email;
         client.position = position || client.position;
         client.userId = userId;
 
         await client.save();
 
-        res.status(200).json({ message: "Client updated successfully", client });
+        res.status(200).json({ message: "Cliente actualizado con éxito", client });
       } catch (error) {
-        console.error('Error updating client:', error);
-        res.status(500).json({ message: 'Error updating client' });
+        console.error('Error actualizando el cliente:', error);
+        res.status(500).json({ message: 'Error actualizando el cliente' });
       }
     });
   } else if (req.method === 'DELETE') {
@@ -38,15 +42,15 @@ export default async function handler(req, res) {
       try {
         const client = await Clients.findByPk(id);
         if (!client) {
-          return res.status(404).json({ message: 'Client not found' });
+          return res.status(404).json({ message: 'Cliente no encontrado' });
         }
 
         await client.destroy();
 
-        res.status(200).json({ message: 'Client deleted successfully' });
+        res.status(200).json({ message: 'Cliente eliminado con éxito' });
       } catch (error) {
-        console.error('Error deleting client:', error);
-        res.status(500).json({ message: 'Error deleting client' });
+        console.error('Error eliminando el cliente:', error);
+        res.status(500).json({ message: 'Error eliminando el cliente' });
       }
     });
   } else {

@@ -67,7 +67,7 @@ export default function Sidebar() {
             </Link>
           </li>
           <li className="mb-4">
-            <Link href="#" className="flex items-center p-2 rounded hover:bg-[#374151]">
+            <Link href="/servicios" className="flex items-center p-2 rounded hover:bg-[#374151]">
               RSV
             </Link>
           </li>

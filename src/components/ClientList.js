@@ -24,8 +24,12 @@ export default function ClientList() {
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
   const [fullName, setFullName] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [businessTurn, setBusinessTurn] = useState('');
+  const [address, setAddress] = useState('');
   const [contactName, setContactName] = useState('');
   const [contactPhone, setContactPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [position, setPosition] = useState('');
   const [userId, setUserId] = useState('');
   const [error, setError] = useState('');
@@ -72,8 +76,12 @@ export default function ClientList() {
       const token = localStorage.getItem('token');
       await axios.put(`/api/clients/${selectedClient.id}`, {
         fullName,
+        companyName,
+        businessTurn,
+        address,
         contactName,
         contactPhone,
+        email,
         position,
         userId
       }, {
@@ -93,8 +101,12 @@ export default function ClientList() {
       const token = localStorage.getItem('token');
       await axios.post('/api/clients', {
         fullName,
+        companyName,
+        businessTurn,
+        address,
         contactName,
         contactPhone,
+        email,
         position,
         userId
       }, {
@@ -113,15 +125,23 @@ export default function ClientList() {
     setSelectedClient(client);
     if (client) {
       setFullName(client.fullName);
+      setCompanyName(client.companyName || '');
+      setBusinessTurn(client.businessTurn || '');
+      setAddress(client.address || '');
       setContactName(client.contactName || '');
       setContactPhone(client.contactPhone || '');
+      setEmail(client.email || '');
       setPosition(client.position || '');
       setUserId(client.userId);
     } else {
       // Limpiar campos si se crea un nuevo cliente
       setFullName('');
+      setCompanyName('');
+      setBusinessTurn('');
+      setAddress('');
       setContactName('');
       setContactPhone('');
+      setEmail('');
       setPosition('');
       setUserId('');
     }
@@ -133,9 +153,10 @@ export default function ClientList() {
     setSelectedClient(null);
   };
 
-  const filteredClients = clients.filter((client) =>
-    client.fullName.toLowerCase().includes(search.toLowerCase())
-  );
+const filteredClients = clients.filter((client) =>
+  client.fullName?.toLowerCase().includes(search.toLowerCase())
+);
+
 
   return (
     <div className="p-8 bg-[#0e1624] text-white min-h-screen">
@@ -161,20 +182,26 @@ export default function ClientList() {
       <table className="w-full table-auto bg-[#1f2937] text-left rounded-lg">
         <thead>
           <tr>
-            <th className="px-4 py-2">Full Name</th>
-            <th className="px-4 py-2">Contact Name</th>
-            <th className="px-4 py-2">Contact Phone</th>
-            <th className="px-4 py-2">Position</th>
-            <th className="px-4 py-2">Action</th>
+            <th className="px-4 py-2">Nombre</th>
+            <th className="px-4 py-2">Compañía</th>
+            <th className="px-4 py-2">Giro Comercial</th>
+            <th className="px-4 py-2">Dirección</th>
+            <th className="px-4 py-2">Contacto</th>
+            <th className="px-4 py-2">Teléfono</th>
+            <th className="px-4 py-2">Email</th>
+            <th className="px-4 py-2">Acciones</th>
           </tr>
         </thead>
         <tbody>
           {filteredClients.map((client) => (
             <tr key={client.id} className="hover:bg-[#374151]">
               <td className="px-4 py-2">{client.fullName}</td>
+              <td className="px-4 py-2">{client.companyName}</td>
+              <td className="px-4 py-2">{client.businessTurn}</td>
+              <td className="px-4 py-2">{client.address}</td>
               <td className="px-4 py-2">{client.contactName}</td>
               <td className="px-4 py-2">{client.contactPhone}</td>
-              <td className="px-4 py-2">{client.position}</td>
+              <td className="px-4 py-2">{client.email}</td>
               <td className="px-4 py-2">
                 <button onClick={() => openModal(client)} className="bg-green-500 text-white p-2 rounded hover:bg-green-600 mr-2">View</button>
                 <button
@@ -188,64 +215,103 @@ export default function ClientList() {
           ))}
         </tbody>
       </table>
-
-      {/* Modal para actualizar o crear cliente */}
       <Modal
-        isOpen={modalIsOpen}
-        onRequestClose={closeModal}
-        style={customStyles}
-        contentLabel="Edit Client"
-      >
-        <h2 className="text-2xl font-bold mb-4 text-white">{selectedClient ? 'Edit Client' : 'Add New Client'}</h2>
-        <form onSubmit={selectedClient ? handleUpdate : handleCreate}>
-          <div className="mb-4">
-            <label className="block text-white">Full Name</label>
-            <input
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className="w-full p-2 border rounded bg-[#374151] text-white"
-              required
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-white">Contact Name</label>
-            <input
-              type="text"
-              value={contactName}
-              onChange={(e) => setContactName(e.target.value)}
-              className="w-full p-2 border rounded bg-[#374151] text-white"
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-white">Contact Phone</label>
-            <input
-              type="text"
-              value={contactPhone}
-              onChange={(e) => setContactPhone(e.target.value)}
-              className="w-full p-2 border rounded bg-[#374151] text-white"
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-white">Position</label>
-            <input
-              type="text"
-              value={position}
-              onChange={(e) => setPosition(e.target.value)}
-              className="w-full p-2 border rounded bg-[#374151] text-white"
-            />
-          </div>
-          <button
-            type="submit"
-            className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
-          >
-            {selectedClient ? 'Update Client' : 'Create Client'}
-          </button>
-        </form>
-        <button onClick={closeModal} className="mt-4 bg-gray-500 text-white p-2 rounded hover:bg-gray-600">
-          Close
-        </button>
-      </Modal>
+  isOpen={modalIsOpen}
+  onRequestClose={closeModal}
+  style={customStyles}
+  contentLabel="Edit Client"
+>
+  <h2 className="text-2xl font-bold mb-4 text-white">{selectedClient ? 'Edit Client' : 'Add New Client'}</h2>
+  <form onSubmit={selectedClient ? handleUpdate : handleCreate}>
+    <div className="grid grid-cols-2 gap-4 mb-4">
+      <div>
+        <label className="block text-white">Full Name</label>
+        <input
+          type="text"
+          value={fullName}
+          onChange={(e) => setFullName(e.target.value)}
+          className="w-full p-2 border rounded bg-[#374151] text-white"
+          required
+        />
+      </div>
+      <div>
+        <label className="block text-white">Company Name</label>
+        <input
+          type="text"
+          value={companyName}
+          onChange={(e) => setCompanyName(e.target.value)}
+          className="w-full p-2 border rounded bg-[#374151] text-white"
+          required
+        />
+      </div>
+      <div>
+        <label className="block text-white">Business Turn</label>
+        <input
+          type="text"
+          value={businessTurn}
+          onChange={(e) => setBusinessTurn(e.target.value)}
+          className="w-full p-2 border rounded bg-[#374151] text-white"
+          required
+        />
+      </div>
+      <div>
+        <label className="block text-white">Address</label>
+        <input
+          type="text"
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+          className="w-full p-2 border rounded bg-[#374151] text-white"
+          required
+        />
+      </div>
+      <div>
+        <label className="block text-white">Contact Name</label>
+        <input
+          type="text"
+          value={contactName}
+          onChange={(e) => setContactName(e.target.value)}
+          className="w-full p-2 border rounded bg-[#374151] text-white"
+        />
+      </div>
+      <div>
+        <label className="block text-white">Contact Phone</label>
+        <input
+          type="text"
+          value={contactPhone}
+          onChange={(e) => setContactPhone(e.target.value)}
+          className="w-full p-2 border rounded bg-[#374151] text-white"
+        />
+      </div>
+      <div>
+        <label className="block text-white">Email</label>
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full p-2 border rounded bg-[#374151] text-white"
+        />
+      </div>
+      <div>
+        <label className="block text-white">Position</label>
+        <input
+          type="text"
+          value={position}
+          onChange={(e) => setPosition(e.target.value)}
+          className="w-full p-2 border rounded bg-[#374151] text-white"
+        />
+      </div>
+    </div>
+    <button
+      type="submit"
+      className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+    >
+      {selectedClient ? 'Update Client' : 'Create Client'}
+    </button>
+  </form>
+  <button onClick={closeModal} className="mt-4 bg-gray-500 text-white p-2 rounded hover:bg-gray-600">
+    Close
+  </button>
+</Modal>
     </div>
   );
 }

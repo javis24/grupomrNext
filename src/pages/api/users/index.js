@@ -1,82 +1,37 @@
-import Clients from '../../../models/ClientModel';
+import Users from '../../../models/UserModel';
+import { hash } from 'bcryptjs';
 import { authenticateToken } from '../../../lib/auth';
 
 export default async function handler(req, res) {
+  try {
     if (req.method === 'GET') {
-        authenticateToken(req, res, async () => {
-            try {
-                const clients = await Clients.findAll();
-                res.status(200).json(clients);
-            } catch (error) {
-                console.error('Error fetching clients:', error);
-                res.status(500).json({ message: 'Error fetching clients' });
-            }
-        });
+      authenticateToken(req, res, async () => {
+        const users = await Users.findAll();
+        res.status(200).json(users);
+      });
     } else if (req.method === 'POST') {
-        authenticateToken(req, res, async () => {
-            const { role: userRole, id: userId } = req.user;
+      const { name, email, password, role } = req.body;
 
-            if (userRole !== 'admin' && userRole !== 'gerencia') {
-                return res.status(403).json({ message: "No tienes permiso para crear clientes" });
-            }
+      if (!name || !email || !password || !role) {
+        return res.status(400).json({ message: 'All fields are required' });
+      }
 
-            const { fullName, contactName, contactPhone, position } = req.body;
+      const hashedPassword = await hash(password, 10);
 
-            if (!fullName) {
-                return res.status(400).json({ message: "Full Name es necesario" });
-            }
+      const newUser = await Users.create({
+        name,
+        email,
+        password: hashedPassword,
+        role
+      });
 
-            try {
-                const newClient = await Clients.create({
-                    fullName,
-                    contactName,
-                    contactPhone,
-                    position,
-                    userId, // Asociar el cliente al usuario autenticado
-                });
-
-                res.status(201).json({ message: "Cliente creado con éxito", client: newClient });
-            } catch (error) {
-                console.error('Error creando el cliente:', error);
-                res.status(500).json({ message: error.message });
-            }
-        });
-    } else if (req.method === 'PUT') {
-        authenticateToken(req, res, async () => {
-            const { role: userRole, id: userId } = req.user;
-
-            if (userRole !== 'admin' && userRole !== 'gerencia') {
-                return res.status(403).json({ message: "No tienes permiso para actualizar clientes" });
-            }
-
-            const { id, fullName, contactName, contactPhone, position } = req.body;
-
-            if (!id) {
-                return res.status(400).json({ message: "ID del cliente es necesario" });
-            }
-
-            try {
-                const client = await Clients.findByPk(id);
-
-                if (!client) {
-                    return res.status(404).json({ message: "Cliente no encontrado" });
-                }
-
-                // Actualizar cliente
-                client.fullName = fullName || client.fullName;
-                client.contactName = contactName || client.contactName;
-                client.contactPhone = contactPhone || client.contactPhone;
-                client.position = position || client.position;
-
-                await client.save();
-                res.status(200).json({ message: "Cliente actualizado con éxito", client });
-            } catch (error) {
-                console.error('Error actualizando el cliente:', error);
-                res.status(500).json({ message: error.message });
-            }
-        });
+      res.status(201).json({ message: 'User created successfully', newUser });
     } else {
-        res.setHeader('Allow', ['GET', 'POST', 'PUT']);
-        res.status(405).end(`Method ${req.method} Not Allowed`);
+      res.setHeader('Allow', ['GET', 'POST']);
+      res.status(405).end(`Method ${req.method} Not Allowed`);
     }
+  } catch (error) {
+    console.error('Error in users/index:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
 }

@@ -22,17 +22,21 @@ export default async function handler(req, res) {
                 return res.status(403).json({ message: "No tienes permiso para crear clientes" });
             }
 
-            const { fullName, contactName, contactPhone, position } = req.body;
+            const { fullName, companyName, businessTurn, address, contactName, contactPhone, email, position } = req.body;
 
-            if (!fullName) {
-                return res.status(400).json({ message: "Full Name es necesario" });
+            if (!fullName || !companyName || !businessTurn || !address) {
+                return res.status(400).json({ message: "Full Name, Company Name, Business Turn y Address son necesarios" });
             }
 
             try {
                 const newClient = await Clients.create({
                     fullName,
+                    companyName,
+                    businessTurn,
+                    address,
                     contactName,
                     contactPhone,
+                    email,
                     position,
                     userId, // Asociar el cliente al usuario autenticado
                 });
@@ -52,7 +56,7 @@ export default async function handler(req, res) {
                 return res.status(403).json({ message: "No tienes permiso para actualizar clientes" });
             }
 
-            const { id, fullName, contactName, contactPhone, position } = req.body;
+            const { id, fullName, companyName, businessTurn, address, contactName, contactPhone, email, position } = req.body;
 
             if (!id) {
                 return res.status(400).json({ message: "ID del cliente es necesario" });
@@ -66,8 +70,12 @@ export default async function handler(req, res) {
                 }
 
                 client.fullName = fullName || client.fullName;
+                client.companyName = companyName || client.companyName;
+                client.businessTurn = businessTurn || client.businessTurn;
+                client.address = address || client.address;
                 client.contactName = contactName || client.contactName;
                 client.contactPhone = contactPhone || client.contactPhone;
+                client.email = email || client.email;
                 client.position = position || client.position;
 
                 await client.save();
