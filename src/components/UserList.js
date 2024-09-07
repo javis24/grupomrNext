@@ -138,7 +138,7 @@ export default function UserList() {
   }
 
   return (
-    <div className="p-8 bg-[#0e1624] text-white min-h-screen">
+    <div className="flex-1 p-8 bg-[#0e1624] min-h-screen">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-3xl font-bold">Users</h1>
         <button onClick={() => openModal()} className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">

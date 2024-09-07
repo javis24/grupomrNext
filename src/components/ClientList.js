@@ -178,7 +178,7 @@ const filteredClients = clients.filter((client) =>
       </div>
 
       {error && <p className="text-red-500">{error}</p>}
-
+      <div className="overflow-x-auto max-h-96"> 
       <table className="w-full table-auto bg-[#1f2937] text-left rounded-lg">
         <thead>
           <tr>
@@ -215,6 +215,7 @@ const filteredClients = clients.filter((client) =>
           ))}
         </tbody>
       </table>
+      </div>
       <Modal
   isOpen={modalIsOpen}
   onRequestClose={closeModal}

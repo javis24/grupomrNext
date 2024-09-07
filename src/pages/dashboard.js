@@ -28,30 +28,31 @@ export default function Dashboard() {
         <header className="mb-8">
           <h1 className="text-3xl font-bold">Dashboard</h1>
         </header>
-        {/* Aquí ajustamos la grid para que en móviles sea una lista */}
+        
+        {/* Ajuste del grid con w-full para pantallas pequeñas */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-          <div className="bg-[#1f2937] p-4 rounded-lg shadow-lg">
+          <div className="bg-[#1f2937] p-4 rounded-lg shadow-lg w-full">
             <h2 className="text-xl font-semibold">Total Users</h2>
             <p className="text-2xl font-bold mt-2">10,928</p>
             <p className="text-green-400 mt-1">12% more than previous week</p>
           </div>
-          <div className="bg-[#1f2937] p-4 rounded-lg shadow-lg">
+          <div className="bg-[#1f2937] p-4 rounded-lg shadow-lg w-full">
             <h2 className="text-xl font-semibold">Stock</h2>
             <p className="text-2xl font-bold mt-2">8,236</p>
             <p className="text-red-400 mt-1">2% less than previous week</p>
           </div>
-          <div className="bg-[#1f2937] p-4 rounded-lg shadow-lg">
+          <div className="bg-[#1f2937] p-4 rounded-lg shadow-lg w-full">
             <h2 className="text-xl font-semibold">Revenue</h2>
             <p className="text-2xl font-bold mt-2">$6,642</p>
             <p className="text-green-400 mt-1">18% more than previous week</p>
           </div>
-          <section className="bg-[#1f2937] p-4 rounded-lg shadow-lg mb-8">
+          <section className="bg-[#1f2937] p-4 rounded-lg shadow-lg mb-8 w-full">
             <h2 className="text-xl font-semibold">Welcome, {userData.role || "User"}</h2>
             <p className="text-lg">Hello {userData.name || "there"}! Welcome to your dashboard.</p>
           </section>
         </section>
         
-        <section className="bg-[#1f2937] p-4 rounded-lg shadow-lg">
+        <section className="bg-[#1f2937] p-4 rounded-lg shadow-lg w-full">
           <h2 className="text-xl font-semibold mb-4">Latest Transactions</h2>
           <table className="w-full text-left">
             <thead>
