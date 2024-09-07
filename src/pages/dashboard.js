@@ -16,8 +16,7 @@ export default function Dashboard() {
             console.error("Error decoding token:", error);
         }
     }
-}, []);
-
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-[#0e1624] text-white">
@@ -25,11 +24,12 @@ export default function Dashboard() {
       <Sidebar />
 
       {/* Main Content */}
-      <main className="flex-1 p-8">
+      <main className="flex-1 p-8 bg-[#0e1624] min-h-screen">
         <header className="mb-8">
           <h1 className="text-3xl font-bold">Dashboard</h1>
         </header>
-        <section className="grid grid-cols-3 gap-4 mb-8">
+        {/* Aquí ajustamos la grid para que en móviles sea una lista */}
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
           <div className="bg-[#1f2937] p-4 rounded-lg shadow-lg">
             <h2 className="text-xl font-semibold">Total Users</h2>
             <p className="text-2xl font-bold mt-2">10,928</p>
@@ -46,10 +46,11 @@ export default function Dashboard() {
             <p className="text-green-400 mt-1">18% more than previous week</p>
           </div>
           <section className="bg-[#1f2937] p-4 rounded-lg shadow-lg mb-8">
-          <h2 className="text-xl font-semibold">Welcome, {userData.role || "User"}</h2>
-          <p className="text-lg">Hello {userData.name || "there"}! Welcome to your dashboard.</p>
-      </section>
+            <h2 className="text-xl font-semibold">Welcome, {userData.role || "User"}</h2>
+            <p className="text-lg">Hello {userData.name || "there"}! Welcome to your dashboard.</p>
+          </section>
         </section>
+        
         <section className="bg-[#1f2937] p-4 rounded-lg shadow-lg">
           <h2 className="text-xl font-semibold mb-4">Latest Transactions</h2>
           <table className="w-full text-left">
@@ -94,8 +95,6 @@ export default function Dashboard() {
               </tr>
             </tbody>
           </table>
-        </section>
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-4">        
         </section>
       </main>
     </div>

@@ -6,6 +6,7 @@ import jwt from 'jsonwebtoken';
 export default function Sidebar() {
   const router = useRouter();
   const [userRole, setUserRole] = useState('');
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -20,65 +21,97 @@ export default function Sidebar() {
   }, []);
 
   const logout = () => {
-    // Eliminar el token JWT de localStorage
     localStorage.removeItem('token');
-    // Redirigir al usuario a la página de inicio de sesión
     router.push('/login');
   };
 
+  const toggleSidebar = () => {
+    setIsCollapsed(!isCollapsed);
+  };
+
   return (
-    <aside className="w-64 bg-[#1f2937] p-5">
-      <div className="flex items-center mb-8">
-        <img src="/logo_mr.png" alt="Logo" className="h-10" />
-        <span className="text-xl font-bold ml-2">GrupoMrLaguna</span>
+    <aside className={`${isCollapsed ? 'w-16' : 'w-64'} bg-[#1f2937] p-5 transition-all duration-300`}>
+      <div className="flex items-center justify-between mb-8">
+        {!isCollapsed && <img src="/logo_mr.png" alt="Logo" className="h-10" />}
+        {!isCollapsed && <span className="text-xl font-bold ml-2">GrupoMrLaguna</span>}
       </div>
       <nav>
+      <button
+          onClick={toggleSidebar}
+          className="bg-white text-center w-full rounded-2xl h-14 relative font-sans text-black text-xl font-semibold group"
+        >
+      <div
+        className="bg-[#1f2937] rounded-xl h-12 w-1/4 flex items-center justify-center absolute left-1 top-[4px] group-hover:w-full z-10 duration-500"
+      >
+        <svg
+          width="25px"
+          height="25px"
+          viewBox="0 0 1024 1024"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            fill="#000000"
+            d="M224 480h640a32 32 0 1 1 0 64H224a32 32 0 0 1 0-64z"
+          ></path>
+          <path
+            fill="#000000"
+            d="m237.248 512 265.408 265.344a32 32 0 0 1-45.312 45.312l-288-288a32 32 0 0 1 0-45.312l288-288a32 32 0 1 1 45.312 45.312L237.248 512z"
+          ></path>
+        </svg>
+      </div>
+      <p className="translate-x-2">Menu</p>
+      <span
+        className={`inline-block w-6 h-6 transform bg-white rounded-full shadow-lg transition-transform duration-300 ease-in-out ${isCollapsed ? 'translate-x-0' : 'translate-x-6'}`}
+      />
+    </button>
+
+    
         <ul>
           {(userRole === 'admin' || userRole === 'gerencia') && (
             <li className="mb-4">
               <Link href="/user" className="flex items-center p-2 rounded hover:bg-[#374151]">
-                Asesores Comerciales
+                {!isCollapsed && 'Asesores Comerciales'}
               </Link>
             </li>
           )}
           <li className="mb-4">
             <Link href="/reportes-unidad-negocio" className="flex items-center p-2 rounded hover:bg-[#374151]">
-              Reportes Unidad Negocio
+              {!isCollapsed && 'Reportes Unidad Negocio'}
             </Link>
           </li>
           <li className="mb-4">
-            <Link href="reporte-mensual" className="flex items-center p-2 rounded hover:bg-[#374151]">
-              Reportes Mensuales
+            <Link href="/reporte-mensual" className="flex items-center p-2 rounded hover:bg-[#374151]">
+              {!isCollapsed && 'Reportes Mensuales'}
             </Link>
           </li>
           <li className="mb-4">
             <Link href="/calendario" className="flex items-center p-2 rounded hover:bg-[#374151]">
-              Calendario
+              {!isCollapsed && 'Calendario'}
             </Link>
           </li>
           <li className="mb-4">
             <Link href="/clientes" className="flex items-center p-2 rounded hover:bg-[#374151]">
-              Clientes
+              {!isCollapsed && 'Clientes'}
             </Link>
           </li>
           <li className="mb-4">
             <Link href="/cotizacion" className="flex items-center p-2 rounded hover:bg-[#374151]">
-              Cotizaciones
+              {!isCollapsed && 'Cotizaciones'}
             </Link>
           </li>
           <li className="mb-4">
             <Link href="/servicios" className="flex items-center p-2 rounded hover:bg-[#374151]">
-              RSV
+              {!isCollapsed && 'RSV'}
             </Link>
           </li>
           <li className="mb-4">
             <Link href="#" className="flex items-center p-2 rounded hover:bg-[#374151]">
-              Creditos
+              {!isCollapsed && 'Creditos'}
             </Link>
           </li>
           <li className="mb-4">
             <Link href="#" className="flex items-center p-2 rounded hover:bg-[#374151]">
-              Incidencias
+              {!isCollapsed && 'Incidencias'}
             </Link>
           </li>
         </ul>
@@ -88,7 +121,7 @@ export default function Sidebar() {
           onClick={logout}
           className="flex items-center p-2 rounded hover:bg-[#374151] text-white w-full text-left"
         >
-          Logout
+          {!isCollapsed && 'Logout'}
         </button>
       </div>
     </aside>
