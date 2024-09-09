@@ -2,95 +2,127 @@ import Clients from '../../../models/ClientModel';
 import { authenticateToken } from '../../../lib/auth';
 
 export default async function handler(req, res) {
-    if (req.method === 'GET') {
-        // Manejo de la autenticación y obtención de clientes
-        authenticateToken(req, res, async () => {
-            try {
-                const clients = await Clients.findAll();
-                if (!clients) {
-                    return res.status(404).json({ message: 'No clients found' });
-                }
-                res.status(200).json(clients); // Respuesta exitosa
-            } catch (error) {
-                console.error('Error fetching clients:', error);
-                res.status(500).json({ message: 'Error fetching clients' });
-            }
-        });
-    } else if (req.method === 'POST') {
-        // Creación de un nuevo cliente
-        authenticateToken(req, res, async () => {
-            const { role: userRole, id: userId } = req.user; // Extrae el rol y el id del usuario autenticado
+  const { method } = req;
 
-            if (userRole !== 'admin' && userRole !== 'gerencia') {
-                return res.status(403).json({ message: "No tienes permiso para crear clientes" });
-            }
+  // Verificar autenticación del usuario
+  authenticateToken(req, res, async () => {
+    const { role: userRole, id: userId } = req.user;
 
-            const { fullName, companyName, businessTurn, address, contactName, contactPhone, email, position } = req.body;
+    switch (method) {
+      case 'GET':
+        // Obtener clientes
+        try {
+          let clients;
+          if (userRole === 'vendedor') {
+            // Si el usuario es vendedor, solo puede ver los clientes que él creó
+            clients = await Clients.findAll({
+              where: { userId },
+            });
+          } else {
+            // Si el usuario es admin, gerencia o coordinador, puede ver todos los clientes
+            clients = await Clients.findAll();
+          }
 
-            if (!fullName || !companyName || !businessTurn || !address) {
-                return res.status(400).json({ message: "Full Name, Company Name, Business Turn y Address son necesarios" });
-            }
+          if (!clients || clients.length === 0) {
+            return res.status(200).json([]); // Devolver un array vacío si no hay clientes
+          }
 
-            try {
-                const newClient = await Clients.create({
-                    fullName,
-                    companyName,
-                    businessTurn,
-                    address,
-                    contactName,
-                    contactPhone,
-                    email,
-                    position,
-                    userId, // Asociar el cliente al usuario autenticado
-                });
+          return res.status(200).json(clients);
+        } catch (error) {
+          console.error('Error fetching clients:', error);
+          return res.status(500).json({ message: 'Error fetching clients' });
+        }
 
-                res.status(201).json({ message: "Cliente creado con éxito", client: newClient });
-            } catch (error) {
-                console.error('Error creando el cliente:', error);
-                res.status(500).json({ message: error.message });
-            }
-        });
-    } else if (req.method === 'PUT') {
-        // Actualización de un cliente
-        authenticateToken(req, res, async () => {
-            const { role: userRole, id: userId } = req.user;
+      case 'POST':
+        // Crear cliente
+        const { fullName, companyName, businessTurn, address, contactName, contactPhone, email, position } = req.body;
 
-            if (userRole !== 'admin' && userRole !== 'gerencia') {
-                return res.status(403).json({ message: "No tienes permiso para actualizar clientes" });
-            }
+        if (!fullName || !companyName || !businessTurn || !address) {
+          return res.status(400).json({ message: 'Required fields are missing' });
+        }
 
-            const { id, fullName, companyName, businessTurn, address, contactName, contactPhone, email, position } = req.body;
+        try {
+          // Crear nuevo cliente y asociarlo con el usuario autenticado
+          const newClient = await Clients.create({
+            fullName,
+            companyName,
+            businessTurn,
+            address,
+            contactName,
+            contactPhone,
+            email,
+            position,
+            userId, // Asociar cliente con el usuario autenticado
+          });
 
-            if (!id) {
-                return res.status(400).json({ message: "ID del cliente es necesario" });
-            }
+          return res.status(201).json({ message: 'Client created successfully', client: newClient });
+        } catch (error) {
+          console.error('Error creating client:', error);
+          return res.status(500).json({ message: 'Error creating client' });
+        }
 
-            try {
-                const client = await Clients.findByPk(id);
+      case 'PUT':
+        // Actualizar cliente
+        const { id, ...updatedData } = req.body; // El ID y los nuevos datos del cliente
 
-                if (!client) {
-                    return res.status(404).json({ message: "Cliente no encontrado" });
-                }
+        if (!id) {
+          return res.status(400).json({ message: 'Client ID is required' });
+        }
 
-                client.fullName = fullName || client.fullName;
-                client.companyName = companyName || client.companyName;
-                client.businessTurn = businessTurn || client.businessTurn;
-                client.address = address || client.address;
-                client.contactName = contactName || client.contactName;
-                client.contactPhone = contactPhone || client.contactPhone;
-                client.email = email || client.email;
-                client.position = position || client.position;
+        try {
+          const client = await Clients.findByPk(id);
 
-                await client.save();
-                res.status(200).json({ message: "Cliente actualizado con éxito", client });
-            } catch (error) {
-                console.error('Error actualizando el cliente:', error);
-                res.status(500).json({ message: error.message });
-            }
-        });
-    } else {
-        // Manejar el caso de un método no permitido
-        res.setHeader('Allow', ['GET', 'POST', 'PUT']);
-        res.status(405).end(`Method ${req.method} Not Allowed`);
+          if (!client) {
+            return res.status(404).json({ message: 'Client not found' });
+          }
+
+          // Verificar si el usuario tiene permisos para actualizar (admin, gerencia o el vendedor que creó el cliente)
+          if (userRole === 'vendedor' && client.userId !== userId) {
+            return res.status(403).json({ message: 'You do not have permission to update this client' });
+          }
+
+          // Actualizar el cliente con los nuevos datos
+          await client.update(updatedData);
+
+          return res.status(200).json({ message: 'Client updated successfully', client });
+        } catch (error) {
+          console.error('Error updating client:', error);
+          return res.status(500).json({ message: 'Error updating client' });
+        }
+
+      case 'DELETE':
+        // Eliminar cliente
+        const { clientId } = req.body; // ID del cliente a eliminar
+
+        if (!clientId) {
+          return res.status(400).json({ message: 'Client ID is required' });
+        }
+
+        try {
+          const client = await Clients.findByPk(clientId);
+
+          if (!client) {
+            return res.status(404).json({ message: 'Client not found' });
+          }
+
+          // Verificar si el usuario tiene permisos para eliminar (admin, gerencia o el vendedor que creó el cliente)
+          if (userRole === 'vendedor' && client.userId !== userId) {
+            return res.status(403).json({ message: 'You do not have permission to delete this client' });
+          }
+
+          // Eliminar el cliente
+          await client.destroy();
+
+          return res.status(200).json({ message: 'Client deleted successfully' });
+        } catch (error) {
+          console.error('Error deleting client:', error);
+          return res.status(500).json({ message: 'Error deleting client' });
+        }
+
+      default:
+        // Si el método HTTP no es compatible
+        res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
+        return res.status(405).end(`Method ${method} Not Allowed`);
     }
+  });
 }

@@ -2,8 +2,9 @@ import '../app/globals.css';
 import Sidebar from '@/components/Sidebar';
 import jwt from 'jsonwebtoken';
 import { useEffect, useState } from 'react';
+import withAuth from '@/utils/withAuth';
 
-export default function Dashboard() {
+function Dashboard() {
   const [userData, setUserData] = useState({});
 
   useEffect(() => {
@@ -101,3 +102,4 @@ export default function Dashboard() {
     </div>
   );
 }
+export default withAuth(Dashboard);
