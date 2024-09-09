@@ -69,16 +69,24 @@ export default function UserList() {
   const handleUpdate = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`/api/users/${selectedUser.id}`, {
+
+      // Solo incluimos el password si se ingresó uno nuevo
+      const updatedUser = {
         name,
+        email,
         role,
-        password: password || undefined, // Actualizar password solo si se ingresa uno nuevo
-      }, {
+      };
+
+      if (password) {
+        updatedUser.password = password;
+      }
+
+      await axios.put(`/api/users/${selectedUser.id}`, updatedUser, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
 
-      fetchUsers(); // Revalidar la lista de usuarios después de actualizar
-      closeModal();
+      fetchUsers(); // Volvemos a cargar la lista de usuarios
+      closeModal(); // Cerramos el modal
     } catch (error) {
       console.error('Error updating user:', error);
       setError('Failed to update user. Please try again.');
@@ -111,7 +119,7 @@ export default function UserList() {
       setName(user.name);
       setEmail(user.email || ''); // Si es creación, email será vacío
       setRole(user.role);
-      setPassword('');
+      setPassword(''); // Resetear la contraseña
     } else {
       // Limpiar campos si se crea un nuevo usuario
       setName('');
@@ -130,7 +138,6 @@ export default function UserList() {
   const filteredUsers = users.filter((user) =>
     (user.name?.toLowerCase().includes(search.toLowerCase()) || user.email?.toLowerCase().includes(search.toLowerCase()))
   );
-  
 
   // Validar el rol del usuario antes de mostrar el componente
   if (userRole !== 'admin' && userRole !== 'gerencia') {
@@ -171,17 +178,12 @@ export default function UserList() {
           {filteredUsers.map((user) => (
             <tr key={user.id} className="hover:bg-[#374151]">
               <td className="px-4 py-2 flex items-center">
-                <img
-                  src={user.avatar || '/logo_mr.png'}
-                  alt={user.name}
-                  className="h-10 w-10 rounded-full mr-2"
-                />
                 {user.name}
               </td>
               <td className="px-4 py-2">{user.email}</td>
               <td className="px-4 py-2">{user.role}</td>
               <td className="px-4 py-2">
-                <button onClick={() => openModal(user)} className="bg-green-500 text-white p-2 rounded hover:bg-green-600 mr-2">View</button>
+                <button onClick={() => openModal(user)} className="bg-green-500 text-white p-2 rounded hover:bg-green-600 mr-2">Edit</button>
                 <button
                   onClick={() => handleDelete(user.id)}
                   className="bg-red-500 text-white p-2 rounded hover:bg-red-600"
@@ -242,7 +244,7 @@ export default function UserList() {
               className="w-full p-2 border rounded bg-[#374151] text-white"
               required
             >
-                <option value="">Select Role</option>
+              <option value="">Select Role</option>
               <option value="admin">Admin</option>
               <option value="vendedor">Vendedor</option>
               <option value="gerencia">Gerencia</option>

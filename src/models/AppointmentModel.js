@@ -1,6 +1,6 @@
 import { Sequelize } from 'sequelize';
 import db from '../config/Database.js';
-import Users from './UserModel.js'; // Asumiendo que cada cita está asociada a un usuario
+import Users from './UserModel.js';
 
 const { DataTypes } = Sequelize;
 
