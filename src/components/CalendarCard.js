@@ -4,24 +4,33 @@ import 'react-calendar/dist/Calendar.css';
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
 
-
-export default function CalendarCard() {
+const CalendarCard = () => {
   const [date, setDate] = useState(new Date());
   const [appointments, setAppointments] = useState([]);
   const [clientName, setClientName] = useState('');
   const [clientStatus, setClientStatus] = useState('');
   const [editingAppointment, setEditingAppointment] = useState(null);
+  const [loading, setLoading] = useState(true); // Estado de carga
+  const [error, setError] = useState(null); // Estado para manejar errores
 
   useEffect(() => {
     const fetchAppointments = async () => {
+      setLoading(true);
       try {
         const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('No token found');
+        }
+
         const response = await axios.get('/api/appointments', {
           headers: { 'Authorization': `Bearer ${token}` },
         });
         setAppointments(response.data);
       } catch (error) {
         console.error('Error fetching appointments:', error);
+        setError('Error fetching appointments');
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -30,20 +39,28 @@ export default function CalendarCard() {
 
   const handleAddAppointment = async () => {
     const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('No token found');
+      return;
+    }
     const decoded = jwt.decode(token);
-    const userId = decoded.id;  // Obtenemos el ID del usuario autenticado
-  
+    const userId = decoded.id; // Obtenemos el ID del usuario autenticado
+
     if (clientName && clientStatus) {
       try {
-        const response = await axios.post('/api/appointments', {
-          date: date.toISOString(), // Enviar la fecha en formato ISO
-          clientName,
-          clientStatus,
-          userId
-        }, {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
-  
+        const response = await axios.post(
+          '/api/appointments',
+          {
+            date: date.toISOString(), // Enviar la fecha en formato ISO
+            clientName,
+            clientStatus,
+            userId,
+          },
+          {
+            headers: { 'Authorization': `Bearer ${token}` },
+          }
+        );
+
         if (response.status === 201) {
           console.log('Cita creada con éxito');
           setAppointments([...appointments, response.data.appointment]); // Agregar la cita al estado
@@ -57,18 +74,26 @@ export default function CalendarCard() {
       alert('Por favor, rellena todos los campos');
     }
   };
-  
 
   const handleEditAppointment = async (id) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('No token found');
+      return;
+    }
+
     try {
-      const token = localStorage.getItem('token');
-      await axios.put(`/api/appointments/${id}`, {
-        date,
-        clientName,
-        clientStatus,
-      }, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      await axios.put(
+        `/api/appointments/${id}`,
+        {
+          date,
+          clientName,
+          clientStatus,
+        },
+        {
+          headers: { 'Authorization': `Bearer ${token}` },
+        }
+      );
 
       setAppointments(
         appointments.map((appointment) =>
@@ -76,14 +101,21 @@ export default function CalendarCard() {
         )
       );
       setEditingAppointment(null);
+      setClientName(''); // Limpiar los campos después de la edición
+      setClientStatus('');
     } catch (error) {
       console.error('Error updating appointment:', error);
     }
   };
 
   const handleDeleteAppointment = async (id) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('No token found');
+      return;
+    }
+
     try {
-      const token = localStorage.getItem('token');
       await axios.delete(`/api/appointments/${id}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
@@ -140,18 +172,34 @@ export default function CalendarCard() {
       <div className="flex flex-col w-full md:w-1/3 mt-6 md:mt-0 md:ml-6">
         <h2 className="text-2xl font-bold mb-4">Appointments</h2>
         <div className="bg-[#374151] p-4 rounded-lg shadow-lg overflow-y-auto max-h-[300px]">
-          {appointments.length === 0 ? (
+          {loading ? (
+            <p>Loading...</p>
+          ) : error ? (
+            <p className="text-red-500">{error}</p>
+          ) : appointments.length === 0 ? (
             <p>No appointments scheduled</p>
           ) : (
             appointments.map((appointment) => (
               <div key={appointment.id} className="mb-4 p-2 bg-[#1f2937] rounded-lg">
-                <p><strong>Date:</strong> {new Date(appointment.date).toLocaleDateString()}</p>
-                <p><strong>Client Name:</strong> {appointment.clientName}</p>
-                <p><strong>Status:</strong> {appointment.clientStatus}</p>
-                <button onClick={() => setEditingAppointment(appointment)} className="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600 mr-2">
+                <p>
+                  <strong>Date:</strong> {new Date(appointment.date).toLocaleDateString()}
+                </p>
+                <p>
+                  <strong>Client Name:</strong> {appointment.clientName}
+                </p>
+                <p>
+                  <strong>Status:</strong> {appointment.clientStatus}
+                </p>
+                <button
+                  onClick={() => setEditingAppointment(appointment)}
+                  className="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600 mr-2"
+                >
                   Edit
                 </button>
-                <button onClick={() => handleDeleteAppointment(appointment.id)} className="bg-red-500 text-white p-2 rounded hover:bg-red-600">
+                <button
+                  onClick={() => handleDeleteAppointment(appointment.id)}
+                  className="bg-red-500 text-white p-2 rounded hover:bg-red-600"
+                >
                   Delete
                 </button>
               </div>
@@ -161,4 +209,8 @@ export default function CalendarCard() {
       </div>
     </div>
   );
-}
+};
+
+CalendarCard.displayName = "CalendarCard";
+
+export default CalendarCard;
