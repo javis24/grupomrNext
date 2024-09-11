@@ -44,14 +44,14 @@ const CalendarCard = () => {
       return;
     }
     const decoded = jwt.decode(token);
-    const userId = decoded.id; // Obtenemos el ID del usuario autenticado
+    const userId = decoded.id;  // Obtenemos el ID del usuario autenticado
 
     if (clientName && clientStatus) {
       try {
         const response = await axios.post(
           '/api/appointments',
           {
-            date: date.toISOString(), // Enviar la fecha en formato ISO
+            date: date.toISOString(),
             clientName,
             clientStatus,
             userId,
