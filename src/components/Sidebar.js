@@ -90,6 +90,11 @@ export default function Sidebar() {
               {!isCollapsed && 'Incidencias'}
             </Link>
           </li>
+          <li className="mb-4">
+            <Link href="chat" className="flex items-center p-2 rounded hover:bg-[#374151]">
+              {!isCollapsed && 'chat'}
+            </Link>
+          </li>
         </ul>
       </nav>
       <div className="mt-auto">

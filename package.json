@@ -27,7 +27,8 @@
     "react-chartjs-2": "^5.2.0",
     "react-dom": "^18",
     "react-modal": "^3.16.1",
-    "sequelize": "^6.37.3"
+    "sequelize": "^6.37.3",
+    "socket.io-client": "^4.7.5"
   },
   "devDependencies": {
     "eslint": "^8",
