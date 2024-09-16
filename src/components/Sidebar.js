@@ -40,7 +40,7 @@ export default function Sidebar() {
           onClick={toggleSidebar}
           className="text-white focus:outline-none text-3xl" // Aumentando el tamaño del ícono de colapso
         >
-          {isCollapsed ? '>' : '<'}
+          {isCollapsed ? '->' : '<-'}
         </button>
         <ul className="mt-4">
           {(userRole === 'admin' || userRole === 'gerencia') && (

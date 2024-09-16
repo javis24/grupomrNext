@@ -1,7 +1,9 @@
 import Sidebar from '@/components/Sidebar';
 import '../app/globals.css';
-import { useState, useEffect } from 'react';export default function Chat() {
-    const [cliente, setCliente] = useState({ name: '', phone: '' });
+import { useState, useEffect } 
+from 'react';export default function Chat() {
+
+const [cliente, setCliente] = useState({ name: '', phone: '' });
   
     useEffect(() => {
       // Simulación de datos de cliente
