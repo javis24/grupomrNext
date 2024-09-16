@@ -93,19 +93,13 @@ function Dashboard() {
             <p className="text-2xl sm:text-xl font-bold mt-2">$6,642</p>
             <p className="text-green-400 mt-1 text-sm sm:text-base">18% more than previous week</p>
           </div>
-
           {/* Welcome Message */}
           <div className="bg-[#1f2937] p-4 rounded-lg shadow-lg w-full">
             <h2 className="text-xl sm:text-lg font-semibold">Welcome, {userData.role || 'User'}</h2>
             <p className="text-lg sm:text-base">Hello {userData.name || 'there'}! Welcome to your dashboard.</p>
           </div>
-        </section>
-
-        {/* Latest Transactions */}
-        <section className="bg-[#1f2937] p-4 rounded-lg shadow-lg w-full">
-          <h2 className="text-xl sm:text-lg font-semibold mb-4">Client List</h2>
-          <div className="overflow-x-auto">
-            <ClientList />
+          <div className="bg-[#1f2937] p-4 rounded-lg shadow-lg w-full">
+          <ClientList />
           </div>
         </section>
       </main>
