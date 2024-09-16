@@ -7,10 +7,12 @@ export default async function handler(req, res) {
 
   if (req.method === 'PUT') {
     authenticateToken(req, res, async () => {
-      const { fullName, companyName, businessTurn, address, contactName, contactPhone, email, position, userId } = req.body;
+      const { role: userRole, id: userId } = req.user;  // Obtener rol y userId del token
+      const { fullName, companyName, businessTurn, address, contactName, contactPhone, email, position } = req.body;
 
-      if (!fullName || !companyName || !businessTurn || !address || !userId) {
-        return res.status(400).json({ message: "Full Name, Company Name, Business Turn, Address y User ID son requeridos" });
+      // Validar los campos requeridos
+      if (!fullName || !companyName || !businessTurn || !address) {
+        return res.status(400).json({ message: "Full Name, Company Name, Business Turn y Address son requeridos" });
       }
 
       try {
@@ -19,6 +21,12 @@ export default async function handler(req, res) {
           return res.status(404).json({ message: 'Cliente no encontrado' });
         }
 
+        // Verificar permisos: vendedores solo pueden actualizar clientes que ellos crearon
+        if (userRole === 'vendedor' && client.userId !== userId) {
+          return res.status(403).json({ message: 'No tienes permiso para actualizar este cliente' });
+        }
+
+        // Actualizar cliente
         client.fullName = fullName || client.fullName;
         client.companyName = companyName || client.companyName;
         client.businessTurn = businessTurn || client.businessTurn;
@@ -27,34 +35,40 @@ export default async function handler(req, res) {
         client.contactPhone = contactPhone || client.contactPhone;
         client.email = email || client.email;
         client.position = position || client.position;
-        client.userId = userId;
 
         await client.save();
 
-        res.status(200).json({ message: "Cliente actualizado con éxito", client });
+        return res.status(200).json({ message: "Cliente actualizado con éxito", client });
       } catch (error) {
         console.error('Error actualizando el cliente:', error);
-        res.status(500).json({ message: 'Error actualizando el cliente' });
+        return res.status(500).json({ message: 'Error actualizando el cliente' });
       }
     });
   } else if (req.method === 'DELETE') {
     authenticateToken(req, res, async () => {
+      const { role: userRole, id: userId } = req.user;  // Obtener rol y userId del token
+
       try {
         const client = await Clients.findByPk(id);
         if (!client) {
           return res.status(404).json({ message: 'Cliente no encontrado' });
         }
 
+        // Verificar permisos: vendedores solo pueden eliminar clientes que ellos crearon
+        if (userRole === 'vendedor' && client.userId !== userId) {
+          return res.status(403).json({ message: 'No tienes permiso para eliminar este cliente' });
+        }
+
         await client.destroy();
 
-        res.status(200).json({ message: 'Cliente eliminado con éxito' });
+        return res.status(200).json({ message: 'Cliente eliminado con éxito' });
       } catch (error) {
         console.error('Error eliminando el cliente:', error);
-        res.status(500).json({ message: 'Error eliminando el cliente' });
+        return res.status(500).json({ message: 'Error eliminando el cliente' });
       }
     });
   } else {
     res.setHeader('Allow', ['PUT', 'DELETE']);
-    res.status(405).end(`Method ${req.method} Not Allowed`);
+    return res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }

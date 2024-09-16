@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import jwt from 'jsonwebtoken';
+import { FiMenu, FiX } from 'react-icons/fi'; // Importamos los íconos de hamburguesa y cerrar
 
 export default function Sidebar() {
   const router = useRouter();
   const [userRole, setUserRole] = useState('');
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true); // Iniciamos el sidebar colapsado
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -30,18 +31,26 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className={`${isCollapsed ? 'w-16' : 'w-64'} bg-[#1f2937] p-5 transition-all duration-300 min-h-screen`}>
-      <div className="flex items-center justify-between mb-8">
-        {!isCollapsed && <img src="/logo_mr.png" alt="Logo" className="h-10" />}
-        {!isCollapsed && <span className="text-xl font-bold ml-2">GrupoMrLaguna</span>}
-      </div>
-      <nav>
+    <aside className={`${isCollapsed ? 'w-16' : 'w-64'} bg-[#1f2937] p-5 transition-all duration-300 min-h-screen relative`}>
+      {/* Icono de hamburguesa en la parte superior para colapsar/desplegar */}
+      <div className="absolute top-4 left-4">
         <button
           onClick={toggleSidebar}
-          className="text-white focus:outline-none text-3xl" // Aumentando el tamaño del ícono de colapso
+          className="text-white focus:outline-none text-3xl" // Ícono de hamburguesa
         >
-          {isCollapsed ? '->' : '<-'}
+          {isCollapsed ? <FiMenu /> : <FiX />}
         </button>
+      </div>
+
+      <div className="flex items-center justify-center mb-8 mt-12">
+        {!isCollapsed && (
+          <Link href="/dashboard">
+            <img src="/logo_mr.png" alt="Logo" className="h-10" />
+          </Link>
+        )}
+      </div>
+      
+      <nav className="mt-12">
         <ul className="mt-4">
           {(userRole === 'admin' || userRole === 'gerencia') && (
             <li className="mb-4">
@@ -92,11 +101,12 @@ export default function Sidebar() {
           </li>
           <li className="mb-4">
             <Link href="chat" className="flex items-center p-2 rounded hover:bg-[#374151]">
-              {!isCollapsed && 'chat'}
+              {!isCollapsed && 'Chat'}
             </Link>
           </li>
         </ul>
       </nav>
+
       <div className="mt-auto">
         <button
           onClick={logout}

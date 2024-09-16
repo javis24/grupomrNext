@@ -2,15 +2,28 @@ import Clients from '../../../models/ClientModel';
 import { authenticateToken } from '../../../lib/auth';
 
 export default async function handler(req, res) {
-  const { method } = req;
+  const { method, query } = req;  // Obtener el método HTTP y los parámetros de la query
 
   // Verificar autenticación del usuario
   authenticateToken(req, res, async () => {
-    const { role: userRole, id: userId } = req.user;
+    const { role: userRole, id: userId } = req.user;  // Obtener el rol y el ID del usuario autenticado
 
     switch (method) {
       case 'GET':
-        // Obtener clientes
+        const { summary } = query;  // Verificar si hay un parámetro 'summary' en la query string
+
+        // Si la query tiene 'summary=true', devolvemos el total de clientes
+        if (summary === 'true') {
+          try {
+            const totalClients = await Clients.count();
+            return res.status(200).json({ totalClients });
+          } catch (error) {
+            console.error('Error fetching clients summary:', error);
+            return res.status(500).json({ message: 'Error fetching clients summary' });
+          }
+        }
+
+        // Si no hay 'summary', devolvemos la lista de clientes
         try {
           let clients;
           if (userRole === 'vendedor') {
@@ -24,7 +37,7 @@ export default async function handler(req, res) {
           }
 
           if (!clients || clients.length === 0) {
-            return res.status(200).json([]); // Devolver un array vacío si no hay clientes
+            return res.status(200).json([]);  // Devolver un array vacío si no hay clientes
           }
 
           return res.status(200).json(clients);
@@ -34,7 +47,6 @@ export default async function handler(req, res) {
         }
 
       case 'POST':
-        // Crear cliente
         const { fullName, companyName, businessTurn, address, contactName, contactPhone, email, position } = req.body;
 
         if (!fullName || !companyName || !businessTurn || !address) {
@@ -52,7 +64,7 @@ export default async function handler(req, res) {
             contactPhone,
             email,
             position,
-            userId, // Asociar cliente con el usuario autenticado
+            userId,  // Asociar cliente con el usuario autenticado
           });
 
           return res.status(201).json({ message: 'Client created successfully', client: newClient });
@@ -62,8 +74,7 @@ export default async function handler(req, res) {
         }
 
       case 'PUT':
-        // Actualizar cliente
-        const { id, ...updatedData } = req.body; // El ID y los nuevos datos del cliente
+        const { id, ...updatedData } = req.body;  // El ID y los nuevos datos del cliente
 
         if (!id) {
           return res.status(400).json({ message: 'Client ID is required' });
@@ -91,8 +102,7 @@ export default async function handler(req, res) {
         }
 
       case 'DELETE':
-        // Eliminar cliente
-        const { clientId } = req.body; // ID del cliente a eliminar
+        const { clientId } = req.body;  // ID del cliente a eliminar
 
         if (!clientId) {
           return res.status(400).json({ message: 'Client ID is required' });
@@ -120,9 +130,8 @@ export default async function handler(req, res) {
         }
 
       default:
-        // Si el método HTTP no es compatible
         res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
-        return res.status(405).end(`Method ${method} Not Allowed`);
+        return res.status(405).json({ message: `Method ${method} Not Allowed` });
     }
   });
 }
