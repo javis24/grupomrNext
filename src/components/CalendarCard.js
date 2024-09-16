@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; 
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import axios from 'axios';
@@ -10,8 +10,8 @@ const CalendarCard = () => {
   const [clientName, setClientName] = useState('');
   const [clientStatus, setClientStatus] = useState('');
   const [editingAppointment, setEditingAppointment] = useState(null);
-  const [loading, setLoading] = useState(true); // Estado de carga
-  const [error, setError] = useState(null); // Estado para manejar errores
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchAppointments = async () => {
@@ -44,7 +44,7 @@ const CalendarCard = () => {
       return;
     }
     const decoded = jwt.decode(token);
-    const userId = decoded.id;  // Obtenemos el ID del usuario autenticado
+    const userId = decoded.id;
 
     if (clientName && clientStatus) {
       try {
@@ -63,7 +63,7 @@ const CalendarCard = () => {
 
         if (response.status === 201) {
           console.log('Cita creada con éxito');
-          setAppointments([...appointments, response.data.appointment]); // Agregar la cita al estado
+          setAppointments([...appointments, response.data.appointment]);
           setClientName('');
           setClientStatus('');
         }
@@ -101,7 +101,7 @@ const CalendarCard = () => {
         )
       );
       setEditingAppointment(null);
-      setClientName(''); // Limpiar los campos después de la edición
+      setClientName('');
       setClientStatus('');
     } catch (error) {
       console.error('Error updating appointment:', error);
@@ -127,41 +127,43 @@ const CalendarCard = () => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row p-6 bg-[#1f2937] text-white rounded-lg shadow-lg">
+    <div className="flex flex-col p-4 bg-[#1f2937] text-white rounded-lg shadow-lg md:flex-row md:p-6">
       <div className="flex flex-col w-full md:w-2/3">
-        <h2 className="text-2xl font-bold mb-4">Calendar</h2>
-        <Calendar
-          onChange={setDate}
-          value={date}
-          locale="es-ES"
-          className="bg-white rounded-md shadow-md"
-        />
-        <div className="mt-4">
+        <h2 className="text-2xl font-bold mb-4">Calendario</h2>
+        <div className="w-full mb-4">
+          <Calendar
+            onChange={setDate}
+            value={date}
+            locale="es-ES"
+            className="bg-white rounded-md shadow-md w-full"
+          />
+        </div>
+        <div className="flex flex-col gap-2">
           <input
             type="text"
             placeholder="Client Name"
             value={clientName}
             onChange={(e) => setClientName(e.target.value)}
-            className="w-full p-2 mb-2 rounded bg-[#374151] text-white"
+            className="w-full p-3 mb-2 rounded bg-[#374151] text-white"
           />
           <input
             type="text"
             placeholder="Client Status"
             value={clientStatus}
             onChange={(e) => setClientStatus(e.target.value)}
-            className="w-full p-2 mb-2 rounded bg-[#374151] text-white"
+            className="w-full p-3 mb-2 rounded bg-[#374151] text-white"
           />
           {editingAppointment ? (
             <button
               onClick={() => handleEditAppointment(editingAppointment.id)}
-              className="w-full bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600"
+              className="w-full bg-yellow-500 text-white p-3 rounded hover:bg-yellow-600"
             >
               Update Appointment
             </button>
           ) : (
             <button
               onClick={handleAddAppointment}
-              className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+              className="w-full bg-blue-500 text-white p-3 rounded hover:bg-blue-600"
             >
               Add Appointment
             </button>
@@ -180,7 +182,7 @@ const CalendarCard = () => {
             <p>No appointments scheduled</p>
           ) : (
             appointments.map((appointment) => (
-              <div key={appointment.id} className="mb-4 p-2 bg-[#1f2937] rounded-lg">
+              <div key={appointment.id} className="mb-4 p-3 bg-[#1f2937] rounded-lg">
                 <p>
                   <strong>Date:</strong> {new Date(appointment.date).toLocaleDateString()}
                 </p>
