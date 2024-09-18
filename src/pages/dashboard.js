@@ -9,7 +9,11 @@ import ClientList from '@/components/ClientList';
 function Dashboard() {
   const [userData, setUserData] = useState({});
   const [upcomingAppointment, setUpcomingAppointment] = useState(null);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true); // Estado inicial colapsado
+  const [latestClients, setLatestClients] = useState([]);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+  const [activeUsers, setActiveUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -17,37 +21,62 @@ function Dashboard() {
       try {
         const decoded = jwt.decode(token);
         setUserData(decoded);
+
+        // Actualiza el campo lastActive cuando se carga el dashboard
+        axios.get('/api/lastActive', {
+          headers: { Authorization: `Bearer ${token}` },
+        }).then(() => {
+          console.log('Last active actualizado');
+        }).catch(error => {
+          console.error('Error actualizando lastActive:', error);
+        });
+
       } catch (error) {
         console.error('Error decoding token:', error);
       }
     }
 
-    const fetchAppointments = async () => {
+    const fetchData = async () => {
+      setLoading(true);
       try {
-        const token = localStorage.getItem('token');
-        const response = await axios.get('/api/appointments', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        const appointments = response.data;
+        const [appointmentsRes, clientsRes, usersRes] = await Promise.all([
+          axios.get('/api/appointments', { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get('/api/clients?latest=true', { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get('/api/users?active=true', { headers: { Authorization: `Bearer ${token}` } }),
+        ]);
 
         const now = new Date();
-        const upcoming = appointments
+        const upcoming = appointmentsRes.data
           .filter(appointment => new Date(appointment.date) > now)
           .sort((a, b) => new Date(a.date) - new Date(b.date))[0];
 
         setUpcomingAppointment(upcoming);
+        setLatestClients(clientsRes.data);
+        setActiveUsers(usersRes.data);
+
+        console.log("Usuarios activos recibidos:", usersRes.data);
       } catch (error) {
-        console.error('Error fetching appointments:', error);
+        console.error('Error fetching data:', error);
+        setError('Error fetching data.');
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchAppointments();
+    fetchData();
   }, []);
 
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
   };
+
+  if (loading) {
+    return <p className="text-center text-white">Cargando...</p>;
+  }
+
+  if (error) {
+    return <p className="text-center text-red-500">{error}</p>;
+  }
 
   return (
     <div className="flex min-h-screen bg-[#0e1624] text-white">
@@ -64,11 +93,20 @@ function Dashboard() {
 
         {/* Layout responsivo */}
         <section className="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-3">
-          {/* Total Users */}
+          {/* Usuarios Activos */}
           <div className="bg-[#1f2937] p-4 rounded-lg shadow-lg">
-            <h2 className="text-xl sm:text-lg font-semibold">Total Users</h2>
-            <p className="text-2xl sm:text-xl font-bold mt-2">10,928</p>
-            <p className="text-green-400 mt-1 text-sm sm:text-base">12% more than previous week</p>
+          <h2 className="text-xl font-semibold">Usuarios Activos</h2>
+            {activeUsers.length > 0 ? (
+              <ul>
+                {activeUsers.map((user, index) => (
+                  <li key={index} className="mt-2">
+                    <p>{user.name} ({user.email}) - Activo: {new Date(user.lastActive).toLocaleTimeString()}</p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-red-400">No hay usuarios activos actualmente.</p>
+            )}
           </div>
 
           {/* Próxima Cita */}
@@ -87,21 +125,32 @@ function Dashboard() {
             )}
           </div>
 
-          {/* Revenue */}
+          {/* Últimos 5 Clientes */}
           <div className="bg-[#1f2937] p-4 rounded-lg shadow-lg">
-            <h2 className="text-xl sm:text-lg font-semibold">Revenue</h2>
-            <p className="text-2xl sm:text-xl font-bold mt-2">$6,642</p>
-            <p className="text-green-400 mt-1 text-sm sm:text-base">18% more than previous week</p>
-          </div>
-          {/* Welcome Message */}
-          <div className="bg-[#1f2937] p-4 rounded-lg shadow-lg w-full">
-            <h2 className="text-xl sm:text-lg font-semibold">Welcome, {userData.role || 'User'}</h2>
-            <p className="text-lg sm:text-base">Hello {userData.name || 'there'}! Welcome to your dashboard.</p>
-          </div>
-          <div className="bg-[#1f2937] p-4 rounded-lg shadow-lg w-full">
-          <ClientList />
+            <h2 className="text-xl sm:text-lg font-semibold">Últimos 5 Clientes</h2>
+            {latestClients.length > 0 ? (
+              <ul className="mt-2 space-y-2">
+                {latestClients.map((client, index) => (
+                  <li key={index} className="text-sm sm:text-base">
+                    <strong>Nombre: {client.fullName}</strong> <br /><strong>Email: {client.email}</strong>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-red-400 mt-2 text-sm sm:text-base">No se encontraron clientes recientes.</p>
+            )}
           </div>
         </section>
+
+        {/* Welcome Message */}
+        <div className="bg-[#1f2937] p-4 rounded-lg shadow-lg w-full">
+          <h2 className="text-xl sm:text-lg font-semibold">Welcome, {userData.role || 'User'}</h2>
+          <p className="text-lg sm:text-base">Hello {userData.name || 'there'}! Welcome to your dashboard.</p>
+        </div>
+
+        <div className="bg-[#1f2937] p-4 rounded-lg shadow-lg w-full">
+          <ClientList />
+        </div>
       </main>
     </div>
   );

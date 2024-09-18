@@ -42,9 +42,13 @@ const Users = db.define('users', {
         validate: {
             notEmpty: true
         }
+    },
+    lastActive: {
+        type: DataTypes.DATE,
+        allowNull: true
     }
-}, {
-    freezeTableName: true
-});
+    }, {
+        freezeTableName: true
+    });
 
 export default Users;

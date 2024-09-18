@@ -31,9 +31,9 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className={`${isCollapsed ? 'w-16' : 'w-64'} bg-[#1f2937] p-5 transition-all duration-300 min-h-screen relative`}>
+    <aside className={`${isCollapsed ? 'w-11' : 'w-64'} bg-[#1f2937] p-5 transition-all duration-300 min-h-screen relative`}>
       {/* Icono de hamburguesa en la parte superior para colapsar/desplegar */}
-      <div className="absolute top-4 left-4">
+      <div className="absolute top-10 left-2">
         <button
           onClick={toggleSidebar}
           className="text-white focus:outline-none text-3xl" // Ícono de hamburguesa

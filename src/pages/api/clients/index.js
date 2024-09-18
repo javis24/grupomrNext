@@ -4,13 +4,12 @@ import { authenticateToken } from '../../../lib/auth';
 export default async function handler(req, res) {
   const { method, query } = req;  // Obtener el método HTTP y los parámetros de la query
 
-  // Verificar autenticación del usuario
   authenticateToken(req, res, async () => {
     const { role: userRole, id: userId } = req.user;  // Obtener el rol y el ID del usuario autenticado
 
     switch (method) {
       case 'GET':
-        const { summary } = query;  // Verificar si hay un parámetro 'summary' en la query string
+        const { summary, latest } = query;  // Verificar si hay un parámetro 'summary' o 'latest' en la query string
 
         // Si la query tiene 'summary=true', devolvemos el total de clientes
         if (summary === 'true') {
@@ -23,7 +22,22 @@ export default async function handler(req, res) {
           }
         }
 
-        // Si no hay 'summary', devolvemos la lista de clientes
+        // Si la query tiene 'latest=true', devolvemos los últimos 5 clientes nuevos
+        if (latest === 'true') {
+          try {
+            const latestClients = await Clients.findAll({
+              order: [['createdAt', 'DESC']],  // Ordenar por fecha de creación, más recientes primero
+              limit: 5,  // Limitar el resultado a 5 clientes
+              attributes: ['fullName', 'email'],  // Solo devolver fullName y email
+            });
+            return res.status(200).json(latestClients);
+          } catch (error) {
+            console.error('Error fetching latest clients:', error);
+            return res.status(500).json({ message: 'Error fetching latest clients' });
+          }
+        }
+
+        // Si no hay 'summary' ni 'latest', devolvemos la lista de todos los clientes
         try {
           let clients;
           if (userRole === 'vendedor') {
