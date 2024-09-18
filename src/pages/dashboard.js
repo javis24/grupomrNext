@@ -93,21 +93,24 @@ function Dashboard() {
 
         {/* Layout responsivo */}
         <section className="grid grid-cols-1 gap-4 mb-8 sm:grid-cols-2 lg:grid-cols-3">
-          {/* Usuarios Activos */}
-          <div className="bg-[#1f2937] p-4 rounded-lg shadow-lg">
-          <h2 className="text-xl font-semibold">Usuarios Activos</h2>
-            {activeUsers.length > 0 ? (
-              <ul>
-                {activeUsers.map((user, index) => (
-                  <li key={index} className="mt-2">
-                    <p>{user.name} ({user.email}) - Activo: {new Date(user.lastActive).toLocaleTimeString()}</p>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-red-400">No hay usuarios activos actualmente.</p>
-            )}
-          </div>
+          
+          {/* Muestra Usuarios Activos solo si el rol es admin o gerencia */}
+          {userData.role === 'admin' || userData.role === 'gerencia' ? (
+            <div className="bg-[#1f2937] p-4 rounded-lg shadow-lg">
+              <h2 className="text-xl font-semibold">Usuarios Activos</h2>
+              {activeUsers.length > 0 ? (
+                <ul>
+                  {activeUsers.map((user, index) => (
+                    <li key={index} className="mt-2">
+                      <p>{user.name} ({user.email}) - Activo: {new Date(user.lastActive).toLocaleTimeString()}</p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-red-400">No hay usuarios activos actualmente.</p>
+              )}
+            </div>
+          ) : null}
 
           {/* Próxima Cita */}
           <div className="bg-[#1f2937] p-4 rounded-lg shadow-lg">
