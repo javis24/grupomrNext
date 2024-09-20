@@ -171,8 +171,8 @@ export default function ClientList() {
   };
 
   return (
-    <div className="p-8 bg-[#0e1624] text-white min-h-screen">
-      <div className="flex justify-between items-center mb-4">
+    <div className="p-1 bg-[#0e1624] text-white min-h-screen">
+      <div className="flex justify-between items-center mb-2">
         <h1 className="text-3xl font-bold">Clients</h1>
         <div className="flex">
           <button onClick={() => openModal()} className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 mr-2">
@@ -184,7 +184,7 @@ export default function ClientList() {
         </div>
       </div>
 
-      <div className="relative mb-4">
+      <div className="relative mb-4 ">
         <select
           value={filterField}
           onChange={(e) => setFilterField(e.target.value)}
@@ -211,22 +211,20 @@ export default function ClientList() {
       {clients.length === 0 ? (
         <p className="text-center">No clients found. Please add new clients.</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full table-auto bg-[#1f2937] text-left rounded-lg">
-            <thead>
-              <tr>
-                <th className="px-4 py-2">Nombre</th>
-                <th className="px-4 py-2">Compañía</th>
-                <th className="px-4 py-2">Giro Comercial</th>
-                <th className="px-4 py-2">Acciones</th>
-              </tr>
-            </thead>
+        <div className="">
+      <table className="min-w-full table-auto bg-[#1f2937] text-left rounded-lg">
+        <thead>
+          <tr className="bg-[#2d3748]">
+            <th className="px-4 py-2 w-1/4">Nombre</th>
+            <th className="px-4 py-2 w-1/4">Compañía</th>
+            <th className="px-4 py-2 w-1/4">Acciones</th>
+          </tr>
+        </thead>
             <tbody>
               {filteredClients.map((client) => (
                 <tr key={client.id} className="hover:bg-[#374151]">
                   <td className="px-4 py-2">{client.fullName}</td>
                   <td className="px-4 py-2">{client.companyName}</td>
-                  <td className="px-4 py-2">{client.businessTurn}</td>
                   <td className="px-4 py-2">
                     <button onClick={() => openModal(client)} className="bg-green-500 text-white p-2 rounded hover:bg-green-600 mr-2">View</button>
                     <button onClick={() => exportClientToPDF(client)} className="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600 mr-2">Export to PDF</button>
@@ -243,110 +241,111 @@ export default function ClientList() {
           </table>
         </div>
       )}
+        <Modal
+          isOpen={modalIsOpen}
+          onRequestClose={closeModal}
+          style={customStyles}
+          contentLabel="Add/Edit Client"
+        >
+          <h2 className="text-2xl font-bold mb-4">{selectedClient ? 'Edit Client' : 'Add New Client'}</h2>
+          <form onSubmit={handleSubmit}>
+            <div className="grid grid-cols-3 md:grid-cols-2 lg:grid-cols-3 gap-2">
+              {/* Primera columna de inputs */}
+              <div className="mb-4">
+                <label className="block text-white mb-2">Full Name</label>
+                <input
+                  type="text"
+                  value={newClient.fullName}
+                  onChange={(e) => setNewClient({ ...newClient, fullName: e.target.value })}
+                  className="w-full p-2 rounded bg-[#1f2937] text-white"
+                  required
+                />
+              </div>
 
-      <Modal
-        isOpen={modalIsOpen}
-        onRequestClose={closeModal}
-        style={customStyles}
-        contentLabel="Add/Edit Client"
-      >
-        <h2 className="text-2xl font-bold mb-4">{selectedClient ? 'Edit Client' : 'Add New Client'}</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Primera columna de inputs */}
-            <div className="mb-4">
-              <label className="block text-white mb-2">Full Name</label>
-              <input
-                type="text"
-                value={newClient.fullName}
-                onChange={(e) => setNewClient({ ...newClient, fullName: e.target.value })}
-                className="w-full p-2 rounded bg-[#1f2937] text-white"
-                required
-              />
+              <div className="mb-4">
+                <label className="block text-white mb-2">Company Name</label>
+                <input
+                  type="text"
+                  value={newClient.companyName}
+                  onChange={(e) => setNewClient({ ...newClient, companyName: e.target.value })}
+                  className="w-full p-2 rounded bg-[#1f2937] text-white"
+                  required
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-white mb-2">Business Turn</label>
+                <input
+                  type="text"
+                  value={newClient.businessTurn}
+                  onChange={(e) => setNewClient({ ...newClient, businessTurn: e.target.value })}
+                  className="w-full p-2 rounded bg-[#1f2937] text-white"
+                  required
+                />
+              </div>
+
+              {/* Segunda columna de inputs */}
+              <div className="mb-4">
+                <label className="block text-white mb-2">Address</label>
+                <input
+                  type="text"
+                  value={newClient.address}
+                  onChange={(e) => setNewClient({ ...newClient, address: e.target.value })}
+                  className="w-full p-2 rounded bg-[#1f2937] text-white"
+                  required
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-white mb-2">Contact Name</label>
+                <input
+                  type="text"
+                  value={newClient.contactName}
+                  onChange={(e) => setNewClient({ ...newClient, contactName: e.target.value })}
+                  className="w-full p-2 rounded bg-[#1f2937] text-white"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-white mb-2">Contact Phone</label>
+                <input
+                  type="text"
+                  value={newClient.contactPhone}
+                  onChange={(e) => setNewClient({ ...newClient, contactPhone: e.target.value })}
+                  className="w-full p-2 rounded bg-[#1f2937] text-white"
+                />
+              </div>
+
+              {/* Tercera columna de inputs */}
+              <div className="mb-4">
+                <label className="block text-white mb-2">Email</label>
+                <input
+                  type="email"
+                  value={newClient.email}
+                  onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
+                  className="w-full p-2 rounded bg-[#1f2937] text-white"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-white mb-2">Position</label>
+                <input
+                  type="text"
+                  value={newClient.position}
+                  onChange={(e) => setNewClient({ ...newClient, position: e.target.value })}
+                  className="w-full p-2 rounded bg-[#1f2937] text-white"
+                />
+              </div>
             </div>
 
-            <div className="mb-4">
-              <label className="block text-white mb-2">Company Name</label>
-              <input
-                type="text"
-                value={newClient.companyName}
-                onChange={(e) => setNewClient({ ...newClient, companyName: e.target.value })}
-                className="w-full p-2 rounded bg-[#1f2937] text-white"
-                required
-              />
-            </div>
+            <button type="submit" className="bg-blue-500 text-white p-2 rounded mt-4">
+              {selectedClient ? 'Save Changes' : 'Add Client'}
+            </button>
+          </form>
+        </Modal>
 
-            <div className="mb-4">
-              <label className="block text-white mb-2">Business Turn</label>
-              <input
-                type="text"
-                value={newClient.businessTurn}
-                onChange={(e) => setNewClient({ ...newClient, businessTurn: e.target.value })}
-                className="w-full p-2 rounded bg-[#1f2937] text-white"
-                required
-              />
-            </div>
 
-            {/* Segunda columna de inputs */}
-            <div className="mb-4">
-              <label className="block text-white mb-2">Address</label>
-              <input
-                type="text"
-                value={newClient.address}
-                onChange={(e) => setNewClient({ ...newClient, address: e.target.value })}
-                className="w-full p-2 rounded bg-[#1f2937] text-white"
-                required
-              />
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-white mb-2">Contact Name</label>
-              <input
-                type="text"
-                value={newClient.contactName}
-                onChange={(e) => setNewClient({ ...newClient, contactName: e.target.value })}
-                className="w-full p-2 rounded bg-[#1f2937] text-white"
-              />
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-white mb-2">Contact Phone</label>
-              <input
-                type="text"
-                value={newClient.contactPhone}
-                onChange={(e) => setNewClient({ ...newClient, contactPhone: e.target.value })}
-                className="w-full p-2 rounded bg-[#1f2937] text-white"
-              />
-            </div>
-
-            {/* Tercera columna de inputs */}
-            <div className="mb-4">
-              <label className="block text-white mb-2">Email</label>
-              <input
-                type="email"
-                value={newClient.email}
-                onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
-                className="w-full p-2 rounded bg-[#1f2937] text-white"
-              />
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-white mb-2">Position</label>
-              <input
-                type="text"
-                value={newClient.position}
-                onChange={(e) => setNewClient({ ...newClient, position: e.target.value })}
-                className="w-full p-2 rounded bg-[#1f2937] text-white"
-              />
-            </div>
-          </div>
-
-          <button type="submit" className="bg-blue-500 text-white p-2 rounded mt-4">
-            {selectedClient ? 'Save Changes' : 'Add Client'}
-          </button>
-        </form>
-      </Modal>
-
+      
     </div>
   );
 }

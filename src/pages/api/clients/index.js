@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     const { role: userRole, id: userId } = req.user;  // Obtener el rol y el ID del usuario autenticado
 
     switch (method) {
-      case 'GET':
+      case 'GET': {
         const { summary, latest } = query;  // Verificar si hay un parámetro 'summary' o 'latest' en la query string
 
         // Si la query tiene 'summary=true', devolvemos el total de clientes
@@ -59,8 +59,9 @@ export default async function handler(req, res) {
           console.error('Error fetching clients:', error);
           return res.status(500).json({ message: 'Error fetching clients' });
         }
+      }
 
-      case 'POST':
+      case 'POST': {
         const { fullName, companyName, businessTurn, address, contactName, contactPhone, email, position } = req.body;
 
         if (!fullName || !companyName || !businessTurn || !address) {
@@ -86,8 +87,9 @@ export default async function handler(req, res) {
           console.error('Error creating client:', error);
           return res.status(500).json({ message: 'Error creating client' });
         }
+      }
 
-      case 'PUT':
+      case 'PUT': {
         const { id, ...updatedData } = req.body;  // El ID y los nuevos datos del cliente
 
         if (!id) {
@@ -114,8 +116,9 @@ export default async function handler(req, res) {
           console.error('Error updating client:', error);
           return res.status(500).json({ message: 'Error updating client' });
         }
+      }
 
-      case 'DELETE':
+      case 'DELETE': {
         const { clientId } = req.body;  // ID del cliente a eliminar
 
         if (!clientId) {
@@ -142,6 +145,7 @@ export default async function handler(req, res) {
           console.error('Error deleting client:', error);
           return res.status(500).json({ message: 'Error deleting client' });
         }
+      }
 
       default:
         res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);

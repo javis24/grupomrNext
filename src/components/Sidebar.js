@@ -50,7 +50,7 @@ export default function Sidebar() {
         )}
       </div>
       
-      <nav className="mt-12">
+      <nav className="mt-10">
         <ul className="mt-4">
           {(userRole === 'admin' || userRole === 'gerencia') && (
             <li className="mb-4">
