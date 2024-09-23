@@ -1,165 +1,345 @@
-import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { useEffect, useState } from 'react'; 
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
 const CreateQuote = () => {
-  const [clients, setClients] = useState([]);
-  const [services, setServices] = useState([]);
-  const [selectedClient, setSelectedClient] = useState(null);
-  const [selectedService, setSelectedService] = useState(null);
+  const [quoteNumber, setQuoteNumber] = useState(0);
+  const [currentDate, setCurrentDate] = useState("");
+
+  // Estado para almacenar los datos del cliente ingresados por el usuario
+  const [clientData, setClientData] = useState({
+    companyName: '',
+    address: '',
+    attentionTo: '',
+    department: '',
+    email: '',
+    phone: '',
+    mobile: '',
+    supervisor: '',
+    assigned: ''
+  });
+
+  // Estado para manejar filas dinámicas en la tabla de servicios
+  const [serviceRows, setServiceRows] = useState([
+    { description: '', um: 'Pieza', pu: '', comments: '' }
+  ]);
 
   useEffect(() => {
-    // Obtener clientes
-    const fetchClients = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await axios.get('/api/clients', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setClients(response.data);
-      } catch (error) {
-        console.error('Error fetching clients:', error);
-      }
-    };
+    const lastQuoteNumber = localStorage.getItem('quoteNumber');
+    if (lastQuoteNumber) {
+      setQuoteNumber(parseInt(lastQuoteNumber) + 1); // Incrementar el número
+    } else {
+      setQuoteNumber(1); // Si no hay número anterior, inicializar en 1
+    }
 
-    // Obtener servicios
-    const fetchServices = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await axios.get('/api/services', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setServices(response.data);
-      } catch (error) {
-        console.error('Error fetching services:', error);
-      }
-    };
-
-    fetchClients();
-    fetchServices();
+    const today = new Date();
+    setCurrentDate(today.toLocaleDateString());
   }, []);
 
-  const handleClientChange = (event) => {
-    const clientId = event.target.value;
-    const client = clients.find((c) => c.id === parseInt(clientId));
-    setSelectedClient(client);
+  // Función para manejar el cambio en los campos del cliente
+  const handleClientInputChange = (e) => {
+    const { name, value } = e.target;
+    setClientData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
   };
 
-  const handleServiceChange = (event) => {
-    const serviceId = event.target.value;
-    const service = services.find((s) => s.id === parseInt(serviceId));
-    setSelectedService(service);
+  // Función para manejar el cambio en las filas
+  const handleRowChange = (index, e) => {
+    const { name, value } = e.target;
+    const updatedRows = [...serviceRows];
+    updatedRows[index][name] = value;
+    setServiceRows(updatedRows);
   };
 
+  // Función para agregar una nueva fila
+  const addRow = () => {
+    setServiceRows([...serviceRows, { description: '', um: 'Pieza', pu: '', comments: '' }]);
+  };
+
+  // Función para generar el PDF con los datos de las filas y del cliente
   const generatePDF = () => {
     const doc = new jsPDF();
-    doc.text("Cotización", 14, 10);
 
-    const clientData = [
-      ["Nombre del cliente", selectedClient?.fullName || ""],
-      ["Compañía", selectedClient?.companyName || ""],
-      ["Teléfono", selectedClient?.contactPhone || ""],
-      ["Email", selectedClient?.email || ""]
-    ];
+    localStorage.setItem('quoteNumber', quoteNumber);
 
-    const serviceData = [
-      ["Servicio", selectedService?.programacion || ""],
-      ["Equipo", selectedService?.equipo || ""],
-      ["Costo de recolección", selectedService?.recoleccion || ""],
-      ["Disposición", selectedService?.disposicion || ""]
-    ];
+    const imgUrl = '/logo_mr.png';  // Ruta relativa desde el directorio 'public'
 
-    doc.autoTable({
-      head: [["Información del Cliente", ""]],
-      body: clientData,
-    });
+    const image = new Image();
+    image.src = imgUrl;
+    image.onload = () => {
+      doc.addImage(image, 'PNG', 20, 10, 20, 20);
 
-    doc.autoTable({
-      head: [["Información del Servicio", ""]],
-      body: serviceData,
-    });
+      // Información de la empresa
+      doc.setFontSize(12);
+      doc.text("Materiales Reutilizables S.A. de C.V.", 105, 20, { align: 'center' });
+      doc.text("Benito Juarez 112 SUR, Col. 1ro de Mayo", 105, 27, { align: 'center' });
+      doc.text("Cd. Lerdo, Dgo. C.P. 35169", 105, 32, { align: 'center' });
+      doc.text("MRE040121UBA", 105, 37, { align: 'center' });
 
-    doc.save('cotizacion.pdf');
-  };
+      // Cotización
+      doc.setFillColor(255, 204, 0); // Color amarillo
+      doc.rect(160, 20, 40, 10, 'F');
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.text("COTIZACIÓN", 180, 27, null, 'center'); 
+
+      // Número de cotización
+      const quoteNumberText = `Nº ${quoteNumber}`;
+      const quoteTextWidth = doc.getTextWidth(quoteNumberText);
+      doc.text(160 + (40 - quoteTextWidth) / 2, 42, quoteNumberText);  
+
+      // Fecha de la cotización
+      const dateTextWidth = doc.getTextWidth(currentDate);
+      doc.text(160 + (40 - dateTextWidth) / 2, 57, currentDate); 
+
+      // Datos del cliente
+      doc.setFontSize(12);
+      doc.setTextColor(255, 165, 0); 
+      doc.text("DATOS DEL CLIENTE O SOLICITANTE", 12, 65);
+
+      const clientDetails = [
+        ["EMPRESA", clientData.companyName],
+        ["DOMICILIO", clientData.address],
+        ["ATENCIÓN A", clientData.attentionTo],
+        ["DEPARTAMENTO", clientData.department],
+        ["CORREO ELECTRÓNICO", clientData.email],
+        ["TELÉFONO", clientData.phone],
+        ["MÓVIL", clientData.mobile],
+        ["SUPERVISOR", clientData.supervisor],
+        ["ASIGNADO", clientData.assigned],
+      ];
+
+      doc.autoTable({
+        body: clientDetails,
+        startY: 70,
+        theme: 'plain',
+        styles: {
+          cellPadding: 2,
+          fontSize: 8,
+        },
+        columnStyles: {
+          0: { halign: 'left', textColor: [0, 0, 0] },
+          1: { halign: 'right', textColor: [0, 0, 0] },
+        }
+      });
+
+      // Tabla de servicios (dinámica)
+      const tableData = serviceRows.map((row, index) => [
+        index + 1,
+        row.description,
+        row.um,
+        `$${row.pu}`,
+        row.comments
+      ]);
+
+      doc.autoTable({
+        head: [["NO", "DESCRIPCIÓN", "UM", "P.U.", "COMENTARIOS"]],
+        body: tableData,
+        startY: doc.lastAutoTable.finalY + 10,
+        theme: 'grid',
+        headStyles: {
+          fillColor: [255, 204, 0],
+          textColor: 0,
+        },
+        styles: {
+          fontSize: 10,
+          halign: 'center',
+        }
+      });
+
+      // Sección de observaciones
+      doc.setFontSize(8);
+      doc.setTextColor(0, 0, 0);
+      doc.setFillColor(255, 204, 0);
+      doc.rect(14, doc.lastAutoTable.finalY + 20, 182, 10, 'F');
+      doc.text("OBSERVACIONES", 105, doc.lastAutoTable.finalY + 27, null, 'center');
+
+      const observations = [
+        "Precios más IVA",
+        "Condiciones de pago: Negociable",
+        "Contamos con todos los permisos necesarios para el desarrollo de nuestras actividades ante la SRNMA y SEMARNART",
+        "NÚMERO DE AUTORIZACIÓN AMBIENTAL RERET-1-SRNMA-005-24",
+        "Nuestro personal cuenta con seguridad social, EPP y capacitación para realizar las maniobras necesarias",
+        "Esta Cotización tiene una vigencia de 15 días",
+        "Teléfono de atención: 871-342 81 05"
+      ];
+
+      // Centrar las observaciones
+      observations.forEach((obs, index) => {
+        const obsTextWidth = doc.getTextWidth(obs);
+        doc.text(105 - (obsTextWidth / 2), doc.lastAutoTable.finalY + 37 + (index * 6), obs);
+      });
+
+       // Pie de página
+       doc.setFontSize(8);
+       doc.setTextColor(0, 0, 0);
+       const footer1 = "Comercialización Grupo MR";
+       const footer2 = "Visita nuestra página y conoce más sobre nosotros";
+       const footer3 = "www.materialesreutilizables.com";
+ 
+       doc.text(105, 250, footer1, null, 'center'); // Subimos la posición del pie de página
+       doc.text(105, 253, footer2, null, 'center');
+       doc.setTextColor(0, 0, 255);  // Color azul para el enlace
+       doc.textWithLink(footer3, 86, 256, { url: "http://www.materialesreutilizables.com" }); // Movemos el link más a la izquierda
+ 
+       doc.save('cotizacion.pdf');
+     };
+   };
 
   return (
     <div className="p-8 bg-[#0e1624] text-white">
       <h2 className="text-2xl font-bold mb-4">Crear Cotización</h2>
 
-      {/* Select de Clientes */}
-      <div className="mb-4">
-        <label className="block mb-2">Seleccionar Cliente</label>
-        <select
-          onChange={handleClientChange}
-          className="p-2 rounded bg-[#374151] text-white w-full"
-        >
-          <option value="">Seleccione un cliente</option>
-          {clients.map((client) => (
-            <option key={client.id} value={client.id}>
-              {client.fullName}
-            </option>
-          ))}
-        </select>
+      {/* Formulario para ingresar datos del cliente */}
+      <div className="grid grid-cols-3 gap-4 mb-4">
+        <div>
+          <label className="block mb-2">Empresa</label>
+          <input
+            type="text"
+            name="companyName"
+            value={clientData.companyName}
+            onChange={handleClientInputChange}
+            className="p-2 rounded bg-[#374151] text-white w-full"
+          />
+        </div>
+
+        <div>
+          <label className="block mb-2">Domicilio</label>
+          <input
+            type="text"
+            name="address"
+            value={clientData.address}
+            onChange={handleClientInputChange}
+            className="p-2 rounded bg-[#374151] text-white w-full"
+          />
+        </div>
+
+        <div>
+          <label className="block mb-2">Atención a</label>
+          <input
+            type="text"
+            name="attentionTo"
+            value={clientData.attentionTo}
+            onChange={handleClientInputChange}
+            className="p-2 rounded bg-[#374151] text-white w-full"
+          />
+        </div>
+
+        <div>
+          <label className="block mb-2">Departamento</label>
+          <input
+            type="text"
+            name="department"
+            value={clientData.department}
+            onChange={handleClientInputChange}
+            className="p-2 rounded bg-[#374151] text-white w-full"
+          />
+        </div>
+
+        <div>
+          <label className="block mb-2">Correo Electrónico</label>
+          <input
+            type="email"
+            name="email"
+            value={clientData.email}
+            onChange={handleClientInputChange}
+            className="p-2 rounded bg-[#374151] text-white w-full"
+          />
+        </div>
+
+        <div>
+          <label className="block mb-2">Teléfono</label>
+          <input
+            type="text"
+            name="phone"
+            value={clientData.phone}
+            onChange={handleClientInputChange}
+            className="p-2 rounded bg-[#374151] text-white w-full"
+          />
+        </div>
+
+        <div>
+          <label className="block mb-2">Móvil</label>
+          <input
+            type="text"
+            name="mobile"
+            value={clientData.mobile}
+            onChange={handleClientInputChange}
+            className="p-2 rounded bg-[#374151] text-white w-full"
+          />
+        </div>
+
+        <div>
+          <label className="block mb-2">Supervisor</label>
+          <input
+            type="text"
+            name="supervisor"
+            value={clientData.supervisor}
+            onChange={handleClientInputChange}
+            className="p-2 rounded bg-[#374151] text-white w-full"
+          />
+        </div>
+
+        <div>
+          <label className="block mb-2">Asignado</label>
+          <input
+            type="text"
+            name="assigned"
+            value={clientData.assigned}
+            onChange={handleClientInputChange}
+            className="p-2 rounded bg-[#374151] text-white w-full"
+          />
+        </div>
       </div>
 
-      {/* Select de Servicios */}
-      <div className="mb-4">
-        <label className="block mb-2">Seleccionar Servicio</label>
-        <select
-          onChange={handleServiceChange}
-          className="p-2 rounded bg-[#374151] text-white w-full"
-        >
-          <option value="">Seleccione un servicio</option>
-          {services.map((service) => (
-            <option key={service.id} value={service.id}>
-              {service.programacion} - {service.equipo}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* Formulario dinámico para agregar servicios */}
+      <h3 className="text-xl font-semibold mb-4">Servicios</h3>
+      {serviceRows.map((row, index) => (
+        <div key={index} className="grid grid-cols-4 gap-4 mb-2">
+          <input
+            type="text"
+            name="description"
+            placeholder="Descripción"
+            value={row.description}
+            onChange={(e) => handleRowChange(index, e)}
+            className="p-2 rounded bg-[#374151] text-white w-full"
+          />
+          <input
+            type="text"
+            name="um"
+            placeholder="UM"
+            value={row.um}
+            onChange={(e) => handleRowChange(index, e)}
+            className="p-2 rounded bg-[#374151] text-white w-full"
+          />
+          <input
+            type="number"
+            name="pu"
+            placeholder="P.U."
+            value={row.pu}
+            onChange={(e) => handleRowChange(index, e)}
+            className="p-2 rounded bg-[#374151] text-white w-full"
+          />
+          <input
+            type="text"
+            name="comments"
+            placeholder="Comentarios"
+            value={row.comments}
+            onChange={(e) => handleRowChange(index, e)}
+            className="p-2 rounded bg-[#374151] text-white w-full"
+          />
+        </div>
+      ))}
 
-      {/* Tabla de detalles seleccionados */}
-      <div className="mb-4">
-        <h3 className="text-xl font-semibold mb-2">Detalles de Cotización</h3>
-        <table className="table-auto w-full text-left bg-[#1f2937] p-4 rounded-lg shadow-lg">
-          <thead>
-            <tr>
-              <th className="pb-2">Detalle</th>
-              <th className="pb-2">Información</th>
-            </tr>
-          </thead>
-          <tbody>
-            {/* Detalles del Cliente */}
-            <tr>
-              <td className="py-2">Cliente</td>
-              <td className="py-2">{selectedClient?.fullName || "-"}</td>
-            </tr>
-            <tr>
-              <td className="py-2">Compañía</td>
-              <td className="py-2">{selectedClient?.companyName || "-"}</td>
-            </tr>
-            <tr>
-              <td className="py-2">Teléfono</td>
-              <td className="py-2">{selectedClient?.contactPhone || "-"}</td>
-            </tr>
-
-            {/* Detalles del Servicio */}
-            <tr>
-              <td className="py-2">Servicio</td>
-              <td className="py-2">{selectedService?.programacion || "-"}</td>
-            </tr>
-            <tr>
-              <td className="py-2">Equipo</td>
-              <td className="py-2">{selectedService?.equipo || "-"}</td>
-            </tr>
-            <tr>
-              <td className="py-2">Costo Recolección</td>
-              <td className="py-2">{selectedService?.recoleccion || "-"}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+      {/* Botón para agregar una nueva fila */}
+      <button
+        onClick={addRow}
+        className="mb-4 p-2 bg-green-500 rounded text-white hover:bg-green-600"
+      >
+        Agregar Fila
+      </button>
 
       {/* Botón para generar PDF */}
       <button
