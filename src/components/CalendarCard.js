@@ -3,6 +3,8 @@ import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const CalendarCard = () => {
   const [date, setDate] = useState(new Date());
@@ -126,6 +128,82 @@ const CalendarCard = () => {
     }
   };
 
+  // Función para exportar una cita a PDF con el mismo diseño de los anteriores
+  const exportAppointmentToPDF = (appointment) => {
+    const doc = new jsPDF();
+    const imgUrl = '/logo_mr.png';  // Ruta de tu logo
+
+    const image = new Image();
+    image.src = imgUrl;
+
+    image.onload = () => {
+      // Agregar el logo
+      doc.addImage(image, 'PNG', 20, 10, 40, 40); // Aumentar el tamaño del logo
+
+      // Información de la empresa
+      doc.setFontSize(12);
+      doc.text("Materiales Reutilizables S.A. de C.V.", 105, 20, { align: 'center' });
+      doc.text("Benito Juarez 112 SUR, Col. 1ro de Mayo", 105, 27, { align: 'center' });
+      doc.text("Cd. Lerdo, Dgo. C.P. 35169", 105, 32, { align: 'center' });
+      doc.text("MRE040121UBA", 105, 37, { align: 'center' });
+
+      // Sección de título
+      doc.setFillColor(255, 204, 0); // Color amarillo
+      doc.rect(160, 20, 40, 10, 'F');
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.text("CITA", 180, 27, null, 'center');
+
+      // Detalles de la cita
+      const appointmentDetails = [
+        ["Fecha:", new Date(appointment.date).toLocaleDateString()],
+        ["Nombre del Cliente:", appointment.clientName],
+        ["Status:", appointment.clientStatus],
+      ];
+
+      doc.autoTable({
+        body: appointmentDetails,
+        startY: 50,
+        theme: 'plain',
+        styles: {
+          cellPadding: 2,
+          fontSize: 10,
+        },
+        columnStyles: {
+          0: { halign: 'left', textColor: [0, 0, 0] },
+          1: { halign: 'left', textColor: [0, 0, 0] },
+        }
+      });
+      const observations = [
+        "Precios más IVA",
+        "Condiciones de pago: Negociable",
+        "Nuestro personal cuenta con seguridad social, EPP y capacitación.",
+        "Autorización Ambiental vigente.",
+        "Teléfono de atención: 871-342 81 05"
+      ];
+
+      observations.forEach((obs, index) => {
+        const obsTextWidth = doc.getTextWidth(obs);
+        doc.text(105 - (obsTextWidth / 2), doc.lastAutoTable.finalY + 25 + (index * 6), obs);
+      });
+
+      // Pie de página
+      doc.setFontSize(8);
+      doc.setTextColor(0, 0, 0);
+      const footer1 = "Comercialización Grupo MR";
+      const footer2 = "Visita nuestra página y conoce más sobre nosotros";
+      const footer3 = "www.materialesreutilizables.com";
+
+      doc.text(105, 250, footer1, null, 'center');
+      doc.text(105, 253, footer2, null, 'center');
+      doc.setTextColor(0, 0, 255);  // Color azul para el enlace
+      doc.textWithLink(footer3, 86, 256, { url: "http://www.materialesreutilizables.com" });
+
+      // Guardar el PDF
+      doc.save(`Cita_${appointment.clientName}.pdf`);
+    };
+  };
+
   return (
     <div className="flex flex-col p-4 bg-[#1f2937] text-white rounded-lg shadow-lg md:flex-row md:p-6">
       <div className="flex flex-col w-full md:w-2/3">
@@ -141,14 +219,14 @@ const CalendarCard = () => {
         <div className="flex flex-col gap-2">
           <input
             type="text"
-            placeholder="Client Name"
+            placeholder="Nombre del cliente"
             value={clientName}
             onChange={(e) => setClientName(e.target.value)}
             className="w-full p-3 mb-2 rounded bg-[#374151] text-white"
           />
           <input
             type="text"
-            placeholder="Client Status"
+            placeholder="Status"
             value={clientStatus}
             onChange={(e) => setClientStatus(e.target.value)}
             className="w-full p-3 mb-2 rounded bg-[#374151] text-white"
@@ -165,29 +243,29 @@ const CalendarCard = () => {
               onClick={handleAddAppointment}
               className="w-full bg-blue-500 text-white p-3 rounded hover:bg-blue-600"
             >
-              Add Appointment
+              Crear Cita
             </button>
           )}
         </div>
       </div>
 
       <div className="flex flex-col w-full md:w-1/3 mt-6 md:mt-0 md:ml-6">
-        <h2 className="text-2xl font-bold mb-4">Appointments</h2>
+        <h2 className="text-2xl font-bold mb-4">Citas Creadas</h2>
         <div className="bg-[#374151] p-4 rounded-lg shadow-lg overflow-y-auto max-h-[300px]">
           {loading ? (
             <p>Loading...</p>
           ) : error ? (
             <p className="text-red-500">{error}</p>
           ) : appointments.length === 0 ? (
-            <p>No appointments scheduled</p>
+            <p>No hay citas agendadas</p>
           ) : (
             appointments.map((appointment) => (
               <div key={appointment.id} className="mb-4 p-3 bg-[#1f2937] rounded-lg">
                 <p>
-                  <strong>Date:</strong> {new Date(appointment.date).toLocaleDateString()}
+                  <strong>Fecha:</strong> {new Date(appointment.date).toLocaleDateString()}
                 </p>
                 <p>
-                  <strong>Client Name:</strong> {appointment.clientName}
+                  <strong>Nombre del cliente:</strong> {appointment.clientName}
                 </p>
                 <p>
                   <strong>Status:</strong> {appointment.clientStatus}
@@ -196,13 +274,19 @@ const CalendarCard = () => {
                   onClick={() => setEditingAppointment(appointment)}
                   className="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600 mr-2"
                 >
-                  Edit
+                  Editar
                 </button>
                 <button
                   onClick={() => handleDeleteAppointment(appointment.id)}
-                  className="bg-red-500 text-white p-2 rounded hover:bg-red-600"
+                  className="bg-red-500 text-white p-2 rounded hover:bg-red-600 mr-2"
                 >
-                  Delete
+                  Eliminar Cita
+                </button>
+                <button
+                  onClick={() => exportAppointmentToPDF(appointment)}
+                  className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+                >
+                  Exportar a PDF
                 </button>
               </div>
             ))

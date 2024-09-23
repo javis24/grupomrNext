@@ -5,36 +5,32 @@ import Users from '../../../models/UserModel';
 export default async function handler(req, res) {
   const { method } = req;
 
-  switch (method) {
-    case 'GET':
-      // Obtener todas las citas del usuario autenticado
-      authenticateToken(req, res, async () => {
-        try {
-          // Filtrar citas por el userId del usuario autenticado
+  authenticateToken(req, res, async () => {
+    try {
+      switch (method) {
+        case 'GET':
+          // Obtener todas las citas del usuario autenticado
           const appointments = await Appointments.findAll({
             where: { userId: req.user.id }, // Usar req.user.id para obtener solo las citas del usuario autenticado
             include: [
               { model: Users, attributes: ['name', 'email'] }, // Para obtener información adicional del usuario
             ],
           });
-          res.status(200).json(appointments);
-        } catch (error) {
-          console.error('Error fetching appointments:', error);
-          res.status(500).json({ message: 'Error fetching appointments' });
-        }
-      });
-      break;
 
-    case 'POST':
-      // Crear una nueva cita
-      authenticateToken(req, res, async () => {
-        const { date, clientName, clientStatus } = req.body;
+          if (!appointments || appointments.length === 0) {
+            return res.status(404).json({ message: 'No se encontraron citas' });
+          }
 
-        if (!date || !clientName || !clientStatus) {
-          return res.status(400).json({ message: 'Todos los campos son necesarios' });
-        }
+          return res.status(200).json(appointments);
 
-        try {
+        case 'POST':
+          // Crear una nueva cita
+          const { date, clientName, clientStatus } = req.body;
+
+          if (!date || !clientName || !clientStatus) {
+            return res.status(400).json({ message: 'Todos los campos son necesarios' });
+          }
+
           const newAppointment = await Appointments.create({
             date,
             clientName,
@@ -42,16 +38,15 @@ export default async function handler(req, res) {
             userId: req.user.id, // Asignar el userId del usuario autenticado
           });
 
-          res.status(201).json({ message: 'Cita creada con éxito', appointment: newAppointment });
-        } catch (error) {
-          console.error('Error creando la cita:', error);
-          res.status(500).json({ message: 'Error creando la cita' });
-        }
-      });
-      break;
+          return res.status(201).json({ message: 'Cita creada con éxito', appointment: newAppointment });
 
-    default:
-      res.setHeader('Allow', ['GET', 'POST']);
-      res.status(405).end(`Method ${method} Not Allowed`);
-  }
+        default:
+          res.setHeader('Allow', ['GET', 'POST']);
+          return res.status(405).end(`Method ${method} Not Allowed`);
+      }
+    } catch (error) {
+      console.error('Error en la API de citas:', error);
+      return res.status(500).json({ message: 'Error en el servidor' });
+    }
+  });
 }

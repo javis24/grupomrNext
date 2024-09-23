@@ -1,6 +1,6 @@
 // src/pages/reportes-unidad-negocio.js
 import Sidebar from '@/components/Sidebar';
-import MonthlyReport from '@/components/MonthlyReport.js';
+import BusinessUnitGraphs from '@/components/BusinessUnitGraphs';
 import '../app/globals.css';
 
 
@@ -9,7 +9,7 @@ export default function ReporteMensual() {
     <div className="flex min-h-screen bg-[#0e1624] text-white">
       <Sidebar />
       <main className="flex-1 p-8">
-        <MonthlyReport />
+      <BusinessUnitGraphs />
       </main>
     </div>
   );

@@ -2,8 +2,6 @@
 import Sidebar from '@/components/Sidebar';
 import BusinessUnitReports from '@/components/BusinessUnitReports';
 import '../app/globals.css';
-import BusinessUnitGraphs from '@/components/BusinessUnitGraphs';
-
 
 export default function ReportesUnidadNegocio() {
   return (
@@ -16,12 +14,6 @@ export default function ReportesUnidadNegocio() {
         </section>        
         {/* Separador */}
         <hr className="my-8 border-gray-500" />
-
-        {/* Sección de Gráficas */}
-        <section>
-          <h2 className="text-3xl font-bold mb-4">Gráficas de Reportes</h2>
-          <BusinessUnitGraphs />
-        </section>
       </main>
     </div>
   );

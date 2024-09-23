@@ -69,7 +69,7 @@ const CreateQuote = () => {
     const image = new Image();
     image.src = imgUrl;
     image.onload = () => {
-      doc.addImage(image, 'PNG', 20, 10, 20, 20);
+      doc.addImage(image, 'PNG', 20, 10, 40, 40);
 
       // Información de la empresa
       doc.setFontSize(12);
