@@ -86,7 +86,7 @@ export default function Sidebar() {
           </li>
           <li className="mb-4">
             <Link href="/servicios" className="flex items-center p-2 rounded hover:bg-[#374151]">
-              {!isCollapsed && 'RSV'}
+              {!isCollapsed && 'Servicios'}
             </Link>
           </li>
           <li className="mb-4">

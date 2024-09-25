@@ -9,10 +9,12 @@ export function authenticateToken(req, res, next) {
 
   jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
     if (err) {
+      console.error('Error verificando token:', err);
       return res.status(403).json({ message: 'Token inválido' });
     }
 
-    req.user = user; // Asignar el usuario decodificado al request
-    next(user); // Pasar el user al siguiente middleware/handler
+    // Agregar el usuario decodificado al request
+    req.user = user; 
+    next(); // Continuar con el siguiente middleware o controlador
   });
 }

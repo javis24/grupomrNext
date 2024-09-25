@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Modal from 'react-modal';
-import jwt from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';  
 
 const customStyles = {
   content: {
@@ -28,7 +28,6 @@ export default function ServiceList() {
   const [numeroEconomico, setNumeroEconomico] = useState('');
   const [contenido, setContenido] = useState('');
   const [manifiesto, setManifiesto] = useState('');
-  const [generado, setGenerado] = useState('');
   const [renta2024, setRenta2024] = useState('');
   const [recoleccion, setRecoleccion] = useState('');
   const [disposicion, setDisposicion] = useState('');
@@ -43,9 +42,11 @@ export default function ServiceList() {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
+    
     if (token) {
       const decoded = jwt.decode(token);
       setUserRole(decoded.role);
+      setUserId(decoded.id); // Obtener el userId del token
     }
     fetchServices(); // Carga inicial de servicios
   }, []);
@@ -53,7 +54,7 @@ export default function ServiceList() {
   const fetchServices = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('/api/servicios/servicios', {
+      const response = await axios.get('/api/servicios', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setServices(response.data);
@@ -67,26 +68,32 @@ export default function ServiceList() {
   const handleDelete = async (serviceId) => {
     try {
       const token = localStorage.getItem('token');
+  
       await axios.delete(`/api/servicios/${serviceId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      fetchServices(); // Revalidar la lista de servicios después de eliminar
+      setServices(services.filter(service => service.id !== serviceId)); // Actualizar el estado sin hacer fetch
     } catch (error) {
       console.error('Error deleting service:', error);
       setError('Failed to delete service. Please try again.');
     }
   };
 
-  const handleUpdate = async () => {
+  const handleUpdate = async (e) => {
+    e.preventDefault();
     try {
       const token = localStorage.getItem('token');
+      if (!selectedService || !selectedService.id) {
+        setError('No service selected for update');
+        return;
+      }
+      
       await axios.put(`/api/servicios/${selectedService.id}`, {
         programacion,
         equipo,
         numeroEconomico,
         contenido,
         manifiesto,
-        generado,
         renta2024,
         recoleccion,
         disposicion,
@@ -95,12 +102,16 @@ export default function ServiceList() {
         email,
         ubicacion,
         rfc,
-        userId,
       }, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      fetchServices(); // Revalidar la lista de servicios después de actualizar
+      const updatedServices = services.map(service => 
+        service.id === selectedService.id 
+          ? { ...service, programacion, equipo, numeroEconomico, contenido, manifiesto, renta2024, recoleccion, disposicion, contacto, telefono, email, ubicacion, rfc } 
+          : service
+      );
+      setServices(updatedServices); // Actualizar el estado sin hacer fetch
       closeModal();
     } catch (error) {
       console.error('Error updating service:', error);
@@ -108,16 +119,16 @@ export default function ServiceList() {
     }
   };
 
-  const handleCreate = async () => {
+  const handleCreate = async (e) => {
+    e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      await axios.post('/api/servicios/servicios', {
+      const response = await axios.post('/api/servicios/', {
         programacion,
         equipo,
         numeroEconomico,
         contenido,
         manifiesto,
-        generado,
         renta2024,
         recoleccion,
         disposicion,
@@ -131,7 +142,7 @@ export default function ServiceList() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      fetchServices(); // Revalidar la lista de servicios después de crear
+      setServices([...services, response.data.service]); // Añadir el nuevo servicio al estado
       closeModal();
     } catch (error) {
       console.error('Error creating service:', error);
@@ -147,7 +158,6 @@ export default function ServiceList() {
       setNumeroEconomico(service.numeroEconomico);
       setContenido(service.contenido);
       setManifiesto(service.manifiesto);
-      setGenerado(service.generado);
       setRenta2024(service.renta2024);
       setRecoleccion(service.recoleccion);
       setDisposicion(service.disposicion);
@@ -164,7 +174,6 @@ export default function ServiceList() {
       setNumeroEconomico('');
       setContenido('');
       setManifiesto('');
-      setGenerado('');
       setRenta2024('');
       setRecoleccion('');
       setDisposicion('');
@@ -188,223 +197,218 @@ export default function ServiceList() {
   );
 
   return (
-    <div className="p-8 bg-[#0e1624] text-white min-h-screen">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-3xl font-bold">Servicios</h1>
-        <button onClick={() => openModal()} className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
-          Add New
-        </button>
-      </div>
-
-      <div className="relative mb-4">
-        <input
-          type="text"
-          placeholder="Search for a service"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full p-2 rounded bg-[#1f2937] text-white"
-        />
-      </div>
-
-      {error && <p className="text-red-500">{error}</p>}
-
-      <table className="w-full table-auto bg-[#1f2937] text-left rounded-lg">
-        <thead>
-          <tr>
-            <th className="px-4 py-2">Programación</th>
-            <th className="px-4 py-2">Equipo</th>
-            <th className="px-4 py-2">Número Económico</th>
-            <th className="px-4 py-2">Contenido</th>
-            <th className="px-4 py-2">Manifiesto</th>
-            <th className="px-4 py-2">Generado</th>
-            <th className="px-4 py-2">Renta 2024</th>
-            <th className="px-4 py-2">Recolección</th>
-            <th className="px-4 py-2">Disposición</th>
-            <th className="px-4 py-2">Contacto</th>
-            <th className="px-4 py-2">Teléfono</th>
-            <th className="px-4 py-2">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredServices.map((service) => (
-            <tr key={service.id} className="hover:bg-[#374151]">
-              <td className="px-4 py-2">{service.programacion}</td>
-              <td className="px-4 py-2">{service.equipo}</td>
-              <td className="px-4 py-2">{service.numeroEconomico}</td>
-              <td className="px-4 py-2">{service.contenido}</td>
-              <td className="px-4 py-2">{service.manifiesto}</td>
-              <td className="px-4 py-2">{service.generado}</td>
-              <td className="px-4 py-2">{typeof service.renta2024 === 'number' ? service.renta2024.toFixed(2) : '-'}</td>
-              <td className="px-4 py-2">{typeof service.recoleccion === 'number' ? service.recoleccion.toFixed(2) : '-'}</td>
-              <td className="px-4 py-2">{typeof service.disposicion === 'number' ? service.disposicion.toFixed(2) : '-'}</td>
-              <td className="px-4 py-2">{service.contacto}</td>
-              <td className="px-4 py-2">{service.telefono}</td>
-              <td className="px-4 py-2">
-                <button onClick={() => openModal(service)} className="bg-green-500 text-white p-2 rounded hover:bg-green-600 mr-2">View</button>
-                <button
-                  onClick={() => handleDelete(service.id)}
-                  className="bg-red-500 text-white p-2 rounded hover:bg-red-600"
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {/* Modal para actualizar o crear servicio */}
-      <Modal
-        isOpen={modalIsOpen}
-        onRequestClose={closeModal}
-        style={customStyles}
-        contentLabel="Edit Service"
-      >
-        <h2 className="text-2xl font-bold mb-4 text-white">{selectedService ? 'Edit Service' : 'Add New Service'}</h2>
-        <form onSubmit={selectedService ? handleUpdate : handleCreate}>
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-white">Programación</label>
-              <input
-                type="text"
-                value={programacion}
-                onChange={(e) => setProgramacion(e.target.value)}
-                className="w-full p-2 border rounded bg-[#374151] text-white"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-white">Equipo</label>
-              <input
-                type="text"
-                value={equipo}
-                onChange={(e) => setEquipo(e.target.value)}
-                className="w-full p-2 border rounded bg-[#374151] text-white"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-white">Número Económico</label>
-              <input
-                type="text"
-                value={numeroEconomico}
-                onChange={(e) => setNumeroEconomico(e.target.value)}
-                className="w-full p-2 border rounded bg-[#374151] text-white"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-white">Contenido</label>
-              <input
-                type="text"
-                value={contenido}
-                onChange={(e) => setContenido(e.target.value)}
-                className="w-full p-2 border rounded bg-[#374151] text-white"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-white">Manifiesto</label>
-              <input
-                type="text"
-                value={manifiesto}
-                onChange={(e) => setManifiesto(e.target.value)}
-                className="w-full p-2 border rounded bg-[#374151] text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-white">Generado</label>
-              <input
-                type="text"
-                value={generado}
-                onChange={(e) => setGenerado(e.target.value)}
-                className="w-full p-2 border rounded bg-[#374151] text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-white">Renta 2024</label>
-              <input
-                type="number"
-                value={renta2024}
-                onChange={(e) => setRenta2024(e.target.value)}
-                className="w-full p-2 border rounded bg-[#374151] text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-white">Recolección</label>
-              <input
-                type="number"
-                value={recoleccion}
-                onChange={(e) => setRecoleccion(e.target.value)}
-                className="w-full p-2 border rounded bg-[#374151] text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-white">Disposición</label>
-              <input
-                type="number"
-                value={disposicion}
-                onChange={(e) => setDisposicion(e.target.value)}
-                className="w-full p-2 border rounded bg-[#374151] text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-white">Contacto</label>
-              <input
-                type="text"
-                value={contacto}
-                onChange={(e) => setContacto(e.target.value)}
-                className="w-full p-2 border rounded bg-[#374151] text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-white">Teléfono</label>
-              <input
-                type="text"
-                value={telefono}
-                onChange={(e) => setTelefono(e.target.value)}
-                className="w-full p-2 border rounded bg-[#374151] text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-white">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full p-2 border rounded bg-[#374151] text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-white">Ubicación</label>
-              <input
-                type="text"
-                value={ubicacion}
-                onChange={(e) => setUbicacion(e.target.value)}
-                className="w-full p-2 border rounded bg-[#374151] text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-white">RFC</label>
-              <input
-                type="text"
-                value={rfc}
-                onChange={(e) => setRfc(e.target.value)}
-                className="w-full p-2 border rounded bg-[#374151] text-white"
-              />
-            </div>
-          </div>
-          <button
-            type="submit"
-            className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
-          >
-            {selectedService ? 'Update Service' : 'Create Service'}
+    <div className="p-4 bg-[#0e1624] text-white min-h-screen flex justify-center">
+      <div className="max-w-7xl w-full">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-3xl font-bold">Servicios</h1>
+          <button onClick={() => openModal()} className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
+            Add New
           </button>
-        </form>
-        <button onClick={closeModal} className="mt-4 bg-gray-500 text-white p-2 rounded hover:bg-gray-600">
-          Close
-        </button>
-      </Modal>
+        </div>
+
+        <div className="relative mb-4">
+          <input
+            type="text"
+            placeholder="Search for a service"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full p-2 rounded bg-[#1f2937] text-white"
+          />
+        </div>
+
+        {error && <p className="text-red-500">{error}</p>}
+
+        <div className="overflow-x-auto">
+          <table className="w-full table-auto bg-[#1f2937] text-left rounded-lg">
+            <thead>
+              <tr>
+                <th className="px-4 py-2">Programación</th>
+                <th className="px-4 py-2">Equipo</th>
+                <th className="px-4 py-2">Número Equipo</th>
+                <th className="px-4 py-2">Contenido</th>
+                <th className="px-4 py-2">Manifiesto</th>
+                <th className="px-4 py-2">Renta</th>
+                <th className="px-4 py-2">Recolección</th>
+                <th className="px-4 py-2">Disposición</th>
+                <th className="px-4 py-2">Ubicación</th>
+                <th className="px-4 py-2">Contacto</th>
+                <th className="px-4 py-2">Teléfono</th>
+                <th className="px-4 py-2">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredServices.map((service) => (
+                <tr key={service.id} className="hover:bg-[#374151]">
+                  <td className="px-4 py-2">{service.programacion}</td>
+                  <td className="px-4 py-2">{service.equipo}</td>
+                  <td className="px-4 py-2">{service.numeroEconomico}</td>
+                  <td className="px-4 py-2">{service.contenido}</td>
+                  <td className="px-4 py-2">{service.manifiesto}</td>
+                  <td className="px-4 py-2">$ {typeof service.renta2024 === 'number' ? service.renta2024.toFixed(2) : '-'}</td>
+                  <td className="px-4 py-2">{typeof service.recoleccion === 'number' ? service.recoleccion.toFixed(2) : '-'}</td>
+                  <td className="px-4 py-2">{typeof service.disposicion === 'number' ? service.disposicion.toFixed(2) : '-'}</td>
+                  <td className="px-4 py-2">{service.ubicacion}</td>
+                  <td className="px-4 py-2">{service.contacto}</td>
+                  <td className="px-4 py-2">{service.telefono}</td>
+                  <td className="px-4 py-2">
+                    <button onClick={() => openModal(service)} className="bg-green-500 text-white p-2 rounded hover:bg-green-600 mr-2">View</button>
+                    <button
+                      onClick={() => handleDelete(service.id)}
+                      className="bg-red-500 text-white p-2 rounded hover:bg-red-600"
+                    >
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Modal para actualizar o crear servicio */}
+        <Modal
+          isOpen={modalIsOpen}
+          onRequestClose={closeModal}
+          style={customStyles}
+          contentLabel="Edit Service"
+        >
+          <h2 className="text-2xl font-bold mb-4 text-white">{selectedService ? 'Edit Service' : 'Add New Service'}</h2>
+          <form onSubmit={selectedService ? handleUpdate : handleCreate}>
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              <div>
+                <label className="block text-white">Programación</label>
+                <input
+                  type="text"
+                  value={programacion}
+                  onChange={(e) => setProgramacion(e.target.value)}
+                  className="w-full p-2 border rounded bg-[#374151] text-white"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-white">Equipo</label>
+                <input
+                  type="text"
+                  value={equipo}
+                  onChange={(e) => setEquipo(e.target.value)}
+                  className="w-full p-2 border rounded bg-[#374151] text-white"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-white">Número Equipo</label>
+                <input
+                  type="text"
+                  value={numeroEconomico}
+                  onChange={(e) => setNumeroEconomico(e.target.value)}
+                  className="w-full p-2 border rounded bg-[#374151] text-white"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-white">Contenido</label>
+                <input
+                  type="text"
+                  value={contenido}
+                  onChange={(e) => setContenido(e.target.value)}
+                  className="w-full p-2 border rounded bg-[#374151] text-white"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-white">Manifiesto</label>
+                <input
+                  type="text"
+                  value={manifiesto}
+                  onChange={(e) => setManifiesto(e.target.value)}
+                  className="w-full p-2 border rounded bg-[#374151] text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-white">Renta 2024</label>
+                <input
+                  type="number"
+                  value={renta2024}
+                  onChange={(e) => setRenta2024(e.target.value)}
+                  className="w-full p-2 border rounded bg-[#374151] text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-white">Recolección</label>
+                <input
+                  type="number"
+                  value={recoleccion}
+                  onChange={(e) => setRecoleccion(e.target.value)}
+                  className="w-full p-2 border rounded bg-[#374151] text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-white">Disposición</label>
+                <input
+                  type="number"
+                  value={disposicion}
+                  onChange={(e) => setDisposicion(e.target.value)}
+                  className="w-full p-2 border rounded bg-[#374151] text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-white">Contacto</label>
+                <input
+                  type="text"
+                  value={contacto}
+                  onChange={(e) => setContacto(e.target.value)}
+                  className="w-full p-2 border rounded bg-[#374151] text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-white">Teléfono</label>
+                <input
+                  type="text"
+                  value={telefono}
+                  onChange={(e) => setTelefono(e.target.value)}
+                  className="w-full p-2 border rounded bg-[#374151] text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-white">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full p-2 border rounded bg-[#374151] text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-white">Ubicación</label>
+                <input
+                  type="text"
+                  value={ubicacion}
+                  onChange={(e) => setUbicacion(e.target.value)}
+                  className="w-full p-2 border rounded bg-[#374151] text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-white">RFC</label>
+                <input
+                  type="text"
+                  value={rfc}
+                  onChange={(e) => setRfc(e.target.value)}
+                  className="w-full p-2 border rounded bg-[#374151] text-white"
+                />
+              </div>
+            </div>
+            <button
+              type="submit"
+              className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+            >
+              {selectedService ? 'Update Service' : 'Create Service'}
+            </button>
+          </form>
+          <button onClick={closeModal} className="mt-4 bg-gray-500 text-white p-2 rounded hover:bg-gray-600">
+            Close
+          </button>
+        </Modal>
+      </div>
     </div>
   );
 }
