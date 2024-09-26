@@ -1,3 +1,4 @@
+// src/pages/api/business-units/reports.js
 import { authenticateToken } from '../../../lib/auth';
 import BusinessUnit from '../../../models/BusinessUnitModel';
 import Company from '../../../models/CompanyModel';
@@ -11,8 +12,9 @@ export default async function handler(req, res) {
                 salesObjective, differenceObjective, remainingSales, remainingDailySales
             } = req.body;
 
-            if (!description || !total || !unitName) {
-                return res.status(400).json({ message: "Todos los campos son necesarios" });
+            // Validación de campos obligatorios
+            if (!unitName || !salesTotalMonth || !daysElapsed || !salesObjective || !daysRemaining) {
+                return res.status(400).json({ message: "Campos obligatorios faltantes" });
             }
 
             try {
@@ -23,18 +25,18 @@ export default async function handler(req, res) {
 
                 const newReport = await BusinessUnit.create({
                     name: unitName,
-                    description,
-                    total,
+                    description: description || null,
+                    total: total || null,
                     salesTotalMonth,
                     daysElapsed,
-                    dailyAvgSales,
+                    dailyAvgSales: dailyAvgSales || null,
                     daysRemaining,
-                    projectedSales,
-                    lastYearSales,
+                    projectedSales: projectedSales || null,
+                    lastYearSales: lastYearSales || null,
                     salesObjective,
-                    differenceObjective,
-                    remainingSales,
-                    remainingDailySales,
+                    differenceObjective: differenceObjective || null,
+                    remainingSales: remainingSales || null,
+                    remainingDailySales: remainingDailySales || null,
                     companyId: company.id,
                 });
 
@@ -44,20 +46,17 @@ export default async function handler(req, res) {
                 res.status(500).json({ message: 'Error al crear reporte' });
             }
         });
-    } 
-    else if (req.method === 'GET') {
+    } else if (req.method === 'GET') {
         authenticateToken(req, res, async () => {
             try {
-                // Busca todos los reportes en la base de datos
                 const reports = await BusinessUnit.findAll();
                 res.status(200).json(reports);
             } catch (error) {
-                console.error('Error fetching reports:', error);
-                res.status(500).json({ message: 'Error fetching reports' });
+                console.error('Error obteniendo reportes:', error);
+                res.status(500).json({ message: 'Error obteniendo reportes' });
             }
         });
-    } 
-    else {
+    } else {
         res.setHeader('Allow', ['POST', 'GET']);
         res.status(405).end(`Method ${req.method} Not Allowed`);
     }

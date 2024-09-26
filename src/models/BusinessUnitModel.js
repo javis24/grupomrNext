@@ -30,6 +30,7 @@ const BusinessUnit = db.define('business_unit', {
         type: DataTypes.FLOAT, 
         allowNull: true,        
     },
+    // Campos de los reportes
     salesTotalMonth: DataTypes.FLOAT,
     daysElapsed: DataTypes.INTEGER,
     dailyAvgSales: DataTypes.FLOAT,
