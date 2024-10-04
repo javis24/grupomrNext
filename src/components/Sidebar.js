@@ -7,6 +7,7 @@ import { FiMenu, FiX } from 'react-icons/fi'; // Importamos los íconos de hambu
 export default function Sidebar() {
   const router = useRouter();
   const [userRole, setUserRole] = useState('');
+  const [userEmail, setUserEmail] = useState(''); // Nuevo estado para el email del usuario
   const [isCollapsed, setIsCollapsed] = useState(true); // Iniciamos el sidebar colapsado
 
   useEffect(() => {
@@ -14,7 +15,8 @@ export default function Sidebar() {
     if (token) {
       try {
         const decoded = jwt.decode(token);
-        setUserRole(decoded.role);
+        setUserRole(decoded.role); // Almacenar el rol del usuario
+        setUserEmail(decoded.email); // Almacenar el email del usuario
       } catch (error) {
         console.error('Error decoding token:', error);
       }
@@ -29,6 +31,9 @@ export default function Sidebar() {
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
   };
+
+  // Definir los roles permitidos para acceder a "Asesores Comerciales"
+  const allowedRolesForAsesores = ['admin', 'gerencia', 'direccion', 'coordinador'];
 
   return (
     <aside className={`${isCollapsed ? 'w-11' : 'w-64'} bg-[#1f2937] p-5 transition-all duration-300 min-h-screen relative`}>
@@ -49,16 +54,19 @@ export default function Sidebar() {
           </Link>
         )}
       </div>
-      
+
       <nav className="mt-10">
         <ul className="mt-4">
-          {(userRole === 'admin' || userRole === 'gerencia') && (
+          {/* Mostrar el enlace de "Asesores Comerciales" solo para los roles permitidos */}
+          {allowedRolesForAsesores.includes(userRole) && (
             <li className="mb-4">
               <Link href="/user" className="flex items-center p-2 rounded hover:bg-[#374151]">
                 {!isCollapsed && 'Asesores Comerciales'}
               </Link>
             </li>
           )}
+          
+          {/* Los demás enlaces son accesibles para todos los roles */}
           <li className="mb-4">
             <Link href="/reportes-unidad-negocio" className="flex items-center p-2 rounded hover:bg-[#374151]">
               {!isCollapsed && 'Reportes Unidad Negocio'}
@@ -79,11 +87,16 @@ export default function Sidebar() {
               {!isCollapsed && 'Clientes'}
             </Link>
           </li>
-          <li className="mb-4">
-            <Link href="/cotizacion" className="flex items-center p-2 rounded hover:bg-[#374151]">
-              {!isCollapsed && 'Cotizaciones'}
-            </Link>
-          </li>
+
+          {/* Mostrar el enlace de "Cotizaciones" solo para el rol "coordinador" o para el email específico */}
+          {(userRole === 'coordinador' || userEmail === 'Hdelbosque@grupomrlaguna.com') && (
+            <li className="mb-4">
+              <Link href="/cotizacion" className="flex items-center p-2 rounded hover:bg-[#374151]">
+                {!isCollapsed && 'Cotizaciones'}
+              </Link>
+            </li>
+          )}
+
           <li className="mb-4">
             <Link href="/servicios" className="flex items-center p-2 rounded hover:bg-[#374151]">
               {!isCollapsed && 'Servicios'}

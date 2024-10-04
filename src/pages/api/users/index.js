@@ -17,10 +17,6 @@ export default async function handler(req, res) {
         case 'GET':
           // Verificar si se pide obtener usuarios activos
           if (query.active === 'true') {
-            if (userRole !== 'admin') {
-              return res.status(403).json({ message: 'No tienes permiso para ver usuarios activos' });
-            }
-
             // Definir que son usuarios activos si estuvieron activos en la última hora
             const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
 
@@ -36,11 +32,12 @@ export default async function handler(req, res) {
             return res.status(200).json(activeUsers); // Enviar usuarios activos al frontend
           }
 
-          // Obtener todos los usuarios (admin o gerencia)
+          // Si no es para obtener usuarios activos, verificar permisos según el rol
           if (userRole !== 'admin' && userRole !== 'gerencia') {
             return res.status(403).json({ message: 'No tienes permiso para ver usuarios' });
           }
 
+          // Obtener todos los usuarios (solo para admin y gerencia)
           const users = await Users.findAll();
           return res.status(200).json(users);
 

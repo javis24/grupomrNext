@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'; 
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import axios from 'axios';
@@ -15,69 +15,65 @@ const CalendarCard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Función para cargar citas desde la API con cancelación en caso de desmontaje
   useEffect(() => {
+    let isMounted = true; // Controlar si el componente está montado
+
     const fetchAppointments = async () => {
       setLoading(true);
       try {
         const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('No token found');
-        }
+        if (!token) throw new Error('No token found');
 
         const response = await axios.get('/api/appointments', {
-          headers: { 'Authorization': `Bearer ${token}` },
+          headers: { Authorization: `Bearer ${token}` },
         });
-        setAppointments(response.data);
+        if (isMounted) setAppointments(response.data);
       } catch (error) {
         console.error('Error fetching appointments:', error);
-        setError('Error fetching appointments');
+        if (isMounted) setError('Error fetching appointments');
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     fetchAppointments();
+
+    return () => {
+      isMounted = false; // Limpiar el estado en caso de desmontaje
+    };
   }, []);
 
-  const handleAddAppointment = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      console.error('No token found');
-      return;
-    }
-    const decoded = jwt.decode(token);
-    const userId = decoded.id;
+  // Manejo de creación de nuevas citas
+  const handleAddAppointment = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('No token found');
 
-    if (clientName && clientStatus) {
-      try {
-        const response = await axios.post(
-          '/api/appointments',
-          {
-            date: date.toISOString(),
-            clientName,
-            clientStatus,
-            userId,
-          },
-          {
-            headers: { 'Authorization': `Bearer ${token}` },
-          }
-        );
-
-        if (response.status === 201) {
-          console.log('Cita creada con éxito');
-          setAppointments([...appointments, response.data.appointment]);
-          setClientName('');
-          setClientStatus('');
-        }
-      } catch (error) {
-        console.error('Error creando la cita:', error);
+      if (!clientName || !clientStatus) {
+        alert('Por favor, rellena todos los campos');
+        return;
       }
-    } else {
-      alert('Por favor, rellena todos los campos');
-    }
-  };
 
-  const handleEditAppointment = async (id) => {
+      const response = await axios.post(
+        '/api/appointments',
+        { date: date.toISOString(), clientName, clientStatus },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.status === 201) {
+        setAppointments((prevAppointments) => [...prevAppointments, response.data.appointment]);
+        setClientName('');
+        setClientStatus('');
+        console.log('Cita creada con éxito');
+      }
+    } catch (error) {
+      console.error('Error creando la cita:', error);
+    }
+  }, [date, clientName, clientStatus]);
+
+  // Manejo de actualización de citas
+  const handleEditAppointment = useCallback(async (id) => {
     const token = localStorage.getItem('token');
     if (!token) {
       console.error('No token found');
@@ -87,18 +83,12 @@ const CalendarCard = () => {
     try {
       await axios.put(
         `/api/appointments/${id}`,
-        {
-          date,
-          clientName,
-          clientStatus,
-        },
-        {
-          headers: { 'Authorization': `Bearer ${token}` },
-        }
+        { date, clientName, clientStatus },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setAppointments(
-        appointments.map((appointment) =>
+      setAppointments((prevAppointments) =>
+        prevAppointments.map((appointment) =>
           appointment.id === id ? { ...appointment, date, clientName, clientStatus } : appointment
         )
       );
@@ -108,9 +98,10 @@ const CalendarCard = () => {
     } catch (error) {
       console.error('Error updating appointment:', error);
     }
-  };
+  }, [date, clientName, clientStatus]);
 
-  const handleDeleteAppointment = async (id) => {
+  // Manejo de eliminación de citas
+  const handleDeleteAppointment = useCallback(async (id) => {
     const token = localStorage.getItem('token');
     if (!token) {
       console.error('No token found');
@@ -119,42 +110,38 @@ const CalendarCard = () => {
 
     try {
       await axios.delete(`/api/appointments/${id}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      setAppointments(appointments.filter((appointment) => appointment.id !== id));
+      setAppointments((prevAppointments) =>
+        prevAppointments.filter((appointment) => appointment.id !== id)
+      );
     } catch (error) {
       console.error('Error deleting appointment:', error);
     }
-  };
+  }, []);
 
-  // Función para exportar una cita a PDF con el mismo diseño de los anteriores
-  const exportAppointmentToPDF = (appointment) => {
+  // Función para exportar a PDF
+  const exportAppointmentToPDF = useCallback((appointment) => {
     const doc = new jsPDF();
-    const imgUrl = '/logo_mr.png';  // Ruta de tu logo
-
+    const imgUrl = '/logo_mr.png';
     const image = new Image();
     image.src = imgUrl;
 
     image.onload = () => {
-      // Agregar el logo
-      doc.addImage(image, 'PNG', 20, 10, 40, 40); // Aumentar el tamaño del logo
-
-      // Información de la empresa
+      doc.addImage(image, 'PNG', 20, 10, 40, 40);
       doc.setFontSize(12);
       doc.text("Materiales Reutilizables S.A. de C.V.", 105, 20, { align: 'center' });
       doc.text("Benito Juarez 112 SUR, Col. 1ro de Mayo", 105, 27, { align: 'center' });
       doc.text("Cd. Lerdo, Dgo. C.P. 35169", 105, 32, { align: 'center' });
       doc.text("MRE040121UBA", 105, 37, { align: 'center' });
 
-      // Sección de título
-      doc.setFillColor(255, 204, 0); // Color amarillo
+      doc.setFillColor(255, 204, 0);
       doc.rect(160, 20, 40, 10, 'F');
       doc.setFontSize(14);
       doc.setTextColor(0, 0, 0);
       doc.text("CITA", 180, 27, null, 'center');
 
-      // Detalles de la cita
       const appointmentDetails = [
         ["Fecha:", new Date(appointment.date).toLocaleDateString()],
         ["Nombre del Cliente:", appointment.clientName],
@@ -169,11 +156,8 @@ const CalendarCard = () => {
           cellPadding: 2,
           fontSize: 10,
         },
-        columnStyles: {
-          0: { halign: 'left', textColor: [0, 0, 0] },
-          1: { halign: 'left', textColor: [0, 0, 0] },
-        }
       });
+
       const observations = [
         "Precios más IVA",
         "Condiciones de pago: Negociable",
@@ -183,11 +167,9 @@ const CalendarCard = () => {
       ];
 
       observations.forEach((obs, index) => {
-        const obsTextWidth = doc.getTextWidth(obs);
-        doc.text(105 - (obsTextWidth / 2), doc.lastAutoTable.finalY + 25 + (index * 6), obs);
+        doc.text(105, doc.lastAutoTable.finalY + 25 + (index * 6), obs, null, 'center');
       });
 
-      // Pie de página
       doc.setFontSize(8);
       doc.setTextColor(0, 0, 0);
       const footer1 = "Comercialización Grupo MR";
@@ -196,13 +178,12 @@ const CalendarCard = () => {
 
       doc.text(105, 250, footer1, null, 'center');
       doc.text(105, 253, footer2, null, 'center');
-      doc.setTextColor(0, 0, 255);  // Color azul para el enlace
+      doc.setTextColor(0, 0, 255);
       doc.textWithLink(footer3, 86, 256, { url: "http://www.materialesreutilizables.com" });
 
-      // Guardar el PDF
       doc.save(`Cita_${appointment.clientName}.pdf`);
     };
-  };
+  }, []);
 
   return (
     <div className="flex flex-col p-4 bg-[#1f2937] text-white rounded-lg shadow-lg md:flex-row md:p-6">
@@ -261,15 +242,9 @@ const CalendarCard = () => {
           ) : (
             appointments.map((appointment) => (
               <div key={appointment.id} className="mb-4 p-3 bg-[#1f2937] rounded-lg">
-                <p>
-                  <strong>Fecha:</strong> {new Date(appointment.date).toLocaleDateString()}
-                </p>
-                <p>
-                  <strong>Nombre del cliente:</strong> {appointment.clientName}
-                </p>
-                <p>
-                  <strong>Status:</strong> {appointment.clientStatus}
-                </p>
+                <p><strong>Fecha:</strong> {new Date(appointment.date).toLocaleDateString()}</p>
+                <p><strong>Nombre del cliente:</strong> {appointment.clientName}</p>
+                <p><strong>Status:</strong> {appointment.clientStatus}</p>
                 <button
                   onClick={() => setEditingAppointment(appointment)}
                   className="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600 mr-2"
