@@ -7,7 +7,7 @@ import { FiMenu, FiX } from 'react-icons/fi'; // Importamos los íconos de hambu
 export default function Sidebar() {
   const router = useRouter();
   const [userRole, setUserRole] = useState('');
-  const [userEmail, setUserEmail] = useState(''); // Nuevo estado para el email del usuario
+  const [userEmail, setUserEmail] = useState(''); // Estado para el email del usuario
   const [isCollapsed, setIsCollapsed] = useState(true); // Iniciamos el sidebar colapsado
 
   useEffect(() => {
@@ -32,8 +32,17 @@ export default function Sidebar() {
     setIsCollapsed(!isCollapsed);
   };
 
-  // Definir los roles permitidos para acceder a "Asesores Comerciales"
-  const allowedRolesForAsesores = ['admin', 'gerencia', 'direccion', 'coordinador'];
+  // Definir las condiciones de visibilidad de cada enlace según el rol y el email del usuario
+  const canViewAsesores = ['admin', 'gerencia', 'direccion', 'coordinador'].includes(userRole);
+  const canViewCotizaciones = userRole === 'coordinador' || userEmail === 'Hdelbosque@grupomrlaguna.com';
+  const canViewReportesUnidadNegocio = ['direccion', 'coordinador', 'gerencia'].includes(userRole);
+  const canViewReportesMensuales = userRole === 'direccion' || userRole === 'coordinador';
+  const canViewServicios = ['direccion', 'coordinador', 'gerencia', userEmail === 'mgaliano@grupomrlaguna.com'].includes(userRole);
+  const canViewClientes = ['direccion', 'coordinador', 'vendedor', userEmail === 'mgaliano@grupomrlaguna.com', userEmail === 'Hdelbosque@grupomrlaguna.com'].includes(userRole);
+  const canViewCreditos = ['gerencia', 'coordinador', userEmail === 'mgaliano@grupomrlaguna.com', userEmail === 'Hdelbosque@grupomrlaguna.com'].includes(userRole);
+  const canViewCalendario = ['gerencia', 'vendedor', 'coordinador', userEmail === 'mgaliano@grupomrlaguna.com', userEmail === 'Hdelbosque@grupomrlaguna.com'].includes(userRole);
+  const canViewChat = ['gerencia', 'vendedor', 'coordinador'].includes(userRole);
+  const canViewIncidencias = ['gerencia', 'vendedor', 'coordinador', userEmail === 'mgaliano@grupomrlaguna.com', userEmail === 'Hdelbosque@grupomrlaguna.com'].includes(userRole);
 
   return (
     <aside className={`${isCollapsed ? 'w-11' : 'w-64'} bg-[#1f2937] p-5 transition-all duration-300 min-h-screen relative`}>
@@ -58,38 +67,52 @@ export default function Sidebar() {
       <nav className="mt-10">
         <ul className="mt-4">
           {/* Mostrar el enlace de "Asesores Comerciales" solo para los roles permitidos */}
-          {allowedRolesForAsesores.includes(userRole) && (
+          {canViewAsesores && (
             <li className="mb-4">
               <Link href="/user" className="flex items-center p-2 rounded hover:bg-[#374151]">
                 {!isCollapsed && 'Asesores Comerciales'}
               </Link>
             </li>
           )}
-          
-          {/* Los demás enlaces son accesibles para todos los roles */}
-          <li className="mb-4">
-            <Link href="/reportes-unidad-negocio" className="flex items-center p-2 rounded hover:bg-[#374151]">
-              {!isCollapsed && 'Reportes Unidad Negocio'}
-            </Link>
-          </li>
-          <li className="mb-4">
-            <Link href="/reporte-mensual" className="flex items-center p-2 rounded hover:bg-[#374151]">
-              {!isCollapsed && 'Reportes Mensuales'}
-            </Link>
-          </li>
-          <li className="mb-4">
-            <Link href="/calendario" className="flex items-center p-2 rounded hover:bg-[#374151]">
-              {!isCollapsed && 'Calendario'}
-            </Link>
-          </li>
-          <li className="mb-4">
-            <Link href="/clientes" className="flex items-center p-2 rounded hover:bg-[#374151]">
-              {!isCollapsed && 'Clientes'}
-            </Link>
-          </li>
 
-          {/* Mostrar el enlace de "Cotizaciones" solo para el rol "coordinador" o para el email específico */}
-          {(userRole === 'coordinador' || userEmail === 'Hdelbosque@grupomrlaguna.com') && (
+          {/* Mostrar el enlace de "Reportes de Unidad de Negocio" según los roles permitidos */}
+          {canViewReportesUnidadNegocio && (
+            <li className="mb-4">
+              <Link href="/reportes-unidad-negocio" className="flex items-center p-2 rounded hover:bg-[#374151]">
+                {!isCollapsed && 'Reportes Unidad Negocio'}
+              </Link>
+            </li>
+          )}
+
+          {/* Mostrar el enlace de "Reportes Mensuales" según los roles permitidos */}
+          {canViewReportesMensuales && (
+            <li className="mb-4">
+              <Link href="/reporte-mensual" className="flex items-center p-2 rounded hover:bg-[#374151]">
+                {!isCollapsed && 'Reportes Mensuales'}
+              </Link>
+            </li>
+          )}
+
+          {/* Mostrar el enlace de "Calendario" según los roles permitidos */}
+          {canViewCalendario && (
+            <li className="mb-4">
+              <Link href="/calendario" className="flex items-center p-2 rounded hover:bg-[#374151]">
+                {!isCollapsed && 'Calendario'}
+              </Link>
+            </li>
+          )}
+
+          {/* Mostrar el enlace de "Clientes" según los roles permitidos */}
+          {canViewClientes && (
+            <li className="mb-4">
+              <Link href="/clientes" className="flex items-center p-2 rounded hover:bg-[#374151]">
+                {!isCollapsed && 'Clientes'}
+              </Link>
+            </li>
+          )}
+
+          {/* Mostrar el enlace de "Cotizaciones" según el rol y email específicos */}
+          {canViewCotizaciones && (
             <li className="mb-4">
               <Link href="/cotizacion" className="flex items-center p-2 rounded hover:bg-[#374151]">
                 {!isCollapsed && 'Cotizaciones'}
@@ -97,26 +120,41 @@ export default function Sidebar() {
             </li>
           )}
 
-          <li className="mb-4">
-            <Link href="/servicios" className="flex items-center p-2 rounded hover:bg-[#374151]">
-              {!isCollapsed && 'Servicios'}
-            </Link>
-          </li>
-          <li className="mb-4">
-            <Link href="#" className="flex items-center p-2 rounded hover:bg-[#374151]">
-              {!isCollapsed && 'Creditos'}
-            </Link>
-          </li>
-          <li className="mb-4">
-            <Link href="#" className="flex items-center p-2 rounded hover:bg-[#374151]">
-              {!isCollapsed && 'Incidencias'}
-            </Link>
-          </li>
-          <li className="mb-4">
-            <Link href="chat" className="flex items-center p-2 rounded hover:bg-[#374151]">
-              {!isCollapsed && 'Chat'}
-            </Link>
-          </li>
+          {/* Mostrar el enlace de "Servicios" según los roles permitidos */}
+          {canViewServicios && (
+            <li className="mb-4">
+              <Link href="/servicios" className="flex items-center p-2 rounded hover:bg-[#374151]">
+                {!isCollapsed && 'Servicios'}
+              </Link>
+            </li>
+          )}
+
+          {/* Mostrar el enlace de "Creditos" según los roles permitidos */}
+          {canViewCreditos && (
+            <li className="mb-4">
+              <Link href="#" className="flex items-center p-2 rounded hover:bg-[#374151]">
+                {!isCollapsed && 'Creditos'}
+              </Link>
+            </li>
+          )}
+
+          {/* Mostrar el enlace de "Incidencias" según los roles permitidos */}
+          {canViewIncidencias && (
+            <li className="mb-4">
+              <Link href="#" className="flex items-center p-2 rounded hover:bg-[#374151]">
+                {!isCollapsed && 'Incidencias'}
+              </Link>
+            </li>
+          )}
+
+          {/* Mostrar el enlace de "Chat" según los roles permitidos */}
+          {canViewChat && (
+            <li className="mb-4">
+              <Link href="chat" className="flex items-center p-2 rounded hover:bg-[#374151]">
+                {!isCollapsed && 'Chat'}
+              </Link>
+            </li>
+          )}
         </ul>
       </nav>
 
