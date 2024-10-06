@@ -33,69 +33,89 @@ export default function BusinessUnitReports() {
   );
 
   useEffect(() => {
-    const calculateFields = () => {
-      const currentReport = reports[selectedUnit];
+    fetchReportData();
+  }, [selectedUnit]);
 
-      const dailyAvgSales = currentReport.salesTotalMonth && currentReport.daysElapsed
-        ? (parseFloat(currentReport.salesTotalMonth) / parseFloat(currentReport.daysElapsed)).toFixed(2)
-        : '';
-
-      const projectedSales = dailyAvgSales
-        ? (parseFloat(dailyAvgSales) * 30).toFixed(2)
-        : '';
-
-      const differenceObjective = currentReport.salesObjective && projectedSales
-        ? (parseFloat(currentReport.salesObjective) - parseFloat(projectedSales)).toFixed(2)
-        : '';
-
-      const remainingSales = currentReport.salesObjective && currentReport.salesTotalMonth
-        ? (parseFloat(currentReport.salesObjective) - parseFloat(currentReport.salesTotalMonth)).toFixed(2)
-        : '';
-
-      const remainingDailySales = remainingSales && currentReport.daysRemaining
-        ? (parseFloat(remainingSales) / parseFloat(currentReport.daysRemaining)).toFixed(2)
-        : '';
-
-      setReports({
-        ...reports,
-        [selectedUnit]: {
-          ...reports[selectedUnit],
-          dailyAvgSales,
-          projectedSales,
-          differenceObjective,
-          remainingSales,
-          remainingDailySales,
-        },
+  const fetchReportData = async () => {
+    try {
+      const token = localStorage.getItem('token'); // Recuperar el token JWT
+      const response = await axios.get(`/api/business-units?unitName=${selectedUnit}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-    };
 
+      const unitData = response.data;
+      setReports((prevReports) => ({
+        ...prevReports,
+        [selectedUnit]: unitData,
+      }));
+    } catch (error) {
+      console.error('Error fetching reports:', error);
+    }
+  };
+
+  useEffect(() => {
     calculateFields();
   }, [reports[selectedUnit]]);
 
-  const handleInputChange = (field, value) => {
-    setReports({
-      ...reports,
+  const calculateFields = () => {
+    const currentReport = reports[selectedUnit];
+
+    const dailyAvgSales = currentReport.salesTotalMonth && currentReport.daysElapsed
+      ? (parseFloat(currentReport.salesTotalMonth) / parseFloat(currentReport.daysElapsed)).toFixed(2)
+      : '';
+
+    const projectedSales = dailyAvgSales
+      ? (parseFloat(dailyAvgSales) * 30).toFixed(2)
+      : '';
+
+    const differenceObjective = currentReport.salesObjective && projectedSales
+      ? (parseFloat(currentReport.salesObjective) - parseFloat(projectedSales)).toFixed(2)
+      : '';
+
+    const remainingSales = currentReport.salesObjective && currentReport.salesTotalMonth
+      ? (parseFloat(currentReport.salesObjective) - parseFloat(currentReport.salesTotalMonth)).toFixed(2)
+      : '';
+
+    const remainingDailySales = remainingSales && currentReport.daysRemaining
+      ? (parseFloat(remainingSales) / parseFloat(currentReport.daysRemaining)).toFixed(2)
+      : '';
+
+    setReports((prevReports) => ({
+      ...prevReports,
       [selectedUnit]: {
-        ...reports[selectedUnit],
+        ...prevReports[selectedUnit],
+        dailyAvgSales,
+        projectedSales,
+        differenceObjective,
+        remainingSales,
+        remainingDailySales,
+      },
+    }));
+  };
+
+  const handleInputChange = (field, value) => {
+    setReports((prevReports) => ({
+      ...prevReports,
+      [selectedUnit]: {
+        ...prevReports[selectedUnit],
         [field]: value,
       },
-    });
+    }));
   };
 
   const generatePDF = () => {
     const doc = new jsPDF();
     const currentReport = reports[selectedUnit];
 
-    // Agregar logo
-    const imgUrl = '/logo_mr.png'; 
+    // Agregar logo y el resto de los detalles del PDF
+    const imgUrl = '/logo_mr.png';
     const image = new Image();
     image.src = imgUrl;
 
-    // Una vez cargada la imagen, se genera el PDF
     image.onload = () => {
       doc.addImage(image, 'PNG', 20, 10, 40, 40);
 
-      // Título de la empresa
+      // Información del reporte
       doc.setFontSize(12);
       doc.text("Materiales Reutilizables S.A. de C.V.", 105, 20, { align: 'center' });
       doc.text("Benito Juarez 112 SUR, Col. 1ro de Mayo", 105, 27, { align: 'center' });
@@ -107,7 +127,7 @@ export default function BusinessUnitReports() {
       doc.rect(160, 20, 40, 10, 'F');
       doc.setFontSize(14);
       doc.setTextColor(0, 0, 0);
-      doc.text("REPORTE", 180, 27, null, 'center'); 
+      doc.text("REPORTE", 180, 27, null, 'center');
 
       // Fecha
       const today = new Date();
@@ -143,31 +163,6 @@ export default function BusinessUnitReports() {
         },
       });
 
-      // Sección de observaciones
-      const observations = [
-        "Contamos con todos los permisos necesarios para el desarrollo de nuestras actividades ante la SRNMA y SEMARNART",
-        "NÚMERO DE AUTORIZACIÓN AMBIENTAL RERET-1-SRNMA-005-24",
-        "Nuestro personal cuenta con seguridad social, EPP y capacitación para realizar las maniobras necesarias",
-        "Teléfono de atención: 871-342 81 05"
-      ];
-
-      doc.setFontSize(10);
-      observations.forEach((text, index) => {
-        doc.text(text, 14, doc.lastAutoTable.finalY + 10 + (index * 6));
-      });
-
-      // Pie de página
-      doc.setFontSize(8);
-      doc.setTextColor(0, 0, 0);
-      const footer1 = "Comercialización Grupo MR";
-      const footer2 = "Visita nuestra página y conoce más sobre nosotros";
-      const footer3 = "www.materialesreutilizables.com";
-
-      doc.text(105, 250, footer1, null, 'center'); // Subimos la posición del pie de página
-      doc.text(105, 253, footer2, null, 'center');
-      doc.setTextColor(0, 0, 255);  // Color azul para el enlace
-      doc.textWithLink(footer3, 86, 256, { url: "http://www.materialesreutilizables.com" }); // Movemos el link más a la izquierda
-
       // Guardar el PDF
       doc.save(`${selectedUnit}-reporte.pdf`);
     };
@@ -178,7 +173,8 @@ export default function BusinessUnitReports() {
       const token = localStorage.getItem('token');  // Recuperar el token JWT
       const reportData = { ...reports[selectedUnit], unitName: selectedUnit };
 
-      await axios.post('/api/business-units/reports', reportData, {
+      // Usar la nueva ruta para crear el reporte
+      await axios.post('/api/business-units', reportData, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -215,7 +211,7 @@ export default function BusinessUnitReports() {
             <label className="block text-gray-400 mb-2">Venta Total del Mes</label>
             <input
               type="number"
-              value={reports[selectedUnit].salesTotalMonth}
+              value={reports[selectedUnit]?.salesTotalMonth || ''}
               onChange={(e) => handleInputChange('salesTotalMonth', e.target.value)}
               className="w-full p-2 rounded bg-[#374151] text-white"
               placeholder="Venta Total del Mes"

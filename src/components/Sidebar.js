@@ -2,26 +2,26 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import jwt from 'jsonwebtoken';
-import { FiMenu, FiX } from 'react-icons/fi'; // Importamos los íconos de hamburguesa y cerrar
+import { FiMenu, FiX } from 'react-icons/fi';
 
 export default function Sidebar() {
   const router = useRouter();
   const [userRole, setUserRole] = useState('');
-  const [userEmail, setUserEmail] = useState(''); // Estado para el email del usuario
-  const [isCollapsed, setIsCollapsed] = useState(true); // Iniciamos el sidebar colapsado
+  const [userEmail, setUserEmail] = useState('');
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (token) {
+    if (token && !userRole) { // Solo decodifica si no tenemos ya el role del usuario
       try {
         const decoded = jwt.decode(token);
-        setUserRole(decoded.role); // Almacenar el rol del usuario
-        setUserEmail(decoded.email); // Almacenar el email del usuario
+        setUserRole(decoded.role);
+        setUserEmail(decoded.email);
       } catch (error) {
         console.error('Error decoding token:', error);
       }
     }
-  }, []);
+  }, [userRole]);
 
   const logout = () => {
     localStorage.removeItem('token');
@@ -32,7 +32,6 @@ export default function Sidebar() {
     setIsCollapsed(!isCollapsed);
   };
 
-  // Definir las condiciones de visibilidad de cada enlace según el rol y el email del usuario
   const canViewAsesores = ['admin', 'gerencia', 'direccion', 'coordinador'].includes(userRole);
   const canViewCotizaciones = userRole === 'coordinador' || userEmail === 'Hdelbosque@grupomrlaguna.com';
   const canViewReportesUnidadNegocio = ['direccion', 'coordinador', 'gerencia'].includes(userRole);
@@ -46,16 +45,14 @@ export default function Sidebar() {
 
   return (
     <aside className={`${isCollapsed ? 'w-11' : 'w-64'} bg-[#1f2937] p-5 transition-all duration-300 min-h-screen relative`}>
-      {/* Icono de hamburguesa en la parte superior para colapsar/desplegar */}
       <div className="absolute top-10 left-2">
         <button
           onClick={toggleSidebar}
-          className="text-white focus:outline-none text-3xl" // Ícono de hamburguesa
+          className="text-white focus:outline-none text-3xl"
         >
           {isCollapsed ? <FiMenu /> : <FiX />}
         </button>
       </div>
-
       <div className="flex items-center justify-center mb-8 mt-12">
         {!isCollapsed && (
           <Link href="/dashboard">
@@ -63,10 +60,8 @@ export default function Sidebar() {
           </Link>
         )}
       </div>
-
       <nav className="mt-10">
         <ul className="mt-4">
-          {/* Mostrar el enlace de "Asesores Comerciales" solo para los roles permitidos */}
           {canViewAsesores && (
             <li className="mb-4">
               <Link href="/user" className="flex items-center p-2 rounded hover:bg-[#374151]">
@@ -74,8 +69,6 @@ export default function Sidebar() {
               </Link>
             </li>
           )}
-
-          {/* Mostrar el enlace de "Reportes de Unidad de Negocio" según los roles permitidos */}
           {canViewReportesUnidadNegocio && (
             <li className="mb-4">
               <Link href="/reportes-unidad-negocio" className="flex items-center p-2 rounded hover:bg-[#374151]">

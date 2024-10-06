@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import Calendar from 'react-calendar';
-import 'react-calendar/dist/Calendar.css';
+import React, { useState, useEffect, useCallback, useMemo, Suspense, lazy } from 'react';
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+
+// Cargar Calendar de manera diferida para optimizar el tiempo de carga
+const Calendar = lazy(() => import('react-calendar'));
+import 'react-calendar/dist/Calendar.css';
 
 const CalendarCard = () => {
   const [date, setDate] = useState(new Date());
@@ -15,46 +17,45 @@ const CalendarCard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Función para cargar citas desde la API con cancelación en caso de desmontaje
+  // Cargar citas desde la API y evitar cargar más de una vez si ya tenemos los datos
   useEffect(() => {
-    let isMounted = true; // Controlar si el componente está montado
+    if (appointments.length === 0) {
+      let isMounted = true;
 
-    const fetchAppointments = async () => {
-      setLoading(true);
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) throw new Error('No token found');
+      const fetchAppointments = async () => {
+        setLoading(true);
+        try {
+          const token = localStorage.getItem('token');
+          if (!token) throw new Error('No token found');
 
-        const response = await axios.get('/api/appointments', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (isMounted) setAppointments(response.data);
-      } catch (error) {
-        console.error('Error fetching appointments:', error);
-        if (isMounted) setError('Error fetching appointments');
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
+          const response = await axios.get('/api/appointments', {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (isMounted) setAppointments(response.data);
+        } catch (error) {
+          console.error('Error fetching appointments:', error);
+          if (isMounted) setError('Error fetching appointments');
+        } finally {
+          if (isMounted) setLoading(false);
+        }
+      };
 
-    fetchAppointments();
+      fetchAppointments();
 
-    return () => {
-      isMounted = false; // Limpiar el estado en caso de desmontaje
-    };
-  }, []);
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [appointments.length]);
 
-  // Manejo de creación de nuevas citas
+  // Función de creación de nuevas citas
   const handleAddAppointment = useCallback(async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return alert('No se encontró el token');
+
+    if (!clientName || !clientStatus) return alert('Por favor, rellena todos los campos');
+
     try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('No token found');
-
-      if (!clientName || !clientStatus) {
-        alert('Por favor, rellena todos los campos');
-        return;
-      }
-
       const response = await axios.post(
         '/api/appointments',
         { date: date.toISOString(), clientName, clientStatus },
@@ -62,7 +63,7 @@ const CalendarCard = () => {
       );
 
       if (response.status === 201) {
-        setAppointments((prevAppointments) => [...prevAppointments, response.data.appointment]);
+        setAppointments((prevAppointments) => [...prevAppointments, response.data]);
         setClientName('');
         setClientStatus('');
         console.log('Cita creada con éxito');
@@ -72,13 +73,10 @@ const CalendarCard = () => {
     }
   }, [date, clientName, clientStatus]);
 
-  // Manejo de actualización de citas
+  // Función de edición de citas
   const handleEditAppointment = useCallback(async (id) => {
     const token = localStorage.getItem('token');
-    if (!token) {
-      console.error('No token found');
-      return;
-    }
+    if (!token) return alert('No se encontró el token');
 
     try {
       await axios.put(
@@ -96,28 +94,22 @@ const CalendarCard = () => {
       setClientName('');
       setClientStatus('');
     } catch (error) {
-      console.error('Error updating appointment:', error);
+      console.error('Error actualizando la cita:', error);
     }
   }, [date, clientName, clientStatus]);
 
-  // Manejo de eliminación de citas
+  // Función de eliminación de citas
   const handleDeleteAppointment = useCallback(async (id) => {
     const token = localStorage.getItem('token');
-    if (!token) {
-      console.error('No token found');
-      return;
-    }
+    if (!token) return alert('No se encontró el token');
 
     try {
       await axios.delete(`/api/appointments/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      setAppointments((prevAppointments) =>
-        prevAppointments.filter((appointment) => appointment.id !== id)
-      );
+      setAppointments((prevAppointments) => prevAppointments.filter((appointment) => appointment.id !== id));
     } catch (error) {
-      console.error('Error deleting appointment:', error);
+      console.error('Error eliminando la cita:', error);
     }
   }, []);
 
@@ -158,78 +150,41 @@ const CalendarCard = () => {
         },
       });
 
-      const observations = [
-        "Precios más IVA",
-        "Condiciones de pago: Negociable",
-        "Nuestro personal cuenta con seguridad social, EPP y capacitación.",
-        "Autorización Ambiental vigente.",
-        "Teléfono de atención: 871-342 81 05"
-      ];
-
-      observations.forEach((obs, index) => {
-        doc.text(105, doc.lastAutoTable.finalY + 25 + (index * 6), obs, null, 'center');
-      });
-
-      doc.setFontSize(8);
-      doc.setTextColor(0, 0, 0);
-      const footer1 = "Comercialización Grupo MR";
-      const footer2 = "Visita nuestra página y conoce más sobre nosotros";
-      const footer3 = "www.materialesreutilizables.com";
-
-      doc.text(105, 250, footer1, null, 'center');
-      doc.text(105, 253, footer2, null, 'center');
-      doc.setTextColor(0, 0, 255);
-      doc.textWithLink(footer3, 86, 256, { url: "http://www.materialesreutilizables.com" });
-
       doc.save(`Cita_${appointment.clientName}.pdf`);
     };
   }, []);
+
+  // Componente de cada cita para evitar renders innecesarios
+  const AppointmentItem = useMemo(() => ({ appointment, onEdit, onDelete, onExport }) => (
+    <div key={appointment.id} className="mb-4 p-3 bg-[#1f2937] rounded-lg">
+      <p><strong>Fecha:</strong> {new Date(appointment.date).toLocaleDateString()}</p>
+      <p><strong>Nombre del cliente:</strong> {appointment.clientName}</p>
+      <p><strong>Status:</strong> {appointment.clientStatus}</p>
+      <button onClick={() => onEdit(appointment.id)} className="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600 mr-2">Editar</button>
+      <button onClick={() => onDelete(appointment.id)} className="bg-red-500 text-white p-2 rounded hover:bg-red-600 mr-2">Eliminar</button>
+      <button onClick={() => onExport(appointment)} className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Exportar a PDF</button>
+    </div>
+  ), []);
 
   return (
     <div className="flex flex-col p-4 bg-[#1f2937] text-white rounded-lg shadow-lg md:flex-row md:p-6">
       <div className="flex flex-col w-full md:w-2/3">
         <h2 className="text-2xl font-bold mb-4">Calendario</h2>
-        <div className="w-full mb-4">
-          <Calendar
-            onChange={setDate}
-            value={date}
-            locale="es-ES"
-            className="bg-white rounded-md shadow-md w-full"
-          />
-        </div>
+        <Suspense fallback={<div>Loading calendar...</div>}>
+          <div className="w-full mb-4">
+            <Calendar onChange={setDate} value={date} locale="es-ES" className="bg-white rounded-md shadow-md w-full" />
+          </div>
+        </Suspense>
         <div className="flex flex-col gap-2">
-          <input
-            type="text"
-            placeholder="Nombre del cliente"
-            value={clientName}
-            onChange={(e) => setClientName(e.target.value)}
-            className="w-full p-3 mb-2 rounded bg-[#374151] text-white"
-          />
-          <input
-            type="text"
-            placeholder="Status"
-            value={clientStatus}
-            onChange={(e) => setClientStatus(e.target.value)}
-            className="w-full p-3 mb-2 rounded bg-[#374151] text-white"
-          />
+          <input type="text" placeholder="Nombre del cliente" value={clientName} onChange={(e) => setClientName(e.target.value)} className="w-full p-3 mb-2 rounded bg-[#374151] text-white" />
+          <input type="text" placeholder="Status" value={clientStatus} onChange={(e) => setClientStatus(e.target.value)} className="w-full p-3 mb-2 rounded bg-[#374151] text-white" />
           {editingAppointment ? (
-            <button
-              onClick={() => handleEditAppointment(editingAppointment.id)}
-              className="w-full bg-yellow-500 text-white p-3 rounded hover:bg-yellow-600"
-            >
-              Update Appointment
-            </button>
+            <button onClick={() => handleEditAppointment(editingAppointment.id)} className="w-full bg-yellow-500 text-white p-3 rounded hover:bg-yellow-600">Update Appointment</button>
           ) : (
-            <button
-              onClick={handleAddAppointment}
-              className="w-full bg-blue-500 text-white p-3 rounded hover:bg-blue-600"
-            >
-              Crear Cita
-            </button>
+            <button onClick={handleAddAppointment} className="w-full bg-blue-500 text-white p-3 rounded hover:bg-blue-600">Crear Cita</button>
           )}
         </div>
       </div>
-
       <div className="flex flex-col w-full md:w-1/3 mt-6 md:mt-0 md:ml-6">
         <h2 className="text-2xl font-bold mb-4">Citas Creadas</h2>
         <div className="bg-[#374151] p-4 rounded-lg shadow-lg overflow-y-auto max-h-[300px]">
@@ -241,29 +196,13 @@ const CalendarCard = () => {
             <p>No hay citas agendadas</p>
           ) : (
             appointments.map((appointment) => (
-              <div key={appointment.id} className="mb-4 p-3 bg-[#1f2937] rounded-lg">
-                <p><strong>Fecha:</strong> {new Date(appointment.date).toLocaleDateString()}</p>
-                <p><strong>Nombre del cliente:</strong> {appointment.clientName}</p>
-                <p><strong>Status:</strong> {appointment.clientStatus}</p>
-                <button
-                  onClick={() => setEditingAppointment(appointment)}
-                  className="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600 mr-2"
-                >
-                  Editar
-                </button>
-                <button
-                  onClick={() => handleDeleteAppointment(appointment.id)}
-                  className="bg-red-500 text-white p-2 rounded hover:bg-red-600 mr-2"
-                >
-                  Eliminar Cita
-                </button>
-                <button
-                  onClick={() => exportAppointmentToPDF(appointment)}
-                  className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
-                >
-                  Exportar a PDF
-                </button>
-              </div>
+              <AppointmentItem
+                key={appointment.id}
+                appointment={appointment}
+                onEdit={() => setEditingAppointment(appointment)}
+                onDelete={handleDeleteAppointment}
+                onExport={exportAppointmentToPDF}
+              />
             ))
           )}
         </div>
