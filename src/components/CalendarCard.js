@@ -160,9 +160,9 @@ const CalendarCard = () => {
       <p><strong>Fecha:</strong> {new Date(appointment.date).toLocaleDateString()}</p>
       <p><strong>Nombre del cliente:</strong> {appointment.clientName}</p>
       <p><strong>Status:</strong> {appointment.clientStatus}</p>
-      <button onClick={() => onEdit(appointment.id)} className="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600 mr-2">Editar</button>
-      <button onClick={() => onDelete(appointment.id)} className="bg-red-500 text-white p-2 rounded hover:bg-red-600 mr-2">Eliminar</button>
-      <button onClick={() => onExport(appointment)} className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Exportar a PDF</button>
+      <button onClick={() => onEdit(appointment.id)} className="bg-yellow-400 text-white p-2 rounded hover:bg-yellow-600 mr-2">Editar</button>
+      <button onClick={() => onDelete(appointment.id)} className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 mr-2">Eliminar</button>
+      <button onClick={() => onExport(appointment)} className="bg-green-500 text-white p-2 rounded hover:bg-green-600">Exportar a PDF</button>
     </div>
   ), []);
 
