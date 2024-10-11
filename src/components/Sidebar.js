@@ -125,7 +125,7 @@ export default function Sidebar() {
           {/* Mostrar el enlace de "Creditos" según los roles permitidos */}
           {canViewCreditos && (
             <li className="mb-4">
-              <Link href="creditos" className="flex items-center p-2 rounded hover:bg-[#374151]">
+              <Link href="#" className="flex items-center p-2 rounded hover:bg-[#374151]">
                 {!isCollapsed && 'Creditos'}
               </Link>
             </li>

@@ -389,7 +389,7 @@ const exportAllClientsToPDF = () => {
             <div className="grid grid-cols-3 md:grid-cols-2 lg:grid-cols-3 gap-2">
               {/* Primera columna de inputs */}
               <div className="mb-4">
-                <label className="block text-white mb-2">Full Name</label>
+                <label className="block text-white mb-2">Razon Social</label>
                 <input
                   type="text"
                   value={newClient.fullName}
