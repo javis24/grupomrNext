@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Modal from 'react-modal';
-import jwt from 'jsonwebtoken';  
+import jwt from 'jsonwebtoken';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const customStyles = {
   content: {
@@ -46,9 +48,9 @@ export default function ServiceList() {
     if (token) {
       const decoded = jwt.decode(token);
       setUserRole(decoded.role);
-      setUserId(decoded.id); // Obtener el userId del token
+      setUserId(decoded.id);
     }
-    fetchServices(); // Carga inicial de servicios
+    fetchServices();
   }, []);
 
   const fetchServices = async () => {
@@ -68,11 +70,10 @@ export default function ServiceList() {
   const handleDelete = async (serviceId) => {
     try {
       const token = localStorage.getItem('token');
-  
       await axios.delete(`/api/servicios/${serviceId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setServices(services.filter(service => service.id !== serviceId)); // Actualizar el estado sin hacer fetch
+      setServices(services.filter(service => service.id !== serviceId));
     } catch (error) {
       console.error('Error deleting service:', error);
       setError('Failed to delete service. Please try again.');
@@ -111,7 +112,7 @@ export default function ServiceList() {
           ? { ...service, programacion, equipo, numeroEconomico, contenido, manifiesto, renta2024, recoleccion, disposicion, contacto, telefono, email, ubicacion, rfc } 
           : service
       );
-      setServices(updatedServices); // Actualizar el estado sin hacer fetch
+      setServices(updatedServices);
       closeModal();
     } catch (error) {
       console.error('Error updating service:', error);
@@ -142,7 +143,7 @@ export default function ServiceList() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setServices([...services, response.data.service]); // Añadir el nuevo servicio al estado
+      setServices([...services, response.data.service]);
       closeModal();
     } catch (error) {
       console.error('Error creating service:', error);
@@ -190,6 +191,60 @@ export default function ServiceList() {
   const closeModal = () => {
     setModalIsOpen(false);
     setSelectedService(null);
+  };
+
+  const exportServiceToPDF = (service) => {
+    const doc = new jsPDF();
+    const imgUrl = '/logo_mr.png';  // Ruta de tu logo
+
+    const image = new Image();
+    image.src = imgUrl;
+
+    image.onload = () => {
+      doc.addImage(image, 'PNG', 20, 10, 20, 20);
+
+      // Información de la empresa
+      doc.setFontSize(12);
+      doc.text("Materiales Reutilizables S.A. de C.V.", 105, 20, { align: 'center' });
+      doc.text("Benito Juarez 112 SUR, Col. 1ro de Mayo", 105, 27, { align: 'center' });
+      doc.text("Cd. Lerdo, Dgo. C.P. 35169", 105, 32, { align: 'center' });
+      doc.text("MRE040121UBA", 105, 37, { align: 'center' });
+
+      // Sección de datos del servicio
+      doc.setFillColor(255, 204, 0); // Color amarillo
+      doc.rect(160, 20, 40, 10, 'F');
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.text("SERVICIO", 180, 27, null, 'center'); 
+
+      // Información del servicio
+      const serviceDetails = [
+        ["PROGRAMACIÓN", service.programacion],
+        ["EQUIPO", service.equipo],
+        ["NÚMERO ECONÓMICO", service.numeroEconomico],
+        ["CONTENIDO", service.contenido],
+        ["MANIFIESTO", service.manifiesto],
+        ["RENTA 2024", `$ ${service.renta2024}`],
+        ["RECOLECCIÓN", `$ ${service.recoleccion}`],
+        ["DISPOSICIÓN", `$ ${service.disposicion}`],
+        ["UBICACIÓN", service.ubicacion],
+        ["CONTACTO", service.contacto],
+        ["TELÉFONO", service.telefono],
+      ];
+
+      doc.autoTable({
+        body: serviceDetails,
+        startY: 50,
+        theme: 'plain',
+        styles: { cellPadding: 1, fontSize: 10, lineWidth: 0.1 },
+        columnStyles: {
+          0: { halign: 'left', textColor: [0, 0, 0], cellWidth: 60 },
+          1: { halign: 'left', textColor: [0, 0, 0], cellWidth: 100 },
+        }
+      });
+
+      doc.save(`${service.programacion}_details.pdf`);
+    };
   };
 
   const filteredServices = services.filter((service) =>
@@ -404,6 +459,16 @@ export default function ServiceList() {
               {selectedService ? 'Update Service' : 'Create Service'}
             </button>
           </form>
+
+          {/* Botón para exportar a PDF */}
+          {selectedService && (
+            <button
+              onClick={() => exportServiceToPDF(selectedService)}
+              className="mt-4 bg-green-500 text-white p-2 rounded hover:bg-green-600"
+            >
+              Export to PDF
+            </button>
+          )}
           <button onClick={closeModal} className="mt-4 bg-gray-500 text-white p-2 rounded hover:bg-gray-600">
             Close
           </button>

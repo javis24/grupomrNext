@@ -1,4 +1,3 @@
-// pages/api/refresh-token.js
 import jwt from 'jsonwebtoken';
 
 export default function handler(req, res) {
@@ -13,8 +12,9 @@ export default function handler(req, res) {
             return res.status(403).json({ message: 'Invalid refresh token' });
         }
 
+        // Incluir el email en el nuevo token de acceso
         const newAccessToken = jwt.sign(
-            { id: user.id, role: user.role },
+            { id: user.id, role: user.role, email: user.email }, // Asegúrate de incluir el email aquí
             process.env.JWT_SECRET,
             { expiresIn: '1h' }  
         );

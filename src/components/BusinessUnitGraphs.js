@@ -11,25 +11,130 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
 export default function BusinessUnitGraphs() {
   const [unitReports, setUnitReports] = useState([]);
+  const [importedFiles, setImportedFiles] = useState([]); // Estado para almacenar los archivos importados
+  const [selectedFile, setSelectedFile] = useState(null); // Estado para almacenar el archivo seleccionado
   const [selectedPeriod, setSelectedPeriod] = useState('day'); // 'day', 'month', 'year', 'week'
 
+  // Obtener los archivos importados cuando se carga el componente
   useEffect(() => {
-    const fetchReports = async () => {
+    const fetchReportsAndFiles = async () => {
       const token = localStorage.getItem('token');
       try {
-        const response = await axios.get('/api/business-units/reports', {
+        // Obtener los reportes
+        const reportResponse = await axios.get('/api/business-graficas/index', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
-        setUnitReports(response.data);
+        setUnitReports(reportResponse.data);
+  
+        // Suponiendo que la API de `/api/business-graficas/index` ya devuelve los archivos importados
+        // si no, tendrías que hacer una petición adicional a una ruta de archivos importados
+        const filesResponse = await axios.get('/api/business-graficas/index', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        setImportedFiles(filesResponse.data); // Actualiza los archivos importados
       } catch (error) {
-        console.error('Error fetching reports:', error);
+        console.error('Error fetching reports or files:', error);
+      }
+    };
+  
+    fetchReportsAndFiles();
+  }, []);
+
+   useEffect(() => {
+    const fetchReports = async () => {
+      const token = localStorage.getItem('token');
+      try {
+        // Obtener los reportes
+        const reportResponse = await axios.get('/api/business-graficas/index', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        setUnitReports(reportResponse.data);
+  
+        // Obtener los archivos importados
+        const filesResponse = await axios.get('/api/business-graficas/get-imported-files', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        setImportedFiles(filesResponse.data);  // Actualiza el estado con los archivos importados
+      } catch (error) {
+        console.error('Error fetching reports or files:', error);
+      }
+    };
+  
+    fetchReports();
+  }, []);
+  
+
+  // Procesa y guarda el archivo cuando se hace clic en "Guardar"
+  const handleSave = () => {
+    if (!selectedFile) {
+      console.error("No file selected");
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = async (e) => {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      // Procesar los datos del archivo
+      const updatedReports = jsonData.map((row) => ({
+        name: row['Unidad'] || '',
+        total: row['Total Vendido'] || 0,
+        createdAt: new Date().toISOString(), // Generar una fecha actual
+        userId: 8 // Aquí puedes poner el ID del usuario actual
+      }));
+
+      setUnitReports(updatedReports); // Actualizar los datos localmente para graficar
+
+      // Enviar los datos al backend para guardarlos en la base de datos
+      try {
+        const token = localStorage.getItem('token'); // Obtener el token de autenticación si es necesario
+        await axios.post('/api/business-graficas/index', { reports: updatedReports }, {
+          headers: {
+            'Authorization': `Bearer ${token}`, // Asegúrate de enviar el token si es requerido
+          },
+        });
+        console.log('Datos importados y guardados exitosamente');
+        setSelectedFile(null); // Reinicia el archivo seleccionado después de guardar
+      } catch (error) {
+        console.error('Error guardando los datos importados:', error);
       }
     };
 
-    fetchReports();
-  }, []);
+    reader.readAsArrayBuffer(selectedFile); // Lee el archivo seleccionado
+  };
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.text('Reporte de Unidad de Negocio', 20, 10);
+    doc.autoTable({
+      head: [['Unidad', 'Total Vendido']],
+      body: unitReports.map(report => [report.name, report.total]),
+    });
+    doc.save('reportes_unidad_negocio.pdf');
+  };
+
+  const exportToExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(unitReports.map(report => ({
+      Unidad: report.name,
+      'Total Vendido': report.total,
+    })));
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Reportes');
+    XLSX.writeFile(workbook, 'reportes_unidad_negocio.xlsx');
+  };
 
   const getUnitData = () => {
     const labels = unitReports.map(report => report.name); // Nombres de las unidades de negocio
@@ -49,64 +154,8 @@ export default function BusinessUnitGraphs() {
     };
   };
 
-  const getPeriodData = () => {
-    const filteredReports = unitReports.filter(report => {
-      const date = new Date(report.createdAt);
-      if (selectedPeriod === 'day') {
-        return date.getDate() === new Date().getDate();
-      } else if (selectedPeriod === 'week') {
-        const startOfWeek = new Date();
-        startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
-        return date >= startOfWeek;
-      } else if (selectedPeriod === 'month') {
-        return date.getMonth() === new Date().getMonth();
-      } else if (selectedPeriod === 'year') {
-        return date.getFullYear() === new Date().getFullYear();
-      }
-      return false;
-    });
-
-    const labels = filteredReports.map(report => new Date(report.createdAt).toLocaleDateString());
-    const totals = filteredReports.map(report => report.total);
-
-    return {
-      labels,
-      datasets: [
-        {
-          label: `Total Vendido por ${selectedPeriod}`,
-          data: totals,
-          backgroundColor: 'rgba(255, 99, 132, 0.2)',
-          borderColor: 'rgba(255, 99, 132, 1)',
-          borderWidth: 1,
-        },
-      ],
-    };
-  };
-
   const handlePeriodChange = (period) => {
     setSelectedPeriod(period);
-  };
-
-  // Función para exportar a PDF
-  const exportToPDF = () => {
-    const doc = new jsPDF();
-    doc.text('Reporte de Unidad de Negocio', 20, 10);
-    doc.autoTable({
-      head: [['Unidad', 'Total Vendido']],
-      body: unitReports.map(report => [report.name, report.total]),
-    });
-    doc.save('reportes_unidad_negocio.pdf');
-  };
-
-  // Función para exportar a Excel
-  const exportToExcel = () => {
-    const worksheet = XLSX.utils.json_to_sheet(unitReports.map(report => ({
-      Unidad: report.name,
-      'Total Vendido': report.total,
-    })));
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Reportes');
-    XLSX.writeFile(workbook, 'reportes_unidad_negocio.xlsx');
   };
 
   return (
@@ -114,15 +163,33 @@ export default function BusinessUnitGraphs() {
       <div className="w-full max-w-lg">
         <h1 className="text-2xl font-bold mb-6 text-center">Gráficas de Reportes</h1>
 
-        {/* Botones de exportación */}
+        {/* Botones de exportación */}        
         <div className="flex justify-between mt-4">
-          <button onClick={exportToPDF} className="bg-red-500 text-white p-2 rounded hover:bg-red-600">
+          <input 
+            type="file" 
+            accept=".xlsx, .xls" 
+            onChange={(e) => setSelectedFile(e.target.files[0])} 
+            className="bg-gray-700 text-white p-2 rounded" 
+          />
+          <button onClick={() => exportToPDF()} className="bg-red-500 text-white p-2 rounded hover:bg-red-600">
             Exportar a PDF
           </button>
-          <button onClick={exportToExcel} className="bg-green-500 text-white p-2 rounded hover:bg-green-600">
+          <button onClick={() => exportToExcel()} className="bg-green-500 text-white p-2 rounded hover:bg-green-600">
             Exportar a Excel
           </button>
         </div>
+
+        {/* Botón para guardar */}
+        {selectedFile && (
+          <div className="flex justify-center mt-4">
+            <button 
+              onClick={handleSave} 
+              className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+            >
+              Guardar
+            </button>
+          </div>
+        )}
 
         {/* Gráfica de ventas por unidad de negocio */}
         <div className="mb-6">
@@ -152,10 +219,26 @@ export default function BusinessUnitGraphs() {
         <div className="mb-4">
           <h2 className="text-lg mb-0 text-center">Total Vendido por Periodo</h2>
           <div className="bg-[#1f2937] p-4 rounded-lg shadow-lg">
-            <Bar data={getPeriodData()} options={{ maintainAspectRatio: false, aspectRatio: 3 }} />
+            <Bar data={getUnitData()} options={{ maintainAspectRatio: false, aspectRatio: 3 }} />
           </div>
+        </div>
+
+        {/* Lista de archivos importados */}
+        <div className="bg-gray-800 p-4 rounded-lg">
+          <h2 className="text-lg mb-4 text-center">Archivos Excel Importados</h2>
+          {importedFiles.length === 0 ? (
+            <p className="text-center text-gray-400">No se han importado archivos aún.</p>
+          ) : (
+            <ul className="list-disc list-inside">
+              {importedFiles.map((file, index) => (
+                <li key={index}>
+                  {file.name} - {new Date(file.createdAt).toLocaleDateString()}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </div>
-  );
-}
+      );
+      }

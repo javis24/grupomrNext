@@ -190,7 +190,7 @@ const CreateQuote = () => {
 
   return (
     <div className="p-8 bg-[#0e1624] text-white">
-      <h2 className="text-2xl font-bold mb-4">Crear Cotización</h2>
+      <h2 className="text-2xl font-bold mb-4"> Cotización MR</h2>
 
       {/* Formulario para ingresar datos del cliente */}
       <div className="grid grid-cols-3 gap-4 mb-4">
