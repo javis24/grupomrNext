@@ -126,6 +126,7 @@ function Dashboard() {
         ) : null}
 
           {/* Próxima Cita */}
+          {userData.role === 'admin' || userData.role === 'gerencia' ? (
           <div className="bg-[#1f2937] p-4 rounded-lg shadow-lg">
             <h2 className="text-xl sm:text-lg font-semibold">Próxima Cita</h2>
             {upcomingAppointment ? (
@@ -140,8 +141,10 @@ function Dashboard() {
               <p className="text-red-400 mt-2 text-sm sm:text-base">No hay citas próximas.</p>
             )}
           </div>
+           ) : null}
 
           {/* Últimos 5 Clientes */}
+          {userData.role === 'admin' || userData.role === 'gerencia' ? (
           <div className="bg-[#1f2937] p-4 rounded-lg shadow-lg">
             <h2 className="text-xl sm:text-lg font-semibold">Últimos 5 Clientes</h2>
             {latestClients.length > 0 ? (
@@ -156,12 +159,14 @@ function Dashboard() {
               <p className="text-red-400 mt-2 text-sm sm:text-base">No se encontraron clientes recientes.</p>
             )}
           </div>
+          ) : null}
         </section>
+      
 
         {/* Welcome Message */}
         <div className="bg-[#1f2937] p-4 rounded-lg shadow-lg w-full">
-          <h2 className="text-xl sm:text-lg font-semibold">Welcome, {userData.role || 'User'}</h2>
-          <p className="text-lg sm:text-base">Hello {userData.name || 'there'}! Welcome to your dashboard.</p>
+          <h2 className="text-xl sm:text-lg font-semibold">Bienvenido al CRM DE GRUPOMRLAGUNA, {userData.email || 'Email: '}</h2>
+          <p className="text-lg sm:text-base">Hola!! {userData.name || 'there'}! Sonrie!!.</p>
         </div>
       </main>
     </div>

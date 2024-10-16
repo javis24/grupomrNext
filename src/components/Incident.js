@@ -69,7 +69,7 @@ export default function IncidentForm() {
     doc.text('MRE040121UBA', 105, 37, { align: 'center' });
 
     // Encabezado de Incidencias
-    doc.setFillColor(255, 204, 0); // Color amarillo (como en la imagen)
+    doc.setFillColor(255, 204, 0); // Color amarillo
     doc.rect(160, 20, 40, 10, 'F');
     doc.setFontSize(14);
     doc.setTextColor(0, 0, 0);
@@ -80,32 +80,18 @@ export default function IncidentForm() {
     doc.setFontSize(12);
     doc.text(`Fecha: ${currentDate}`, 160, 42);
 
-    // Generar la tabla para la incidencia
-    const tableData = [
-      [1, incident.title, incident.description, new Date(incident.createdAt).toLocaleDateString()],
-    ];
-
-    doc.autoTable({
-      head: [['#', 'Título', 'Descripción', 'Fecha de Creación']],
-      body: tableData,
-      startY: 60,
-      theme: 'grid',
-      headStyles: {
-        fillColor: [255, 204, 0], // Color amarillo
-        textColor: 0,
-      },
-      styles: {
-        fontSize: 10,
-        halign: 'center',
-      },
-    });
+    // Información de la incidencia
+    doc.setFontSize(12);
+    doc.text(`Título: ${incident.title}`, 20, 60);
+    doc.text(`Descripción: ${incident.description}`, 20, 70);
+    doc.text(`Fecha de Creación: ${new Date(incident.createdAt).toLocaleDateString()}`, 20, 80);
 
     // Observaciones
     doc.setFontSize(8);
     doc.setTextColor(0, 0, 0);
-    doc.setFillColor(255, 204, 0); // Color amarillo para el fondo de observaciones
-    doc.rect(14, doc.lastAutoTable.finalY + 10, 182, 10, 'F');
-    doc.text('OBSERVACIONES', 105, doc.lastAutoTable.finalY + 17, null, 'center');
+    doc.setFillColor(255, 204, 0);
+    doc.rect(14, 100, 182, 10, 'F');
+    doc.text('OBSERVACIONES', 105, 107, null, 'center');
 
     const observations = [
       'Las incidencias registradas se mantendrán durante 30 días.',
@@ -116,7 +102,7 @@ export default function IncidentForm() {
     // Centrar las observaciones
     observations.forEach((obs, index) => {
       const obsTextWidth = doc.getTextWidth(obs);
-      doc.text(105 - obsTextWidth / 2, doc.lastAutoTable.finalY + 25 + index * 6, obs);
+      doc.text(105 - obsTextWidth / 2, 115 + index * 6, obs);
     });
 
     // Pie de página
@@ -126,7 +112,7 @@ export default function IncidentForm() {
     doc.text('www.materialesreutilizables.com', 105, 285, null, 'center');
 
     // Guardar el PDF
-    doc.save(`incidencia_${incident.title}.pdf`);
+    doc.save(`incidencia_${incident.createdAt}.pdf`);
   };
 
   return (

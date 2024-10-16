@@ -313,7 +313,7 @@ const exportAllClientsToPDF = () => {
         <h1 className="text-3xl font-bold">Clients</h1>
         <div className="flex">
           <button onClick={() => openModal()} className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 mr-2">
-            Add New
+            Añadir 
           </button>
           <button onClick={exportAllClientsToPDF} className="bg-red-500 text-white p-2 rounded hover:bg-red-600">
             Export All to PDF
