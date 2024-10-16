@@ -158,39 +158,34 @@ const CreateQuote = () => {
 
       const observations = [
         "Precios más IVA",
-        "Condiciones de pago: Negociable",
+        "Condiciones de pago: Transferencia bancaria",
         "Contamos con todos los permisos necesarios para el desarrollo de nuestras actividades ante la SRNMA y SEMARNART",
-        "NÚMERO DE AUTORIZACIÓN AMBIENTAL RERET-1-SRNMA-005-24",
+        "NUMERO DE AUTORIZACIÓN AMBIENTAL RERET-3-SRNMA-329-24",
         "Nuestro personal cuenta con seguridad social, EPP y capacitación para realizar las maniobras necesarias",
         "Esta Cotización tiene una vigencia de 15 días",
-        "Teléfono de atención: 871-342 81 05"
+        "Teléfono de atención. 871 132 05 44"
       ];
-
-      // Centrar las observaciones
+  
       observations.forEach((obs, index) => {
-        const obsTextWidth = doc.getTextWidth(obs);
-        doc.text(105 - (obsTextWidth / 2), doc.lastAutoTable.finalY + 37 + (index * 6), obs);
+        doc.text(105, doc.lastAutoTable.finalY + 37 + (index * 6), obs, null, 'center');
       });
-
-       // Pie de página
-       doc.setFontSize(8);
-       doc.setTextColor(0, 0, 0);
-       const footer1 = "Comercialización Grupo MR";
-       const footer2 = "Visita nuestra página y conoce más sobre nosotros";
-       const footer3 = "www.materialesreutilizables.com";
- 
-       doc.text(105, 250, footer1, null, 'center'); // Subimos la posición del pie de página
-       doc.text(105, 253, footer2, null, 'center');
-       doc.setTextColor(0, 0, 255);  // Color azul para el enlace
-       doc.textWithLink(footer3, 86, 256, { url: "http://www.materialesreutilizables.com" }); // Movemos el link más a la izquierda
- 
-       doc.save('cotizacion.pdf');
-     };
-   };
+  
+      // Pie de página
+      doc.setFontSize(8);
+      doc.setTextColor(0, 0, 0);
+      doc.text("Comercialización SANO", 105, doc.lastAutoTable.finalY + 85, null, 'center');
+      doc.text("Ing. Gustavo Salgado", 105, doc.lastAutoTable.finalY + 90, null, 'center');
+      doc.text("Gerencia General", 105, doc.lastAutoTable.finalY + 95, null, 'center');
+      doc.setTextColor(0, 0, 255);  // Color azul para el enlace
+      doc.textWithLink("gerencia@sanolaguna.com", 105, doc.lastAutoTable.finalY + 100, { url: "mailto:gerencia@sanolaguna.com" });
+  
+      doc.save('cotizacion.pdf');
+    };
+  };
 
   return (
     <div className="p-8 bg-[#0e1624] text-white">
-      <h2 className="text-2xl font-bold mb-4"> Cotización MR</h2>
+      <h2 className="text-2xl font-bold mb-4"> Cotización SANO</h2>
 
       {/* Formulario para ingresar datos del cliente */}
       <div className="grid grid-cols-3 gap-4 mb-4">

@@ -61,12 +61,12 @@ export default function IncidentForm() {
   const generateIncidentPDF = (incident) => {
     const doc = new jsPDF();
 
-    // Información de la empresa (encabezado)
+    // Información de la empresa
     doc.setFontSize(12);
-    doc.text('Materiales Reutilizables S.A. de C.V.', 105, 20, { align: 'center' });
-    doc.text('Benito Juarez 112 SUR, Col. 1ro de Mayo', 105, 27, { align: 'center' });
-    doc.text('Cd. Lerdo, Dgo. C.P. 35169', 105, 32, { align: 'center' });
-    doc.text('MRE040121UBA', 105, 37, { align: 'center' });
+    doc.text("Materiales Reutilizables S.A. de C.V.", 105, 20, { align: 'center' });
+    doc.text("Benito Juarez 112 SUR, Col. 1ro de Mayo", 105, 27, { align: 'center' });
+    doc.text("Cd. Lerdo, Dgo. C.P. 35169", 105, 32, { align: 'center' });
+    doc.text("MRE040121UBA", 105, 37, { align: 'center' });
 
     // Encabezado de Incidencias
     doc.setFillColor(255, 204, 0); // Color amarillo
