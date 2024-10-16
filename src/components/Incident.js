@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 export default function IncidentForm() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [message, setMessage] = useState(null);
-  const [incidents, setIncidents] = useState([]); // Estado para almacenar las incidencias
+  const [incidents, setIncidents] = useState([]);
 
   // Función para obtener las incidencias guardadas
   const fetchIncidents = async () => {
@@ -13,7 +15,7 @@ export default function IncidentForm() {
     try {
       const response = await axios.get('/api/incidents', {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
       setIncidents(response.data);
@@ -32,14 +34,18 @@ export default function IncidentForm() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.post('/api/incidents/', {
-        title,
-        description,
-      }, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
+      const response = await axios.post(
+        '/api/incidents/',
+        {
+          title,
+          description,
         },
-      });
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       setMessage(response.data.message);
       setTitle('');
@@ -49,6 +55,78 @@ export default function IncidentForm() {
       console.error('Error al guardar la incidencia:', error);
       setMessage('Error al guardar la incidencia');
     }
+  };
+
+  // Función para generar el PDF de una incidencia específica
+  const generateIncidentPDF = (incident) => {
+    const doc = new jsPDF();
+
+    // Información de la empresa (encabezado)
+    doc.setFontSize(12);
+    doc.text('Materiales Reutilizables S.A. de C.V.', 105, 20, { align: 'center' });
+    doc.text('Benito Juarez 112 SUR, Col. 1ro de Mayo', 105, 27, { align: 'center' });
+    doc.text('Cd. Lerdo, Dgo. C.P. 35169', 105, 32, { align: 'center' });
+    doc.text('MRE040121UBA', 105, 37, { align: 'center' });
+
+    // Encabezado de Incidencias
+    doc.setFillColor(255, 204, 0); // Color amarillo (como en la imagen)
+    doc.rect(160, 20, 40, 10, 'F');
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.text('INCIDENCIA', 180, 27, null, 'center');
+
+    // Fecha de generación del PDF
+    const currentDate = new Date().toLocaleDateString();
+    doc.setFontSize(12);
+    doc.text(`Fecha: ${currentDate}`, 160, 42);
+
+    // Generar la tabla para la incidencia
+    const tableData = [
+      [1, incident.title, incident.description, new Date(incident.createdAt).toLocaleDateString()],
+    ];
+
+    doc.autoTable({
+      head: [['#', 'Título', 'Descripción', 'Fecha de Creación']],
+      body: tableData,
+      startY: 60,
+      theme: 'grid',
+      headStyles: {
+        fillColor: [255, 204, 0], // Color amarillo
+        textColor: 0,
+      },
+      styles: {
+        fontSize: 10,
+        halign: 'center',
+      },
+    });
+
+    // Observaciones
+    doc.setFontSize(8);
+    doc.setTextColor(0, 0, 0);
+    doc.setFillColor(255, 204, 0); // Color amarillo para el fondo de observaciones
+    doc.rect(14, doc.lastAutoTable.finalY + 10, 182, 10, 'F');
+    doc.text('OBSERVACIONES', 105, doc.lastAutoTable.finalY + 17, null, 'center');
+
+    const observations = [
+      'Las incidencias registradas se mantendrán durante 30 días.',
+      'Revise regularmente el estado de las incidencias para asegurarse de que se resuelvan.',
+      'Para más información, contacte al departamento correspondiente.',
+    ];
+
+    // Centrar las observaciones
+    observations.forEach((obs, index) => {
+      const obsTextWidth = doc.getTextWidth(obs);
+      doc.text(105 - obsTextWidth / 2, doc.lastAutoTable.finalY + 25 + index * 6, obs);
+    });
+
+    // Pie de página
+    doc.setFontSize(8);
+    doc.setTextColor(0, 0, 0);
+    doc.text('Materiales Reutilizables S.A. de C.V.', 105, 280, null, 'center');
+    doc.text('www.materialesreutilizables.com', 105, 285, null, 'center');
+
+    // Guardar el PDF
+    doc.save(`incidencia_${incident.title}.pdf`);
   };
 
   return (
@@ -95,6 +173,7 @@ export default function IncidentForm() {
                   <th className="text-left">Título</th>
                   <th className="text-left">Descripción</th>
                   <th className="text-left">Fecha de Creación</th>
+                  <th className="text-left">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -102,7 +181,15 @@ export default function IncidentForm() {
                   <tr key={index} className="border-t border-gray-700">
                     <td className="py-2">{incident.title}</td>
                     <td className="py-2">{incident.description}</td>
-                    <td className="py-2">{new Date(incident.createdAt).toLocaleDateString()}</td> {/* Mostrar la fecha de creación */}
+                    <td className="py-2">{new Date(incident.createdAt).toLocaleDateString()}</td>
+                    <td className="py-2">
+                      <button
+                        onClick={() => generateIncidentPDF(incident)}
+                        className="bg-green-500 text-white p-2 rounded hover:bg-green-600"
+                      >
+                        Exportar PDF
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
