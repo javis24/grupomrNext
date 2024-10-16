@@ -163,10 +163,6 @@ function Dashboard() {
           <h2 className="text-xl sm:text-lg font-semibold">Welcome, {userData.role || 'User'}</h2>
           <p className="text-lg sm:text-base">Hello {userData.name || 'there'}! Welcome to your dashboard.</p>
         </div>
-
-        <div className="bg-[#1f2937] p-4 rounded-lg shadow-lg w-full">
-          <ClientList />
-        </div>
       </main>
     </div>
   );

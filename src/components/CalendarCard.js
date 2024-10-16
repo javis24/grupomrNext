@@ -3,6 +3,8 @@ import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import '../styles/custom-calendar.css';
+
 
 // Cargar Calendar de manera diferida para optimizar el tiempo de carga
 const Calendar = lazy(() => import('react-calendar'));
