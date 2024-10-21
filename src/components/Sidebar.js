@@ -126,7 +126,7 @@ export default function Sidebar() {
           {(canViewCreditos || hasTotalAccess) && (
             <li className="mb-4">
               <Link href="/cotizacionsano" className="flex items-center p-2 rounded hover:bg-[#374151]">
-                {!isCollapsed && 'Créditos-sano'}
+                {!isCollapsed && 'cotización-sano'}
               </Link>
             </li>
           )}

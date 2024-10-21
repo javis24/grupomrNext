@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
+
 const CreditRequestForm = () => {
   const [formData, setFormData] = useState({
     nombreComercial: '',
@@ -27,18 +28,16 @@ const CreditRequestForm = () => {
     nombre: '',
     telmovil: '',
     correoContacto: '',
-    nombreempresa: '',
-    contacto: '',
-    domicilio: '',
-    telefono: '',
-    montocredito: '',
-    antiguedad: '',
-    nombreempresa2: '',
-    contacto2: '',
-    domicilio2: '',
-    telefono2Ref: '',
-    montocredito2: '',
-    antiguedad2: '',
+    referenciasComerciales: [
+      {
+        nombreempresa: '',
+        contacto: '',
+        domicilio: '',
+        telefono: '',
+        montocredito: '',
+        antiguedad: ''
+      }
+    ],
     banco: '',
     numeroCuenta: '',
     sucursal: '',
@@ -90,8 +89,58 @@ const CreditRequestForm = () => {
       cantidadCredito: '',
       recomendaciones: '',
       observaciones: ''
-    }
+    },
+
+    pagare: {
+      no: '',                
+      buenoPor: '',          
+      lugar: '',              
+     dia: '',                
+      mes: '',               
+      anio: '',              
+      beneficiario: '',       
+      lugarPago: '',          
+      fechaPago: '',          
+      cantidadPago: '',       
+      moneda: '',              
+    nombreDeudor: '',        
+      documentoDeudor: '',    
+      direccionDeudor: '',     
+      telefonoDeudor: '',      
+      firmaRepresentante: ''   
+        }
+
+
   });
+
+  const handleChangeReference = (index, e) => {
+    const { name, value } = e.target;
+    const updatedReferences = [...formData.referenciasComerciales];
+    updatedReferences[index][name] = value;
+    setFormData({ ...formData, referenciasComerciales: updatedReferences });
+  };
+
+  const addNewReference = () => {
+    setFormData({
+      ...formData,
+      referenciasComerciales: [
+        ...formData.referenciasComerciales,
+        {
+          nombreempresa: '',
+          contacto: '',
+          domicilio: '',
+          telefono: '',
+          montocredito: '',
+          antiguedad: ''
+        }
+      ]
+    });
+  };
+
+  const [open, setOpen] = useState(1);
+  const handleOpen = (value) => {
+    setOpen(open === value ? 0 : value);
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -708,685 +757,953 @@ doc.text("PARA ESCANEAR Y ENVIAR POR VÍA DIGITAL.", 40, linePositionY + 85);
        };
      };
    
-
-
-
-
-  return (
-    <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Solicitud de Crédito</h1>
-      <form className="grid grid-cols-3 gap-6">
-        {/* Campos principales */}
-        <div>
-          <label className="block">Nombre Comercial</label>
-          <input
-            type="text"
-            name="nombreComercial"
-            value={formData.nombreComercial}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Razón Social</label>
-          <input
-            type="text"
-            name="razonSocial"
-            value={formData.razonSocial}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">RFC</label>
-          <input
-            type="text"
-            name="rfc"
-            value={formData.rfc}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Representante Legal</label>
-          <input
-            type="text"
-            name="representanteLegal"
-            value={formData.representanteLegal}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        {/* Campos de dirección */}
-        <div>
-          <label className="block">Calle</label>
-          <input
-            type="text"
-            name="calle"
-            value={formData.calle}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Número</label>
-          <input
-            type="text"
-            name="numero"
-            value={formData.numero}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Colonia</label>
-          <input
-            type="text"
-            name="colonia"
-            value={formData.colonia}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Ciudad</label>
-          <input
-            type="text"
-            name="ciudad"
-            value={formData.ciudad}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Estado</label>
-          <input
-            type="text"
-            name="estado"
-            value={formData.estado}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Código Postal</label>
-          <input
-            type="text"
-            name="cp"
-            value={formData.cp}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        {/* Teléfonos, correo, giro comercial, fecha inicio */}
-        <div>
-          <label className="block">Teléfono (1)</label>
-          <input
-            type="text"
-            name="telefono1"
-            value={formData.telefono1}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Teléfono (2)</label>
-          <input
-            type="text"
-            name="telefono2"
-            value={formData.telefono2}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Correo</label>
-          <input
-            type="text"
-            name="correo"
-            value={formData.correo}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Giro Comercial</label>
-          <input
-            type="text"
-            name="giroComercial"
-            value={formData.giroComercial}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Fecha de Inicio de Actividades</label>
-          <input
-            type="text"
-            name="fechaInicio"
-            value={formData.fechaInicio}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        {/* Contacto comercial */}
-        <div>
-          <label className="block">Compras</label>
-          <input
-            type="text"
-            name="compras"
-            value={formData.compras}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Pagos</label>
-          <input
-            type="text"
-            name="pagos"
-            value={formData.pagos}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Usuario/Operación</label>
-          <input
-            type="text"
-            name="usuario"
-            value={formData.usuario}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Otro</label>
-          <input
-            type="text"
-            name="otro"
-            value={formData.otro}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Tel / Movil</label>
-          <input
-            type="text"
-            name="telmovil"
-            value={formData.telmovil}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Correo Contacto</label>
-          <input
-            type="text"
-            name="correoContacto"
-            value={formData.correoContacto}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-
-        {/* Referencias comerciales */}
-        <div>
-          <label className="block">Nombre de la Empresa (1)</label>
-          <input
-            type="text"
-            name="nombreempresa"
-            value={formData.nombreempresa}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Contacto (1)</label>
-          <input
-            type="text"
-            name="contacto"
-            value={formData.contacto}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Domicilio (1)</label>
-          <input
-            type="text"
-            name="domicilio"
-            value={formData.domicilio}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Teléfono (1)</label>
-          <input
-            type="text"
-            name="telefono"
-            value={formData.telefono}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Monto de Crédito (1)</label>
-          <input
-            type="text"
-            name="montocredito"
-            value={formData.montocredito}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Antigüedad (1)</label>
-          <input
-            type="text"
-            name="antiguedad"
-            value={formData.antiguedad}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-
-        {/* Segunda referencia comercial */}
-        <div>
-          <label className="block">Nombre de la Empresa (2)</label>
-          <input
-            type="text"
-            name="nombreempresa2"
-            value={formData.nombreempresa2}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Contacto (2)</label>
-          <input
-            type="text"
-            name="contacto2"
-            value={formData.contacto2}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Domicilio (2)</label>
-          <input
-            type="text"
-            name="domicilio2"
-            value={formData.domicilio2}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Teléfono (2)</label>
-          <input
-            type="text"
-            name="telefono2Ref"
-            value={formData.telefono2Ref}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Monto de Crédito (2)</label>
-          <input
-            type="text"
-            name="montocredito2"
-            value={formData.montocredito2}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Antigüedad (2)</label>
-          <input
-            type="text"
-            name="antiguedad2"
-            value={formData.antiguedad2}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-
-        {/* Referencias bancarias */}
-        <div>
-          <label className="block">Banco</label>
-          <input
-            type="text"
-            name="banco"
-            value={formData.banco}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Número de Cuenta</label>
-          <input
-            type="text"
-            name="numeroCuenta"
-            value={formData.numeroCuenta}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Sucursal</label>
-          <input
-            type="text"
-            name="sucursal"
-            value={formData.sucursal}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Domicilio</label>
-          <input
-            type="text"
-            name="domicilioBanco"
-            value={formData.domicilioBanco}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Teléfono</label>
-          <input
-            type="text"
-            name="telefonoBanco"
-            value={formData.telefonoBanco}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Nombre del Gerente</label>
-          <input
-            type="text"
-            name="nombreGerente"
-            value={formData.nombreGerente}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Cuenta Opera Desde</label>
-          <input
-            type="text"
-            name="cuentaDesde"
-            value={formData.cuentaDesde}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Saldo Promedio Mensual</label>
-          <input
-            type="text"
-            name="saldoPromedio"
-            value={formData.saldoPromedio}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-
-        {formData.personalAutorizado.map((persona, index) => (
-          <div key={index} className="col-span-3">
-            <label className="block">Nombre {index + 1}</label>
-            <input
-              type="text"
-              name={`nombre${index}`}
-              value={persona.nombre}
-              onChange={(e) => handlePersonalAutorizadoChange(index, 'nombre', e.target.value)}
-              className="p-2 rounded border mb-2"
-            />
-            <label className="block">No. INE o Pasaporte {index + 1}</label>
-            <input
-              type="text"
-              name={`ine${index}`}
-              value={persona.ine}
-              onChange={(e) => handlePersonalAutorizadoChange(index, 'ine', e.target.value)}
-              className="p-2 rounded border mb-2"
-            />
-            <label className="block">Firma {index + 1}</label>
-            <input
-              type="text"
-              name={`firma${index}`}
-              value={persona.firma}
-              onChange={(e) => handlePersonalAutorizadoChange(index, 'firma', e.target.value)}
-              className="p-2 rounded border mb-2"
-            />
+      return (
+        <div className="container mx-auto p-6">
+        <h1 className="text-2xl font-bold mb-6">Solicitud de Crédito</h1>
+        <form className="grid grid-cols-1 gap-6">
+          
+          {/* Nombre Comercial */}
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-4">Nombre Comercial</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block">Nombre Comercial</label>
+                <input
+                  type="text"
+                  name="nombreComercial"
+                  value={formData.nombreComercial}
+                  onChange={handleChange}
+                  className="p-2 rounded border w-full text-black"
+                />
+              </div>
+              <div>
+                <label className="block">Razón Social</label>
+                <input
+                  type="text"
+                  name="razonSocial"
+                  value={formData.razonSocial}
+                  onChange={handleChange}
+                  className="p-2 rounded border w-full text-black"
+                />
+              </div>
+              <div>
+                <label className="block">RFC</label>
+                <input
+                  type="text"
+                  name="rfc"
+                  value={formData.rfc}
+                  onChange={handleChange}
+                  className="p-2 rounded border w-full text-black"
+                />
+              </div>
+              <div>
+                <label className="block">Representante Legal</label>
+                <input
+                  type="text"
+                  name="representanteLegal"
+                  value={formData.representanteLegal}
+                  onChange={handleChange}
+                  className="p-2 rounded border w-full text-black"
+                />
+              </div>
+            </div>
           </div>
-        ))}
+      
+          {/* Domicilio Fiscal */}
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-4">Domicilio Fiscal</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block">Calle</label>
+                <input
+                  type="text"
+                  name="calle"
+                  value={formData.calle}
+                  onChange={handleChange}
+                  className="p-2 rounded border w-full text-black"
+                />
+              </div>
+              <div>
+                <label className="block">Número</label>
+                <input
+                  type="text"
+                  name="numero"
+                  value={formData.numero}
+                  onChange={handleChange}
+                  className="p-2 rounded border w-full text-black"
+                />
+              </div>
+              <div>
+                <label className="block">Colonia</label>
+                <input
+                  type="text"
+                  name="colonia"
+                  value={formData.colonia}
+                  onChange={handleChange}
+                  className="p-2 rounded border w-full text-black"
+                />
+              </div>
+              <div>
+                <label className="block">Ciudad</label>
+                <input
+                  type="text"
+                  name="ciudad"
+                  value={formData.ciudad}
+                  onChange={handleChange}
+                  className="p-2 rounded border w-full text-black"
+                />
+              </div>
+              <div>
+                <label className="block">Estado</label>
+                <input
+                  type="text"
+                  name="estado"
+                  value={formData.estado}
+                  onChange={handleChange}
+                  className="p-2 rounded border w-full text-black"
+                />
+              </div>
+              <div>
+                <label className="block">Código Postal</label>
+                <input
+                  type="text"
+                  name="cp"
+                  value={formData.cp}
+                  onChange={handleChange}
+                  className="p-2 rounded border w-full text-black"
+                />
+              </div>
+            </div>
+          </div>
+      
+          {/* Teléfonos y Correo */}
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-4">Teléfonos y Correo</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block">Teléfono (1)</label>
+                <input
+                  type="text"
+                  name="telefono1"
+                  value={formData.telefono1}
+                  onChange={handleChange}
+                  className="p-2 rounded border w-full text-black"
+                />
+              </div>
+              <div>
+                <label className="block">Teléfono (2)</label>
+                <input
+                  type="text"
+                  name="telefono2"
+                  value={formData.telefono2}
+                  onChange={handleChange}
+                  className="p-2 rounded border w-full text-black"
+                />
+              </div>
+              <div>
+                <label className="block">Correo</label>
+                <input
+                  type="text"
+                  name="correo"
+                  value={formData.correo}
+                  onChange={handleChange}
+                  className="p-2 rounded border w-full text-black"
+                />
+              </div>
+            </div>
+          </div>
+      
+          {/* Giro Comercial y Fecha de Inicio */}
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-4">Giro Comercial y Fecha de Inicio</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block">Giro Comercial</label>
+                <input
+                  type="text"
+                  name="giroComercial"
+                  value={formData.giroComercial}
+                  onChange={handleChange}
+                  className="p-2 rounded border w-full text-black"
+                />
+              </div>
+              <div>
+                <label className="block">Fecha de Inicio de Actividades</label>
+                <input
+                  type="text"
+                  name="fechaInicio"
+                  value={formData.fechaInicio}
+                  onChange={handleChange}
+                  className="p-2 rounded border w-full text-black"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Contacto Comercial */}
+                  <div className="mb-8">
+                    <h2 className="text-lg font-semibold mb-4">Contacto Comercial</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div>
+                        <label className="block">Compras</label>
+                        <input
+                          type="text"
+                          name="compras"
+                          value={formData.compras}
+                          onChange={handleChange}
+                          className="p-2 rounded border w-full text-black"
+                        />
+                      </div>
+                      <div>
+                        <label className="block">Pagos</label>
+                        <input
+                          type="text"
+                          name="pagos"
+                          value={formData.pagos}
+                          onChange={handleChange}
+                          className="p-2 rounded border w-full text-black"
+                        />
+                      </div>
+                      <div>
+                        <label className="block">Usuario/Operación</label>
+                        <input
+                          type="text"
+                          name="usuario"
+                          value={formData.usuario}
+                          onChange={handleChange}
+                          className="p-2 rounded border w-full text-black"
+                        />
+                      </div>
+                      <div>
+                        <label className="block">Otro</label>
+                        <input
+                          type="text"
+                          name="otro"
+                          value={formData.otro}
+                          onChange={handleChange}
+                          className="p-2 rounded border w-full text-black"
+                        />
+                      </div>
+                      <div>
+                        <label className="block">Tel / Movil</label>
+                        <input
+                          type="text"
+                          name="telmovil"
+                          value={formData.telmovil}
+                          onChange={handleChange}
+                          className="p-2 rounded border w-full text-black"
+                        />
+                      </div>
+                      <div>
+                        <label className="block">Correo Contacto</label>
+                        <input
+                          type="text"
+                          name="correoContacto"
+                          value={formData.correoContacto}
+                          onChange={handleChange}
+                          className="p-2 rounded border w-full text-black"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="container mx-auto p-6">
+                    {/* Referencias Comerciales */}
+                    <div className="mb-8">
+                      <h2 className="text-lg font-semibold mb-4">Referencias Comerciales</h2>
+                      {formData.referenciasComerciales.map((reference, index) => (
+                        <div key={index} className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                          <div>
+                            <label className="block">Nombre de la Empresa ({index + 1})</label>
+                            <input
+                              type="text"
+                              name="nombreempresa"
+                              value={reference.nombreempresa}
+                              onChange={(e) => handleChangeReference(index, e)}
+                              className="p-2 rounded border w-full text-black"
+                            />
+                          </div>
+                          <div>
+                            <label className="block">Contacto ({index + 1})</label>
+                            <input
+                              type="text"
+                              name="contacto"
+                              value={reference.contacto}
+                              onChange={(e) => handleChangeReference(index, e)}
+                              className="p-2 rounded border w-full text-black"
+                            />
+                          </div>
+                          <div>
+                            <label className="block">Domicilio ({index + 1})</label>
+                            <input
+                              type="text"
+                              name="domicilio"
+                              value={reference.domicilio}
+                              onChange={(e) => handleChangeReference(index, e)}
+                              className="p-2 rounded border w-full text-black"
+                            />
+                          </div>
+                          <div>
+                            <label className="block">Teléfono ({index + 1})</label>
+                            <input
+                              type="text"
+                              name="telefono"
+                              value={reference.telefono}
+                              onChange={(e) => handleChangeReference(index, e)}
+                              className="p-2 rounded border w-full text-black"
+                            />
+                          </div>
+                          <div>
+                            <label className="block">Monto de Crédito ({index + 1})</label>
+                            <input
+                              type="text"
+                              name="montocredito"
+                              value={reference.montocredito}
+                              onChange={(e) => handleChangeReference(index, e)}
+                              className="p-2 rounded border w-full text-black"
+                            />
+                          </div>
+                          <div>
+                            <label className="block">Antigüedad ({index + 1})</label>
+                            <input
+                              type="text"
+                              name="antiguedad"
+                              value={reference.antiguedad}
+                              onChange={(e) => handleChangeReference(index, e)}
+                              className="p-2 rounded border w-full text-black"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                      {/* Referencias Bancarias */}
+                        <div className="mb-8">
+                          <h2 className="text-lg font-semibold mb-4">Referencias Bancarias</h2>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                              <label className="block">Banco</label>
+                              <input
+                                type="text"
+                                name="banco"
+                                value={formData.banco}
+                                onChange={handleChange}
+                                className="p-2 rounded border w-full text-black"
+                              />
+                            </div>
+                            <div>
+                              <label className="block">Número de Cuenta</label>
+                              <input
+                                type="text"
+                                name="numeroCuenta"
+                                value={formData.numeroCuenta}
+                                onChange={handleChange}
+                                className="p-2 rounded border w-full text-black"
+                              />
+                            </div>
+                            <div>
+                              <label className="block">Sucursal</label>
+                              <input
+                                type="text"
+                                name="sucursal"
+                                value={formData.sucursal}
+                                onChange={handleChange}
+                                className="p-2 rounded border w-full text-black"
+                              />
+                            </div>
+                            <div>
+                              <label className="block">Domicilio del Banco</label>
+                              <input
+                                type="text"
+                                name="domicilioBanco"
+                                value={formData.domicilioBanco}
+                                onChange={handleChange}
+                                className="p-2 rounded border w-full text-black"
+                              />
+                            </div>
+                            <div>
+                              <label className="block">Teléfono del Banco</label>
+                              <input
+                                type="text"
+                                name="telefonoBanco"
+                                value={formData.telefonoBanco}
+                                onChange={handleChange}
+                                className="p-2 rounded border w-full text-black"
+                              />
+                            </div>
+                            <div>
+                              <label className="block">Nombre del Gerente</label>
+                              <input
+                                type="text"
+                                name="nombreGerente"
+                                value={formData.nombreGerente}
+                                onChange={handleChange}
+                                className="p-2 rounded border w-full text-black"
+                              />
+                            </div>
+                            <div>
+                              <label className="block">Cuenta Operativa Desde</label>
+                              <input
+                                type="text"
+                                name="cuentaDesde"
+                                value={formData.cuentaDesde}
+                                onChange={handleChange}
+                                className="p-2 rounded border w-full text-black"
+                              />
+                            </div>
+                            <div>
+                              <label className="block">Saldo Promedio</label>
+                              <input
+                                type="text"
+                                name="saldoPromedio"
+                                value={formData.saldoPromedio}
+                                onChange={handleChange}
+                                className="p-2 rounded border w-full text-black"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Personal autorizado */}
+                          <div className="mb-8">
+                            <h2 className="text-lg font-semibold mb-4">Personal Autorizado</h2>
+                            {formData.personalAutorizado.map((persona, index) => (
+                              <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
+                                <div>
+                                  <label className="block">Nombre {index + 1}</label>
+                                  <input
+                                    type="text"
+                                    name={`nombre${index}`}
+                                    value={persona.nombre}
+                                    onChange={(e) => handlePersonalAutorizadoChange(index, 'nombre', e.target.value)}
+                                    className="p-2 rounded border w-full"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block">No. INE o Pasaporte {index + 1}</label>
+                                  <input
+                                    type="text"
+                                    name={`ine${index}`}
+                                    value={persona.ine}
+                                    onChange={(e) => handlePersonalAutorizadoChange(index, 'ine', e.target.value)}
+                                    className="p-2 rounded border w-full"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block">Firma {index + 1}</label>
+                                  <input
+                                    type="text"
+                                    name={`firma${index}`}
+                                    value={persona.firma}
+                                    onChange={(e) => handlePersonalAutorizadoChange(index, 'firma', e.target.value)}
+                                    className="p-2 rounded border w-full"
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          {/* Datos del aval */}
+                            <div className="mb-8">
+                              <h2 className="text-lg font-semibold mb-4">Datos del Aval</h2>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                  <label className="block">Nombre del Aval</label>
+                                  <input
+                                    type="text"
+                                    name="aval.nombre"
+                                    value={formData.aval.nombre}
+                                    onChange={handleChange}
+                                    className="p-2 rounded border w-full mb-2"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block">Dirección</label>
+                                  <input
+                                    type="text"
+                                    name="aval.direccion"
+                                    value={formData.aval.direccion}
+                                    onChange={handleChange}
+                                    className="p-2 rounded border w-full mb-2"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block">Colonia</label>
+                                  <input
+                                    type="text"
+                                    name="aval.colonia"
+                                    value={formData.aval.colonia}
+                                    onChange={handleChange}
+                                    className="p-2 rounded border w-full mb-2"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block">Entre Calles</label>
+                                  <input
+                                    type="text"
+                                    name="aval.entreCalles"
+                                    value={formData.aval.entreCalles}
+                                    onChange={handleChange}
+                                    className="p-2 rounded border w-full mb-2"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block">Teléfono</label>
+                                  <input
+                                    type="text"
+                                    name="aval.telefono"
+                                    value={formData.aval.telefono}
+                                    onChange={handleChange}
+                                    className="p-2 rounded border w-full mb-2"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block">Fax</label>
+                                  <input
+                                    type="text"
+                                    name="aval.fax"
+                                    value={formData.aval.fax}
+                                    onChange={handleChange}
+                                    className="p-2 rounded border w-full mb-2"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block">Correo Electrónico</label>
+                                  <input
+                                    type="text"
+                                    name="aval.correoElectronico"
+                                    value={formData.aval.correoElectronico}
+                                    onChange={handleChange}
+                                    className="p-2 rounded border w-full mb-2"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block">No. INE o Pasaporte</label>
+                                  <input
+                                    type="text"
+                                    name="aval.ine"
+                                    value={formData.aval.ine}
+                                    onChange={handleChange}
+                                    className="p-2 rounded border w-full mb-2"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block">Firma</label>
+                                  <input
+                                    type="text"
+                                    name="aval.firma"
+                                    value={formData.aval.firma}
+                                    onChange={handleChange}
+                                    className="p-2 rounded border w-full mb-2"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block">Código Postal (CP)</label>
+                                  <input
+                                    type="text"
+                                    name="aval.cp"
+                                    value={formData.aval.cp}
+                                    onChange={handleChange}
+                                    className="p-2 rounded border w-full mb-2"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+
+                              {/* Datos de Facturación */}
+                              <div className="mb-8">
+                                <h2 className="text-lg font-semibold mb-4">Datos de Facturación</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                  <div>
+                                    <label className="block">Método de Pago</label>
+                                    <input
+                                      type="text"
+                                      name="facturacion.metodoPago"
+                                      value={formData.facturacion.metodoPago}
+                                      onChange={handleChange}
+                                      className="p-2 rounded border w-full"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block">Uso de CFDI</label>
+                                    <input
+                                      type="text"
+                                      name="facturacion.usoCFDI"
+                                      value={formData.facturacion.usoCFDI}
+                                      onChange={handleChange}
+                                      className="p-2 rounded border w-full"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block">Institución</label>
+                                    <input
+                                      type="text"
+                                      name="facturacion.institucion"
+                                      value={formData.facturacion.institucion}
+                                      onChange={handleChange}
+                                      className="p-2 rounded border w-full"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block">Cuenta</label>
+                                    <input
+                                      type="text"
+                                      name="facturacion.cuenta"
+                                      value={formData.facturacion.cuenta}
+                                      onChange={handleChange}
+                                      className="p-2 rounded border w-full"
+                                    />
+                                  </div>
+                                  <div className="col-span-2">
+                                    <label className="block">Domicilio, Día y Horario de Revisión de Factura</label>
+                                    <input
+                                      type="text"
+                                      name="facturacion.domicilioRevision"
+                                      value={formData.facturacion.domicilioRevision}
+                                      onChange={handleChange}
+                                      className="p-2 rounded border w-full"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block">Día de Pago</label>
+                                    <input
+                                      type="text"
+                                      name="facturacion.diaPago"
+                                      value={formData.facturacion.diaPago}
+                                      onChange={handleChange}
+                                      className="p-2 rounded border w-full"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                                {/* Sección de Crédito Solicitado */}
+                              <div className="mb-8">
+                                <h2 className="text-lg font-semibold mb-4">Crédito Solicitado</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                  <div>
+                                    <label className="block">Volumen Estimado de Compra Mensual</label>
+                                    <input
+                                      type="text"
+                                      name="creditoSolicitado.volumenEstimado"
+                                      value={formData.creditoSolicitado.volumenEstimado}
+                                      onChange={handleChange}
+                                      className="p-2 rounded border w-full"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block">Se Solicita un Crédito de</label>
+                                    <input
+                                      type="text"
+                                      name="creditoSolicitado.solicitaCredito"
+                                      value={formData.creditoSolicitado.solicitaCredito}
+                                      onChange={handleChange}
+                                      className="p-2 rounded border w-full"
+                                    />
+                                  </div>
+                                  <div className="col-span-2">
+                                    <label className="block">Condiciones de Crédito</label>
+                                    <textarea
+                                      name="creditoSolicitado.condicionesCredito"
+                                      value={formData.creditoSolicitado.condicionesCredito}
+                                      onChange={handleChange}
+                                      className="p-2 rounded border w-full"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block">Nombre y Firma del Asesor</label>
+                                    <input
+                                      type="text"
+                                      name="creditoSolicitado.nombreFirmaAsesor"
+                                      value={formData.creditoSolicitado.nombreFirmaAsesor}
+                                      onChange={handleChange}
+                                      className="p-2 rounded border w-full"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block">Nombre y Firma Crédito y Cobranza</label>
+                                    <input
+                                      type="text"
+                                      name="creditoSolicitado.nombreFirmaCobranza"
+                                      value={formData.creditoSolicitado.nombreFirmaCobranza}
+                                      onChange={handleChange}
+                                      className="p-2 rounded border w-full"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block">Nombre y Firma Dpto. Comercial</label>
+                                    <input
+                                      type="text"
+                                      name="creditoSolicitado.nombreFirmaComercial"
+                                      value={formData.creditoSolicitado.nombreFirmaComercial}
+                                      onChange={handleChange}
+                                      className="p-2 rounded border w-full"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Sección de Uso Exclusivo */}
+                            <div className="mb-8">
+                              <h2 className="text-lg font-semibold mb-4">Para Uso Exclusivo de Materiales Reutilizables S.A. de C.V.</h2>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                  <label className="block">Fecha Otorgada</label>
+                                  <input
+                                    type="date"
+                                    name="documentos.fechaOtorgada"
+                                    value={formData.documentos.fechaOtorgada}
+                                    onChange={handleChange}
+                                    className="p-2 rounded border w-full"
+                                  />
+                                </div>
+                                <div className="grid grid-cols-2">
+                                  <div className="flex items-center">
+                                    <input
+                                      type="checkbox"
+                                      name="documentos.creditoAprobado"
+                                      checked={formData.documentos.creditoAprobado}
+                                      onChange={handleChange}
+                                      className="mr-2"
+                                    />
+                                    <label>Crédito Aprobado</label>
+                                  </div>
+                                  <div>
+                                    <label className="block">Por la Cantidad de:</label>
+                                    <input
+                                      type="text"
+                                      name="documentos.cantidadCredito"
+                                      value={formData.documentos.cantidadCredito}
+                                      onChange={handleChange}
+                                      className="p-2 rounded border w-full"
+                                    />
+                                  </div>
+                                </div>
+                                <div className="flex items-center">
+                                  <input
+                                    type="checkbox"
+                                    name="documentos.creditoRechazado"
+                                    checked={formData.documentos.creditoRechazado}
+                                    onChange={handleChange}
+                                    className="mr-2"
+                                  />
+                                  <label>Crédito Rechazado</label>
+                                </div>
+                              </div>
+                              <div className="mt-4">
+                                <label className="block">Recomendaciones</label>
+                                <textarea
+                                  name="documentos.recomendaciones"
+                                  value={formData.documentos.recomendaciones}
+                                  onChange={handleChange}
+                                  className="p-2 rounded border w-full"
+                                />
+                              </div>
+                              <div className="mt-4">
+                                <label className="block">Observaciones</label>
+                                <textarea
+                                  name="documentos.observaciones"
+                                  value={formData.documentos.observaciones}
+                                  onChange={handleChange}
+                                  className="p-2 rounded border w-full"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="mb-8">
+                            <h2 className="text-lg font-semibold mb-4">Pagaré</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <div>
+                                <label className="block">No. de Pagaré</label>
+                                <input
+                                  type="text"
+                                  name="pagare.no"
+                                  value={formData.pagare.no}
+                                  onChange={handleChange}
+                                  className="p-2 rounded border w-full"
+                                />
+                              </div>
+                              <div>
+                                <label className="block">Bueno por $</label>
+                                <input
+                                  type="text"
+                                  name="pagare.buenoPor"
+                                  value={formData.pagare.buenoPor}
+                                  onChange={handleChange}
+                                  className="p-2 rounded border w-full"
+                                />
+                              </div>
+                              <div>
+                                <label className="block">Lugar</label>
+                                <input
+                                  type="text"
+                                  name="pagare.lugar"
+                                  value={formData.pagare.lugar}
+                                  onChange={handleChange}
+                                  className="p-2 rounded border w-full"
+                                />
+                              </div>
+                              <div>
+                                <label className="block">Día</label>
+                                <input
+                                  type="text"
+                                  name="pagare.dia"
+                                  value={formData.pagare.dia}
+                                  onChange={handleChange}
+                                  className="p-2 rounded border w-full"
+                                />
+                              </div>
+                              <div>
+                                <label className="block">Mes</label>
+                                <input
+                                  type="text"
+                                  name="pagare.mes"
+                                  value={formData.pagare.mes}
+                                  onChange={handleChange}
+                                  className="p-2 rounded border w-full"
+                                />
+                              </div>
+                              <div>
+                                <label className="block">Año</label>
+                                <input
+                                  type="text"
+                                  name="pagare.anio"
+                                  value={formData.pagare.anio}
+                                  onChange={handleChange}
+                                  className="p-2 rounded border w-full"
+                                />
+                              </div>
+                              <div>
+                                <label className="block">Beneficiario</label>
+                                <input
+                                  type="text"
+                                  name="pagare.beneficiario"
+                                  value={formData.pagare.beneficiario}
+                                  onChange={handleChange}
+                                  className="p-2 rounded border w-full"
+                                />
+                              </div>
+                              <div>
+                                <label className="block">Lugar de Pago</label>
+                                <input
+                                  type="text"
+                                  name="pagare.lugarPago"
+                                  value={formData.pagare.lugarPago}
+                                  onChange={handleChange}
+                                  className="p-2 rounded border w-full"
+                                />
+                              </div>
+                              <div>
+                                <label className="block">Fecha de Pago</label>
+                                <input
+                                  type="text"
+                                  name="pagare.fechaPago"
+                                  value={formData.pagare.fechaPago}
+                                  onChange={handleChange}
+                                  className="p-2 rounded border w-full"
+                                />
+                              </div>
+                              <div>
+                                <label className="block">Cantidad de Pago</label>
+                                <input
+                                  type="text"
+                                  name="pagare.cantidadPago"
+                                  value={formData.pagare.cantidadPago}
+                                  onChange={handleChange}
+                                  className="p-2 rounded border w-full"
+                                />
+                              </div>
+                              <div>
+                                <label className="block">Moneda</label>
+                                <input
+                                  type="text"
+                                  name="pagare.moneda"
+                                  value={formData.pagare.moneda}
+                                  onChange={handleChange}
+                                  className="p-2 rounded border w-full"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Datos del Deudor */}
+                            <h3 className="text-lg font-semibold mt-6">Datos del Deudor</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <div>
+                                <label className="block">Nombre del Deudor</label>
+                                <input
+                                  type="text"
+                                  name="pagare.nombreDeudor"
+                                  value={formData.pagare.nombreDeudor}
+                                  onChange={handleChange}
+                                  className="p-2 rounded border w-full"
+                                />
+                              </div>
+                              <div>
+                                <label className="block">N° Documento del Deudor</label>
+                                <input
+                                  type="text"
+                                  name="pagare.documentoDeudor"
+                                  value={formData.pagare.documentoDeudor}
+                                  onChange={handleChange}
+                                  className="p-2 rounded border w-full"
+                                />
+                              </div>
+                              <div>
+                                <label className="block">Dirección del Deudor</label>
+                                <input
+                                  type="text"
+                                  name="pagare.direccionDeudor"
+                                  value={formData.pagare.direccionDeudor}
+                                  onChange={handleChange}
+                                  className="p-2 rounded border w-full"
+                                />
+                              </div>
+                              <div>
+                                <label className="block">Teléfono del Deudor</label>
+                                <input
+                                  type="text"
+                                  name="pagare.telefonoDeudor"
+                                  value={formData.pagare.telefonoDeudor}
+                                  onChange={handleChange}
+                                  className="p-2 rounded border w-full"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Firma del Representante Legal */}
+                            <div className="mt-4">
+                              <label className="block">Firma del Representante Legal</label>
+                              <input
+                                type="text"
+                                name="pagare.firmaRepresentante"
+                                value={formData.pagare.firmaRepresentante}
+                                onChange={handleChange}
+                                className="p-2 rounded border w-full"
+                              />
+                            </div>
+                          </div>
 
 
 
 
 
-        <div className="col-span-3">
-          <label className="block">Nombre del Aval</label>
-          <input
-            type="text"
-            name="aval.nombre"
-            value={formData.aval.nombre}
-            onChange={handleChange}
-            className="p-2 rounded border mb-2"
-          />
-          <label className="block">Dirección</label>
-          <input
-            type="text"
-            name="aval.direccion"
-            value={formData.aval.direccion}
-            onChange={handleChange}
-            className="p-2 rounded border mb-2"
-          />
-          <label className="block">Colonia</label>
-          <input
-            type="text"
-            name="aval.colonia"
-            value={formData.aval.colonia}
-            onChange={handleChange}
-            className="p-2 rounded border mb-2"
-          />
-          <label className="block">Entre Calles</label>
-          <input
-            type="text"
-            name="aval.entreCalles"
-            value={formData.aval.entreCalles}
-            onChange={handleChange}
-            className="p-2 rounded border mb-2"
-          />
-          <label className="block">Teléfono</label>
-          <input
-            type="text"
-            name="aval.telefono"
-            value={formData.aval.telefono}
-            onChange={handleChange}
-            className="p-2 rounded border mb-2"
-          />
-          <label className="block">Fax</label>
-          <input
-            type="text"
-            name="aval.fax"
-            value={formData.aval.fax}
-            onChange={handleChange}
-            className="p-2 rounded border mb-2"
-          />
-          <label className="block">Correo Electrónico</label>
-          <input
-            type="text"
-            name="aval.correoElectronico"
-            value={formData.aval.correoElectronico}
-            onChange={handleChange}
-            className="p-2 rounded border mb-2"
-          />
-          <label className="block">No. INE o Pasaporte</label>
-          <input
-            type="text"
-            name="aval.ine"
-            value={formData.aval.ine}
-            onChange={handleChange}
-            className="p-2 rounded border mb-2"
-          />
-          <label className="block">Firma</label>
-          <input
-            type="text"
-            name="aval.firma"
-            value={formData.aval.firma}
-            onChange={handleChange}
-            className="p-2 rounded border mb-2"
-          />
-          <label className="block">Código Postal (CP)</label>
-          <input
-            type="text"
-            name="aval.cp"
-            value={formData.aval.cp}
-            onChange={handleChange}
-            className="p-2 rounded border mb-2"
-          />
-        </div>
 
-       {/* Datos de Facturación */}
-       <div>
-          <label className="block">Método de Pago</label>
-          <input
-            type="text"
-            name="facturacion.metodoPago"
-            value={formData.facturacion.metodoPago}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Uso de CFDI</label>
-          <input
-            type="text"
-            name="facturacion.usoCFDI"
-            value={formData.facturacion.usoCFDI}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Institución</label>
-          <input
-            type="text"
-            name="facturacion.institucion"
-            value={formData.facturacion.institucion}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Cuenta</label>
-          <input
-            type="text"
-            name="facturacion.cuenta"
-            value={formData.facturacion.cuenta}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Domicilio, Día y Horario de Revisión de Factura</label>
-          <input
-            type="text"
-            name="facturacion.domicilioRevision"
-            value={formData.facturacion.domicilioRevision}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Día de Pago</label>
-          <input
-            type="text"
-            name="facturacion.diaPago"
-            value={formData.facturacion.diaPago}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
 
-         {/* Sección de Crédito Solicitado */}
-         <div>
-          <label className="block">Volumen Estimado de Compra Mensual</label>
-          <input
-            type="text"
-            name="creditoSolicitado.volumenEstimado"
-            value={formData.creditoSolicitado.volumenEstimado}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Se Solicita un Crédito de</label>
-          <input
-            type="text"
-            name="creditoSolicitado.solicitaCredito"
-            value={formData.creditoSolicitado.solicitaCredito}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div className="col-span-3">
-          <label className="block">Condiciones de Crédito</label>
-          <textarea
-            name="creditoSolicitado.condicionesCredito"
-            value={formData.creditoSolicitado.condicionesCredito}
-            onChange={handleChange}
-            className="p-2 rounded border w-full"
-          />
-        </div>
-        <div>
-          <label className="block">Nombre y Firma del Asesor</label>
-          <input
-            type="text"
-            name="creditoSolicitado.nombreFirmaAsesor"
-            value={formData.creditoSolicitado.nombreFirmaAsesor}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Nombre y Firma Crédito y Cobranza</label>
-          <input
-            type="text"
-            name="creditoSolicitado.nombreFirmaCobranza"
-            value={formData.creditoSolicitado.nombreFirmaCobranza}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
-        <div>
-          <label className="block">Nombre y Firma Dpto. Comercial</label>
-          <input
-            type="text"
-            name="creditoSolicitado.nombreFirmaComercial"
-            value={formData.creditoSolicitado.nombreFirmaComercial}
-            onChange={handleChange}
-            className="p-2 rounded border"
-          />
-        </div>
 
-        {/* Botón para exportar a PDF */}
-        <button
-          type="button"
-          className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
-          onClick={exportToPDF}
-        >
-          Exportar a PDF
-        </button>
-      </form>
-    </div>
-  );
-};
+                  </div>
+            </div>
 
-export default CreditRequestForm;
+      
+          {/* Botón para enviar o generar PDF */}
+          <button
+            type="button"
+            className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 w-full text-black"
+            onClick={exportToPDF}
+          >
+            Exportar a PDF
+          </button>
+        </form>
+      </div>
+      
+
+      );
+    };
+    
+    export default CreditRequestForm;
+    

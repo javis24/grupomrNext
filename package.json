@@ -11,6 +11,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@material-tailwind/html": "^2.3.2",
+    "@material-tailwind/react": "^2.1.10",
     "axios": "^1.7.5",
     "bcryptjs": "^2.4.3",
     "chart.js": "^4.4.4",
