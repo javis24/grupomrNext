@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   if (req.method === 'PUT') {
     authenticateToken(req, res, async () => {
       const { role: userRole, id: userId } = req.user;
-      const { programacion, equipo, numeroEconomico, contenido, manifiesto, renta2024, recoleccion, disposicion, contacto, telefono, email, ubicacion, rfc } = req.body;
+      const { contactName, programacion, equipo, numeroEconomico, contenido, manifiesto, renta2024, recoleccion, disposicion, contacto, telefono, email, ubicacion, rfc } = req.body;
 
       try {
         const service = await Servicios.findByPk(id);
@@ -21,6 +21,7 @@ export default async function handler(req, res) {
         }
 
         // Actualizar servicio
+        service.contactName = contactName || service.contactName;
         service.programacion = programacion || service.programacion;
         service.equipo = equipo || service.equipo;
         service.numeroEconomico = numeroEconomico || service.numeroEconomico;

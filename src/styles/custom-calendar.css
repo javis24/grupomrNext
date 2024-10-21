@@ -1,7 +1,7 @@
 /* src/styles/custom-calendar.css */
 .react-calendar__tile {
     color: #000 !important; /* Texto negro por defecto */
-    background-color: white; /* Fondo blanco por defecto */
+    background-color: #000; /* Fondo blanco por defecto */
   }
   
   .react-calendar__tile--now {

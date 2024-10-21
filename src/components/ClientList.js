@@ -310,13 +310,13 @@ const exportAllClientsToPDF = () => {
   return (
     <div className="p-1 bg-[#0e1624] text-white min-h-screen">
       <div className="flex justify-between items-center mb-2">
-        <h1 className="text-3xl font-bold">Clients</h1>
+        <h1 className="text-3xl font-bold">Clientes</h1>
         <div className="flex">
           <button onClick={() => openModal()} className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 mr-2">
             Añadir 
           </button>
           <button onClick={exportAllClientsToPDF} className="bg-red-500 text-white p-2 rounded hover:bg-red-600">
-            Export All to PDF
+            Descargar todo a PDF
           </button>
         </div>
       </div>
@@ -327,15 +327,15 @@ const exportAllClientsToPDF = () => {
           onChange={(e) => setFilterField(e.target.value)}
           className="p-2 rounded bg-[#1f2937] text-white mr-4"
         >
-          <option value="address">Address</option>
-          <option value="contactName">Contact Name</option>
-          <option value="contactPhone">Contact Phone</option>
+          <option value="address">Dirección</option>
+          <option value="contactName">Nombre del Cliente</option>
+          <option value="contactPhone">Teléfono del Cliente</option>
           <option value="email">Email</option>
         </select>
 
         <input
           type="text"
-          placeholder={`Search by ${filterField}`}
+          placeholder={`Buscar por ${filterField}`}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full p-2 rounded bg-[#1f2937] text-white"
@@ -346,7 +346,7 @@ const exportAllClientsToPDF = () => {
 
       {/* Mostrar mensaje si no hay clientes */}
       {clients.length === 0 ? (
-        <p className="text-center">No clients found. Please add new clients.</p>
+        <p className="text-center">No se encontraron clientes. Por favor, agregue nuevos clientes.</p>
       ) : (
         <div className="">
       <table className="min-w-full table-auto bg-[#1f2937] text-left rounded-lg">
@@ -363,13 +363,13 @@ const exportAllClientsToPDF = () => {
                   <td className="px-4 py-2">{client.fullName}</td>
                   <td className="px-4 py-2">{client.companyName}</td>
                   <td className="px-4 py-2">
-                    <button onClick={() => openModal(client)} className="bg-green-500 text-white p-2 rounded hover:bg-green-600 mr-2">View</button>
-                    <button onClick={() => exportClientToPDF(client)} className="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600 mr-2">Export to PDF</button>
+                    <button onClick={() => openModal(client)} className="bg-green-500 text-white p-2 rounded hover:bg-green-600 mr-2">Ver Cliente</button>
+                    <button onClick={() => exportClientToPDF(client)} className="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600 mr-2">Exportar a PDF</button>
                     <button
                       onClick={() => handleDelete(client.id)}
                       className="bg-red-500 text-white p-2 rounded hover:bg-red-600"
                     >
-                      Delete
+                      Eliminar Cliente
                     </button>
                   </td>
                 </tr>
@@ -384,7 +384,7 @@ const exportAllClientsToPDF = () => {
           style={customStyles}
           contentLabel="Add/Edit Client"
         >
-          <h2 className="text-2xl font-bold mb-4">{selectedClient ? 'Edit Client' : 'Add New Client'}</h2>
+          <h2 className="text-2xl font-bold mb-4 text-white">{selectedClient ? 'Editar Cliente' : 'Añadir Cliente'}</h2>
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-3 md:grid-cols-2 lg:grid-cols-3 gap-2">
               {/* Primera columna de inputs */}
@@ -400,7 +400,7 @@ const exportAllClientsToPDF = () => {
               </div>
 
               <div className="mb-4">
-                <label className="block text-white mb-2">Company Name</label>
+                <label className="block text-white mb-2">Nombre de Empresa</label>
                 <input
                   type="text"
                   value={newClient.companyName}
@@ -411,7 +411,7 @@ const exportAllClientsToPDF = () => {
               </div>
 
               <div className="mb-4">
-                <label className="block text-white mb-2">Business Turn</label>
+                <label className="block text-white mb-2">Giro de Negocios</label>
                 <input
                   type="text"
                   value={newClient.businessTurn}
@@ -423,7 +423,7 @@ const exportAllClientsToPDF = () => {
 
               {/* Segunda columna de inputs */}
               <div className="mb-4">
-                <label className="block text-white mb-2">Address</label>
+                <label className="block text-white mb-2">Dirección</label>
                 <input
                   type="text"
                   value={newClient.address}
@@ -434,7 +434,7 @@ const exportAllClientsToPDF = () => {
               </div>
 
               <div className="mb-4">
-                <label className="block text-white mb-2">Contact Name</label>
+                <label className="block text-white mb-2">Nombre de contacto</label>
                 <input
                   type="text"
                   value={newClient.contactName}
@@ -444,7 +444,7 @@ const exportAllClientsToPDF = () => {
               </div>
 
               <div className="mb-4">
-                <label className="block text-white mb-2">Contact Phone</label>
+                <label className="block text-white mb-2">Teléfono de contacto</label>
                 <input
                   type="text"
                   value={newClient.contactPhone}
@@ -465,7 +465,7 @@ const exportAllClientsToPDF = () => {
               </div>
 
               <div className="mb-4">
-                <label className="block text-white mb-2">Position</label>
+                <label className="block text-white mb-2">Posición</label>
                 <input
                   type="text"
                   value={newClient.position}
@@ -476,7 +476,7 @@ const exportAllClientsToPDF = () => {
             </div>
 
             <button type="submit" className="bg-blue-500 text-white p-2 rounded mt-4">
-              {selectedClient ? 'Save Changes' : 'Add Client'}
+              {selectedClient ? 'Guardar Cliente' : 'Añadir Cliente'}
             </button>
           </form>
         </Modal>

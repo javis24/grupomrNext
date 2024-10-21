@@ -21,7 +21,7 @@ const CreateQuote = () => {
 
   // Estado para manejar filas dinámicas en la tabla de servicios
   const [serviceRows, setServiceRows] = useState([
-    { description: '', um: 'Pieza', pu: '', comments: '' }
+    { description: '', um: '', pu: '', comments: '' }
   ]);
 
   useEffect(() => {
@@ -272,7 +272,7 @@ const CreateQuote = () => {
         </div>
 
         <div>
-          <label className="block mb-2">Supervisor</label>
+          <label className="block mb-2">Asesor Comercial</label>
           <input
             type="text"
             name="supervisor"
@@ -282,20 +282,11 @@ const CreateQuote = () => {
           />
         </div>
 
-        <div>
-          <label className="block mb-2">Asignado</label>
-          <input
-            type="text"
-            name="assigned"
-            value={clientData.assigned}
-            onChange={handleClientInputChange}
-            className="p-2 rounded bg-[#374151] text-white w-full"
-          />
-        </div>
+       
       </div>
 
       {/* Formulario dinámico para agregar servicios */}
-      <h3 className="text-xl font-semibold mb-4">Servicios</h3>
+      <h3 className="text-xl font-semibold mb-4">Servicios/Productos</h3>
       {serviceRows.map((row, index) => (
         <div key={index} className="grid grid-cols-4 gap-4 mb-2">
           <input
@@ -325,12 +316,38 @@ const CreateQuote = () => {
           <input
             type="text"
             name="comments"
+            placeholder="Cantidad"
+            value={row.comments}
+            onChange={(e) => handleRowChange(index, e)}
+            className="p-2 rounded bg-[#374151] text-white w-full"
+          />
+          <input
+            type="text"
+            name="comments"
+            placeholder="Sub Total"
+            value={row.comments}
+            onChange={(e) => handleRowChange(index, e)}
+            className="p-2 rounded bg-[#374151] text-white w-full"
+          />
+           <input
+            type="text"
+            name="comments"
             placeholder="Comentarios"
             value={row.comments}
             onChange={(e) => handleRowChange(index, e)}
             className="p-2 rounded bg-[#374151] text-white w-full"
           />
+           <input
+            type="text"
+            name="comments"
+            placeholder="Observaciones"
+            value={row.comments}
+            onChange={(e) => handleRowChange(index, e)}
+            className="p-2 rounded bg-[#374151] text-white w-full"
+          />
+          
         </div>
+        
       ))}
 
       {/* Botón para agregar una nueva fila */}

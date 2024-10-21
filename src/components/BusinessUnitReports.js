@@ -10,6 +10,7 @@ const units = [
   { name: 'Sano' },
   { name: 'Composta' },
   { name: 'Plástico' },
+  { name: 'Servicios' },
 ];
 
 export default function BusinessUnitReports() {

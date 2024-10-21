@@ -147,9 +147,9 @@ export default function UserList() {
   return (
     <div className="p-1 bg-[#0e1624] min-h-screen">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-3xl font-bold">Users</h1>
+        <h1 className="text-3xl font-bold">Usuarios Activos</h1>
         <button onClick={() => openModal()} className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
-          Add New
+          Añadir Usuario
         </button>
       </div>
 
@@ -169,7 +169,7 @@ export default function UserList() {
         <thead>
           <tr>
             <th className="px-4 py-2">Name</th>
-            <th className="px-4 py-2">Role</th>
+            <th className="px-4 py-2">Email</th>
             <th className="px-4 py-2">Action</th>
           </tr>
         </thead>
@@ -179,7 +179,7 @@ export default function UserList() {
               <td className="px-4 py-2 flex items-center">
                 {user.name}
               </td>
-              <td className="px-4 py-2">{user.role}</td>
+              <td className="px-4 py-2">{user.email}</td>
               <td className="px-4 py-2">
                 <button onClick={() => openModal(user)} className="bg-green-500 text-white p-2 rounded hover:bg-green-600 mr-2">Edit</button>
                 <button

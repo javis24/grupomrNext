@@ -5,6 +5,10 @@ import Users from './UserModel.js';
 const { DataTypes } = Sequelize;
 
 const Servicios = db.define('servicios', {
+    contactName: { 
+        type: DataTypes.STRING,
+        allowNull: false
+    },
     programacion: {
         type: DataTypes.STRING,
         allowNull: false

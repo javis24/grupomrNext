@@ -25,6 +25,7 @@ export default function ServiceList() {
   const [search, setSearch] = useState('');
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
+  const [contactName, setContactName] = useState('');
   const [programacion, setProgramacion] = useState('');
   const [equipo, setEquipo] = useState('');
   const [numeroEconomico, setNumeroEconomico] = useState('');
@@ -90,6 +91,7 @@ export default function ServiceList() {
       }
       
       await axios.put(`/api/servicios/${selectedService.id}`, {
+        contactName,
         programacion,
         equipo,
         numeroEconomico,
@@ -109,7 +111,7 @@ export default function ServiceList() {
 
       const updatedServices = services.map(service => 
         service.id === selectedService.id 
-          ? { ...service, programacion, equipo, numeroEconomico, contenido, manifiesto, renta2024, recoleccion, disposicion, contacto, telefono, email, ubicacion, rfc } 
+          ? { ...service, contactName, programacion, equipo, numeroEconomico, contenido, manifiesto, renta2024, recoleccion, disposicion, contacto, telefono, email, ubicacion, rfc } 
           : service
       );
       setServices(updatedServices);
@@ -125,6 +127,7 @@ export default function ServiceList() {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.post('/api/servicios/', {
+        contactName,
         programacion,
         equipo,
         numeroEconomico,
@@ -154,6 +157,7 @@ export default function ServiceList() {
   const openModal = (service = null) => {
     setSelectedService(service);
     if (service) {
+      setContactName(service.contactName);
       setProgramacion(service.programacion);
       setEquipo(service.equipo);
       setNumeroEconomico(service.numeroEconomico);
@@ -170,6 +174,7 @@ export default function ServiceList() {
       setUserId(service.userId);
     } else {
       // Limpiar campos si se crea un nuevo servicio
+      setContactName('');
       setProgramacion('');
       setEquipo('');
       setNumeroEconomico('');
@@ -219,6 +224,7 @@ export default function ServiceList() {
 
       // Información del servicio
       const serviceDetails = [
+        ["NOMBRE Del CONTACTO", service.contactName],
         ["PROGRAMACIÓN", service.programacion],
         ["EQUIPO", service.equipo],
         ["NÚMERO ECONÓMICO", service.numeroEconomico],
@@ -251,20 +257,81 @@ export default function ServiceList() {
     service.programacion?.toLowerCase().includes(search.toLowerCase())
   );
 
+  const exportAllServicesToPDF = () => {
+    const doc = new jsPDF();
+    const imgUrl = '/logo_mr.png';  // Ruta de tu logo
+  
+    let currentY = 10;  // Empezamos desde la parte superior del PDF
+  
+    const image = new Image();
+    image.src = imgUrl;
+  
+    image.onload = () => {
+      doc.addImage(image, 'PNG', 20, 10, 20, 20);
+      
+      doc.setFontSize(12);
+      doc.text("Materiales Reutilizables S.A. de C.V.", 105, currentY + 10, { align: 'center' });
+      doc.text("Benito Juarez 112 SUR, Col. 1ro de Mayo", 105, currentY + 17, { align: 'center' });
+      doc.text("Cd. Lerdo, Dgo. C.P. 35169", 105, currentY + 22, { align: 'center' });
+      doc.text("MRE040121UBA", 105, currentY + 27, { align: 'center' });
+  
+      services.forEach((service, index) => {
+        // Añadir encabezado para cada servicio
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        doc.text(`Servicio ${index + 1}`, 20, currentY + 40);
+  
+        const serviceDetails = [
+          ["NOMBRE Del CONTACTO", service.contactName],
+          ["PROGRAMACIÓN", service.programacion],
+          ["EQUIPO", service.equipo],
+          ["NÚMERO ECONÓMICO", service.numeroEconomico],
+          ["CONTENIDO", service.contenido],
+          ["MANIFIESTO", service.manifiesto],
+          ["RENTA 2024", `$ ${service.renta2024}`],
+          ["RECOLECCIÓN", `$ ${service.recoleccion}`],
+          ["DISPOSICIÓN", `$ ${service.disposicion}`],
+          ["UBICACIÓN", service.ubicacion],
+          ["CONTACTO", service.contacto],
+          ["TELÉFONO", service.telefono],
+        ];
+  
+        doc.autoTable({
+          body: serviceDetails,
+          startY: currentY + 45,  // Ajustar el inicio en Y para cada servicio
+          theme: 'plain',
+          styles: { cellPadding: 1, fontSize: 12, lineWidth: 0.1 },
+          columnStyles: {
+            0: { halign: 'left', textColor: [0, 0, 0], cellWidth: 60 },
+            1: { halign: 'left', textColor: [0, 0, 0], cellWidth: 100 },
+          },
+        });
+  
+        currentY = doc.lastAutoTable.finalY + 15; // Añadir más espacio entre servicios
+      });
+  
+      doc.save('todos_los_servicios.pdf');
+    };
+  };
+  
+
   return (
     <div className="p-4 bg-[#0e1624] text-white min-h-screen flex justify-center">
       <div className="max-w-7xl w-full">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-3xl font-bold">Servicios</h1>
           <button onClick={() => openModal()} className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
-            Add New
+            Agregar nuevo servicio
           </button>
+          <button onClick={exportAllServicesToPDF} className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
+              Exportar todos a PDF
+            </button>
         </div>
 
         <div className="relative mb-4">
           <input
             type="text"
-            placeholder="Search for a service"
+            placeholder="Buscar un servicio"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full p-2 rounded bg-[#1f2937] text-white"
@@ -277,23 +344,25 @@ export default function ServiceList() {
           <table className="w-full table-auto bg-[#1f2937] text-left rounded-lg">
             <thead>
               <tr>
-                <th className="px-4 py-2">Programación</th>
-                <th className="px-4 py-2">Equipo</th>
-                <th className="px-4 py-2">Número Equipo</th>
-                <th className="px-4 py-2">Contenido</th>
-                <th className="px-4 py-2">Manifiesto</th>
-                <th className="px-4 py-2">Renta</th>
-                <th className="px-4 py-2">Recolección</th>
-                <th className="px-4 py-2">Disposición</th>
-                <th className="px-4 py-2">Ubicación</th>
-                <th className="px-4 py-2">Contacto</th>
-                <th className="px-4 py-2">Teléfono</th>
-                <th className="px-4 py-2">Acciones</th>
+                <th className="px-2 py-2">Nombre</th>
+                <th className="px-2 py-2">Programación</th>
+                <th className="px-2 py-2">Equipo</th>
+                <th className="px-2 py-2">Número Equipo</th>
+                <th className="px-2 py-2">Contenido</th>
+                <th className="px-2 py-2">Manifiesto</th>
+                <th className="px-2 py-2">Renta</th>
+                <th className="px-2 py-2">Recolección</th>
+                <th className="px-2 py-2">Disposición</th>
+                <th className="px-2 py-2">Ubicación</th>
+                <th className="px-2 py-2">Contacto</th>
+                <th className="px-2 py-2">Teléfono</th>
+                <th className="px-2 py-2">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {filteredServices.map((service) => (
                 <tr key={service.id} className="hover:bg-[#374151]">
+                    <td className="px-4 py-2">{service.contactName}</td>
                   <td className="px-4 py-2">{service.programacion}</td>
                   <td className="px-4 py-2">{service.equipo}</td>
                   <td className="px-4 py-2">{service.numeroEconomico}</td>
@@ -306,12 +375,12 @@ export default function ServiceList() {
                   <td className="px-4 py-2">{service.contacto}</td>
                   <td className="px-4 py-2">{service.telefono}</td>
                   <td className="px-4 py-2">
-                    <button onClick={() => openModal(service)} className="bg-green-500 text-white p-2 rounded hover:bg-green-600 mr-2">View</button>
+                    <button onClick={() => openModal(service)} className="bg-green-500 text-white p-2 rounded hover:bg-green-600 mr-2">Ver..</button>
                     <button
                       onClick={() => handleDelete(service.id)}
                       className="bg-red-500 text-white p-2 rounded hover:bg-red-600"
                     >
-                      Delete
+                      Elim..
                     </button>
                   </td>
                 </tr>
@@ -330,6 +399,16 @@ export default function ServiceList() {
           <h2 className="text-2xl font-bold mb-4 text-white">{selectedService ? 'Edit Service' : 'Add New Service'}</h2>
           <form onSubmit={selectedService ? handleUpdate : handleCreate}>
             <div className="grid grid-cols-3 gap-4 mb-4">
+            <div>
+                <label className="block text-white">Nombre de Contacto</label>
+                <input
+                  type="text"
+                  value={contactName}
+                  onChange={(e) => setContactName(e.target.value)}
+                  className="w-full p-2 border rounded bg-[#374151] text-white"
+                  required
+                />
+              </div>
               <div>
                 <label className="block text-white">Programación</label>
                 <input
@@ -380,7 +459,7 @@ export default function ServiceList() {
                 />
               </div>
               <div>
-                <label className="block text-white">Renta 2024</label>
+                <label className="block text-white">Renta</label>
                 <input
                   type="number"
                   value={renta2024}
@@ -456,7 +535,7 @@ export default function ServiceList() {
               type="submit"
               className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
             >
-              {selectedService ? 'Update Service' : 'Create Service'}
+              {selectedService ? 'Actualizar Servicio' : 'Crear Servicio'}
             </button>
           </form>
 
@@ -466,11 +545,11 @@ export default function ServiceList() {
               onClick={() => exportServiceToPDF(selectedService)}
               className="mt-4 bg-green-500 text-white p-2 rounded hover:bg-green-600"
             >
-              Export to PDF
+              Exportar al PDF
             </button>
           )}
           <button onClick={closeModal} className="mt-4 bg-gray-500 text-white p-2 rounded hover:bg-gray-600">
-            Close
+            Cerrar
           </button>
         </Modal>
       </div>

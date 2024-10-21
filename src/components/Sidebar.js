@@ -41,11 +41,11 @@ export default function Sidebar() {
   }
 
  // Definir accesos basados en el correo electrónico
- const canViewReportesUnidadNegocio = ['direccion@grupomrlaguna.com', 'gustavosalgado@grupomrlaguna.com'].includes(userEmail);
+ const canViewReportesUnidadNegocio = [ ''].includes(userEmail);
  const canViewReportesMensuales = userEmail === 'direccion@grupomrlaguna.com';
- const canViewCotizaciones = ['mgaliano@grupomrlaguna.com', 'Hdelbosque@grupomrlaguna.com', 'gustavosalgado@grupomrlaguna.com'].includes(userEmail);
+ const canViewCotizaciones = ['mgaliano@grupomrlaguna.com', 'Hdelbosque@grupomrlaguna.com', 'luispatino@grupomrlaguna.com', 'gustavosalgado@grupomrlaguna.com'].includes(userEmail);
  const canViewServicios = ['direccion@grupomrlaguna.com', 'mgaliano@grupomrlaguna.com'].includes(userEmail);
- const canViewClientes = ['direccion@grupomrlaguna.com', 'mgaliano@grupomrlaguna.com', 'Hdelbosque@grupomrlaguna.com', 'gustavosalgado@grupomrlaguna.com'].includes(userEmail);
+ const canViewClientes = ['direccion@grupomrlaguna.com', 'mgaliano@grupomrlaguna.com', 'Hdelbosque@grupomrlaguna.com', 'luispatino@grupomrlaguna.com', 'gustavosalgado@grupomrlaguna.com'].includes(userEmail);
  const canViewCreditos = ['mgaliano@grupomrlaguna.com', 'Hdelbosque@grupomrlaguna.com', 'gustavosalgado@grupomrlaguna.com'].includes(userEmail);
  const canViewCalendario = ['mgaliano@grupomrlaguna.com', 'Hdelbosque@grupomrlaguna.com', 'gustavosalgado@grupomrlaguna.com', 'luispatino@grupomrlaguna.com'].includes(userEmail);
  const canViewChat = ['mgaliano@grupomrlaguna.com', 'Hdelbosque@grupomrlaguna.com', 'gustavosalgado@grupomrlaguna.com', 'luispatino@grupomrlaguna.com'].includes(userEmail);
@@ -80,7 +80,7 @@ export default function Sidebar() {
               </Link>
             </li>
           )}
-        {(canViewReportesUnidadNegocio || canViewReportesMensuales   || hasTotalAccess) && (
+        {(hasTotalAccess) && (
         <li className="mb-4">
               <Link href="/reportes-unidad-negocio" className="flex items-center p-2 rounded hover:bg-[#374151]">
                 {!isCollapsed && 'Unidad de Negocio'}
@@ -123,10 +123,24 @@ export default function Sidebar() {
               </Link>
             </li>
           )}
+          {(canViewCreditos || hasTotalAccess) && (
+            <li className="mb-4">
+              <Link href="/cotizacionsano" className="flex items-center p-2 rounded hover:bg-[#374151]">
+                {!isCollapsed && 'Créditos-sano'}
+              </Link>
+            </li>
+          )}
           {(canViewCotizaciones || hasTotalAccess) && (
             <li className="mb-4">
               <Link href="/cotizacion" className="flex items-center p-2 rounded hover:bg-[#374151]">
                 {!isCollapsed && 'Cotización'}
+              </Link>
+            </li>
+          )}
+            {(canViewCotizaciones || hasTotalAccess) && (
+            <li className="mb-4">
+              <Link href="/archivos" className="flex items-center p-2 rounded hover:bg-[#374151]">
+                {!isCollapsed && 'PDF'}
               </Link>
             </li>
           )}
