@@ -130,6 +130,7 @@ export default function Sidebar() {
               </Link>
             </li>
           )}
+          
           {(canViewCotizaciones || hasTotalAccess) && (
             <li className="mb-4">
               <Link href="/cotizacion" className="flex items-center p-2 rounded hover:bg-[#374151]">

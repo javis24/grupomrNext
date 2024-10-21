@@ -4,7 +4,6 @@ import jwt from 'jsonwebtoken';
 import { useEffect, useState } from 'react';
 import withAuth from '@/utils/withAuth';
 import axios from 'axios';
-import ClientList from '@/components/ClientList';
 
 function Dashboard() {
   const [userData, setUserData] = useState({});

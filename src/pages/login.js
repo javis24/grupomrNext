@@ -21,7 +21,7 @@ export default function Login() {
           console.log('Token stored in localStorage:', localStorage.getItem('token'));
       
           // Redirigir al dashboard
-          router.push('/dashboard');
+          router.push('/clientes');
         } catch (error) {
           setError('Failed to login. Please check your credentials.');
         }
