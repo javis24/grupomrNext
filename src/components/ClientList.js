@@ -37,6 +37,7 @@ export default function ClientList() {
     contactPhone: '',
     email: '',
     position: '',
+    planta: '',
   });
 
   useEffect(() => {
@@ -89,6 +90,7 @@ export default function ClientList() {
         contactPhone: '',
         email: '',
         position: '',
+        planta: '',
       });
     }
     setModalIsOpen(true);
@@ -168,6 +170,7 @@ const exportClientToPDF = (client) => {
       ["TELÉFONO DE CONTACTO", client.contactPhone],
       ["CORREO ELECTRÓNICO", client.email],
       ["CARGO", client.position],
+      ["PLANTA", client.planta],
     ];
 
     // Ajustar la tabla para que sea más compacta
@@ -473,6 +476,15 @@ const exportAllClientsToPDF = () => {
                   className="w-full p-2 rounded bg-[#1f2937] text-white"
                 />
               </div>
+              <div className="mb-4">
+              <label className="block text-white mb-2">Planta</label>
+              <input
+                type="text"
+                value={newClient.planta}
+                onChange={(e) => setNewClient({ ...newClient, planta: e.target.value })}
+                className="w-full p-2 rounded bg-[#1f2937] text-white"
+              />
+            </div>
             </div>
 
             <button type="submit" className="bg-blue-500 text-white p-2 rounded mt-4">

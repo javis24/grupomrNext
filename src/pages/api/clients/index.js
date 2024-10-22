@@ -48,10 +48,10 @@ export default async function handler(req, res) {
       }
 
       case 'POST': {
-        const { fullName, companyName, businessTurn, address, contactName, contactPhone, email, position } = req.body;
+        const { fullName, companyName, businessTurn, address, contactName, contactPhone, email, position, planta } = req.body;
 
         // Verificar campos requeridos
-        if (!fullName || !companyName || !businessTurn || !address) {
+        if (!fullName || !companyName || !businessTurn || !address || !planta) {
           return res.status(400).json({ message: 'Required fields are missing' });
         }
 
@@ -66,6 +66,7 @@ export default async function handler(req, res) {
             contactPhone,
             email,
             position,
+            planta, // Incluir el nuevo campo "Planta"
             userId,  // Asociar cliente con el usuario autenticado
           });
 
@@ -95,7 +96,7 @@ export default async function handler(req, res) {
             return res.status(403).json({ message: 'You do not have permission to update this client' });
           }
 
-          // Actualizar el cliente con los nuevos datos
+          // Actualizar el cliente con los nuevos datos, incluido "Planta"
           await client.update(updatedData);
 
           return res.status(200).json({ message: 'Client updated successfully', client });

@@ -10,11 +10,11 @@ export default async function handler(req, res) {
 
     switch (method) {
       case 'PUT': {
-        const { fullName, companyName, businessTurn, address, contactName, contactPhone, email, position } = req.body;
+        const { fullName, companyName, businessTurn, address, contactName, contactPhone, email, position, planta } = req.body;
 
         // Validar los campos requeridos
-        if (!fullName || !companyName || !businessTurn || !address) {
-          return res.status(400).json({ message: "Full Name, Company Name, Business Turn y Address son requeridos" });
+        if (!fullName || !companyName || !businessTurn || !address || !planta) {
+          return res.status(400).json({ message: "Full Name, Company Name, Business Turn, Address y Planta son requeridos" });
         }
 
         try {
@@ -38,6 +38,7 @@ export default async function handler(req, res) {
           client.contactPhone = contactPhone || client.contactPhone;
           client.email = email || client.email;
           client.position = position || client.position;
+          client.planta = planta || client.planta; // Incluir el campo planta
 
           await client.save();
 

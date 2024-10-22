@@ -73,6 +73,13 @@ const Clients = db.define('clients', {
             len: [0, 100]
         }
     },
+    planta: {  
+        type: DataTypes.STRING,
+        allowNull: true,
+        validate: {
+            len: [0, 100]
+        }
+    },
     userId: {
         type: DataTypes.INTEGER,
         allowNull: false,
