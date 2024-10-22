@@ -161,33 +161,109 @@ export default function SalesReportList() {
 
   const exportReportToPDF = (report) => {
     const doc = new jsPDF();
-    
-    const reportDetails = [
-      ["Cliente/Proveedor/Prospecto", report.clienteProveedorProspecto],
-      ["Empresa", report.empresa],
-      ["Unidad de Negocio", report.unidadNegocio],
-      ["Producto/Servicio", report.productoServicio],
-      ["Comentarios", report.comentarios],
-      ["Status", report.status],
-    ];
+    const imgUrl = '/logo_mr.png';  // Ruta de tu logo
 
-    doc.autoTable({
-      body: reportDetails,
-      startY: 20,
-      theme: 'plain',
-      styles: { cellPadding: 1, fontSize: 10, lineWidth: 0.1 },
-      columnStyles: {
-        0: { halign: 'left', cellWidth: 70 },
-        1: { halign: 'left', cellWidth: 110 },
-      }
-    });
+    const image = new Image();
+    image.src = imgUrl;
 
-    doc.save(`Reporte_${report.clienteProveedorProspecto}.pdf`);
+    image.onload = () => {
+      doc.addImage(image, 'PNG', 20, 10, 20, 20);
+
+      // Información de la empresa
+      doc.setFontSize(12);
+      doc.text("Materiales Reutilizables S.A. de C.V.", 105, 20, { align: 'center' });
+      doc.text("Benito Juarez 112 SUR, Col. 1ro de Mayo", 105, 27, { align: 'center' });
+      doc.text("Cd. Lerdo, Dgo. C.P. 35169", 105, 32, { align: 'center' });
+      doc.text("MRE040121UBA", 105, 37, { align: 'center' });
+
+      // Sección de datos del reporte
+      doc.setFillColor(255, 204, 0); // Color amarillo
+      doc.rect(160, 20, 40, 10, 'F');
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.text("REPORTE", 180, 27, null, 'center'); 
+
+      // Información del reporte
+      const reportDetails = [
+        ["Cliente/Proveedor/Prospecto", report.clienteProveedorProspecto],
+        ["Empresa", report.empresa],
+        ["Unidad de Negocio", report.unidadNegocio],
+        ["Producto/Servicio", report.productoServicio],
+        ["Comentarios", report.comentarios],
+        ["Status", report.status],
+      ];
+
+      doc.autoTable({
+        body: reportDetails,
+        startY: 50,
+        theme: 'plain',
+        styles: { cellPadding: 1, fontSize: 10, lineWidth: 0.1 },
+        columnStyles: {
+          0: { halign: 'left', textColor: [0, 0, 0], cellWidth: 60 },
+          1: { halign: 'left', textColor: [0, 0, 0], cellWidth: 100 },
+        }
+      });
+
+      doc.save(`Reporte_${report.clienteProveedorProspecto}.pdf`);
+    };
   };
 
   const filteredReports = salesReports.filter((report) =>
     report.clienteProveedorProspecto?.toLowerCase().includes(search.toLowerCase())
   );
+
+
+
+  const exportAllReportsToPDF = () => {
+    const doc = new jsPDF();
+    const imgUrl = '/logo_mr.png';  // Ruta de tu logo
+  
+    let currentY = 10;  // Empezamos desde la parte superior del PDF
+  
+    const image = new Image();
+    image.src = imgUrl;
+  
+    image.onload = () => {
+      doc.addImage(image, 'PNG', 20, 10, 20, 20);
+      
+      doc.setFontSize(12);
+      doc.text("Materiales Reutilizables S.A. de C.V.", 105, currentY + 10, { align: 'center' });
+      doc.text("Benito Juarez 112 SUR, Col. 1ro de Mayo", 105, currentY + 17, { align: 'center' });
+      doc.text("Cd. Lerdo, Dgo. C.P. 35169", 105, currentY + 22, { align: 'center' });
+      doc.text("MRE040121UBA", 105, currentY + 27, { align: 'center' });
+  
+      salesReports.forEach((report, index) => {
+        // Añadir encabezado para cada reporte
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        doc.text(`Reporte ${index + 1}`, 20, currentY + 40);
+  
+        const reportDetails = [
+          ["Cliente/Proveedor/Prospecto", report.clienteProveedorProspecto],
+          ["Empresa", report.empresa],
+          ["Unidad de Negocio", report.unidadNegocio],
+          ["Producto/Servicio", report.productoServicio],
+          ["Comentarios", report.comentarios],
+          ["Status", report.status],
+        ];
+  
+        doc.autoTable({
+          body: reportDetails,
+          startY: currentY + 45,  // Ajustar el inicio en Y para cada reporte
+          theme: 'plain',
+          styles: { cellPadding: 1, fontSize: 12, lineWidth: 0.1 },
+          columnStyles: {
+            0: { halign: 'left', textColor: [0, 0, 0], cellWidth: 60 },
+            1: { halign: 'left', textColor: [0, 0, 0], cellWidth: 100 },
+          },
+        });
+  
+        currentY = doc.lastAutoTable.finalY + 15; // Añadir más espacio entre reportes
+      });
+  
+      doc.save('todos_los_reportes.pdf');
+    };
+  };
 
   return (
     <div className="p-4 bg-[#0e1624] text-white min-h-screen flex justify-center">
@@ -197,6 +273,10 @@ export default function SalesReportList() {
           <button onClick={() => openModal()} className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">
             Agregar nuevo reporte
           </button>
+          <button onClick={exportAllReportsToPDF} className="bg-green-500 text-white p-2 rounded hover:bg-green-600">
+              Exportar todos a PDF
+            </button>
+          
         </div>
 
         <div className="relative mb-4">

@@ -39,32 +39,43 @@ const SanoQuotationForm = () => {
   const exportToPDF = () => {
     const doc = new jsPDF();
 
+    // Obtener la fecha actual
+      const today = new Date();
+      const formattedDate = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
+
+
     // Logo del encabezado
     const imgUrl = '/logo_sano.png';  // Ruta de tu logo
     const image = new Image();
     image.src = imgUrl;
 
-    image.onload = () => {
-      doc.addImage(image, 'PNG', 10, 10, 30, 30);
-      doc.setFontSize(11);
-      doc.text("Soluciones Ambientales Normativas SA de CV", 105, 20, { align: 'center' });
-      doc.text("Av. Enrique Ibarra 719 Ote Col. San José, Cd. Lerdo, Dgo. C.P. 35168", 105, 27, { align: 'center' });
-
-      // Título de la cotización
-      doc.setFontSize(13);
-      doc.text("COTIZACIÓN", 160, 47);
-
-      // Fecha y No. Cotización
+      image.onload = () => {
+      doc.addImage(image, 'PNG', 10, 5, 50, 50);
+      
+      // Información de la empresa y cotización en el encabezado
       doc.setFontSize(10);
-      doc.rect(150, 55, 50, 15);
-      doc.text("No: 01", 160, 63);
-      doc.text(`Fecha: ${formData.fecha}`, 160, 70);
+      doc.text("Soluciones Ambientales Normativas SA de CV", 100, 20, { align: 'center' });
+      doc.text("Av. Enrique Ibarra 719 Ote Col. San José", 100, 27, { align: 'center' });
+      doc.text("Cd. Lerdo, Dgo. C.P. 35168", 100, 34, { align: 'center' });
+
+      // Título de Cotización y Fecha
+      doc.setFillColor(255, 178, 107); // Color naranja
+
+      // Ajustar las coordenadas 'y' para mover las cajas más arriba
+      doc.rect(150, 20, 50, 15, 'F'); // Caja para "Cotización", movida más arriba
+      doc.rect(150, 40, 50, 15, 'F'); // Caja para "Fecha", movida más arriba
+
+      // Ajustar el texto para que esté dentro de las cajas movidas
+      doc.setFontSize(12);
+      doc.text("COTIZACIÓN", 175, 28, { align: 'center' }); // Texto ajustado para "Cotización"
+      doc.text("Nº 01", 175, 33, { align: 'center' }); // Texto ajustado para "Nº"
+      doc.text(`Fecha: ${formattedDate}`, 175, 45, { align: 'center' });// Centrado ajustado
 
       // Información del cliente
       doc.setFontSize(10);
-      doc.setFillColor(255, 204, 0);
-      doc.rect(10, 80, 190, 10, 'F');
-      doc.text("DATOS DEL CLIENTE O SOLICITANTE", 105, 87, null, 'center');
+      doc.setFillColor(255, 178, 107); 
+      doc.rect(10, 70, 190, 10, 'F'); // Barra de título "Datos del Cliente"
+      doc.text("DATOS DEL CLIENTE O SOLICITANTE", 105, 77, null, 'center');
 
       const clientDetails = [
         ["EMPRESA", formData.empresa, "DOMICILIO", formData.domicilio],
@@ -75,17 +86,19 @@ const SanoQuotationForm = () => {
 
       doc.autoTable({
         body: clientDetails,
-        startY: 95,
+        startY: 85,
         theme: 'plain',
-        styles: { cellPadding: 2, fontSize: 8, halign: 'left' },
-        columnStyles: { 0: { cellWidth: 50 }, 1: { cellWidth: 50 }, 2: { cellWidth: 50 }, 3: { cellWidth: 50 } }
+        theme: 'grid',
+        styles: { cellPadding: 2, fontSize: 8, halign: 'left'},
+        columnStyles: { 0: { cellWidth: 38 }, 1: { cellWidth: 50 }, 2: { cellWidth: 50 }, 3: { cellWidth: 50 } },
+        margin: { left: 10 }
       });
 
       // Detalle de la cotización
-      doc.setFontSize(10);
-      doc.setFillColor(255, 204, 0);
+      doc.setFontSize(8);
+      doc.setFillColor(255, 178, 107);
       doc.rect(10, doc.lastAutoTable.finalY + 10, 190, 10, 'F');
-      doc.text("DETALLE DE LA COTIZACIÓN", 105, doc.lastAutoTable.finalY + 17, null, 'center');
+      doc.text("Estimado, con la presente nos permitimos realizarle la siguiente propuesta con respecto a el servicio de manejo integral de residuos peligrosos", 105, doc.lastAutoTable.finalY + 17, null, 'center');
 
       const itemDetails = formData.items.map((item, index) => [
         index + 1,
@@ -100,12 +113,44 @@ const SanoQuotationForm = () => {
       doc.autoTable({
         head: [["NO", "DESCRIPCIÓN", "CANTIDAD", "UNIDAD", "P.U.", "TOTAL", "COMENTARIOS"]],
         body: itemDetails,
-        startY: doc.lastAutoTable.finalY + 20,
+        startY: doc.lastAutoTable.finalY + 30,
         theme: 'grid',
-        headStyles: { fillColor: [255, 204, 0] },
-        styles: { fontSize: 8, halign: 'center' },
-        columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 50 }, 2: { cellWidth: 20 }, 3: { cellWidth: 20 }, 4: { cellWidth: 30 }, 5: { cellWidth: 30 }, 6: { cellWidth: 40 } }
+        headStyles: { fillColor: [255, 178, 107] },
+        styles: { fontSize: 8, halign: 'left' },
+        margin: { left: 11 },
+        columnStyles: { 0: { cellWidth: 10 }, 1: { cellWidth: 50 }, 2: { cellWidth: 20 }, 3: { cellWidth: 20 }, 4: { cellWidth: 20 }, 5: { cellWidth: 20 }, 6: { cellWidth: 50 } }
       });
+
+       // Sección de Observaciones
+          doc.setFontSize(8);
+          doc.setFillColor(255, 178, 107); 
+          doc.rect(10, doc.lastAutoTable.finalY + 20, 190, 10, 'F');
+          doc.text("OBSERVACIONES", 105, doc.lastAutoTable.finalY + 27, null, 'center');
+
+          const observations = [
+            "Precios más IVA",
+            "Condiciones de pago: Transferencia bancaria",
+            "Contamos con todos los permisos necesarios para el desarrollo de nuestras actividades ante la SRNMA y SEMARNART",
+            "NUMERO DE AUTORIZACIÓN AMBIENTAL RERET-3-SRNMA-329-24",
+            "Nuestro personal cuenta con seguridad social, EPP y capacitación para realizar las maniobras necesarias",
+            "Esta Cotización tiene una vigencia de 15 días",
+            "Teléfono de atención: 871 132 05 44"
+          ];
+
+          // Centrando cada línea de las observaciones
+          observations.forEach((line, index) => {
+            doc.text(line, 105, doc.lastAutoTable.finalY + 35 + (index * 6), null, 'center');
+          });
+
+          // Información de contacto
+          doc.setFontSize(8);
+          doc.text("Comercialización SANO", 105, doc.lastAutoTable.finalY + 85, null, 'center');
+          doc.setFontSize(10);
+          doc.text("Ing. Gustavo Salgado", 105, doc.lastAutoTable.finalY + 90, null, 'center');
+          doc.text("Gerencia General", 105, doc.lastAutoTable.finalY + 95, null, 'center');
+          doc.text("gerencia@sanolaguna.com", 105, doc.lastAutoTable.finalY + 100, null, 'center');
+
+
 
       // Guardar el archivo PDF
       doc.save('cotizacion_sano.pdf');
