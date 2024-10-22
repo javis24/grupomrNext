@@ -145,6 +145,13 @@ export default function Sidebar() {
               </Link>
             </li>
           )}
+              {(canViewCotizaciones || hasTotalAccess) && (
+            <li className="mb-4">
+              <Link href="/reportes" className="flex items-center p-2 rounded hover:bg-[#374151]">
+                {!isCollapsed && 'Reportes'}
+              </Link>
+            </li>
+          )}
           {(canViewIncidencias || hasTotalAccess) && (
             <li className="mb-4">
               <Link href="/incidencias" className="flex items-center p-2 rounded hover:bg-[#374151]">
