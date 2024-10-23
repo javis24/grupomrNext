@@ -152,6 +152,13 @@ export default function Sidebar() {
               </Link>
             </li>
           )}
+              {(canViewCotizaciones || hasTotalAccess) && (
+            <li className="mb-4">
+              <Link href="/qr" className="flex items-center p-2 rounded hover:bg-[#374151]">
+                {!isCollapsed && 'QR'}
+              </Link>
+            </li>
+          )}
           {(canViewIncidencias || hasTotalAccess) && (
             <li className="mb-4">
               <Link href="/incidencias" className="flex items-center p-2 rounded hover:bg-[#374151]">

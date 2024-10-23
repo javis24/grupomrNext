@@ -19,6 +19,7 @@
     "date-fns": "^3.6.0",
     "dotenv": "^16.4.5",
     "formidable": "^3.5.1",
+    "html5-qrcode": "^2.3.8",
     "jsonwebtoken": "^9.0.2",
     "jspdf": "^2.5.2",
     "jspdf-autotable": "^3.8.3",
