@@ -1,42 +1,76 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import React, { useEffect, useState } from 'react';
+import { Html5Qrcode } from 'html5-qrcode';
 
 const QRCodeReader = () => {
   const [qrData, setQrData] = useState('No QR code scanned');
-  const qrCodeRef = useRef(null);
+  const [cameraId, setCameraId] = useState(null);
 
   useEffect(() => {
-    const html5QrCodeScanner = new Html5QrcodeScanner(
-      'reader', 
-      {
-        fps: 10,    // Frames per second
-        qrbox: { width: 250, height: 250 }, // Define el área de escaneo
-      },
-      /* verbose= */ false
-    );
-
-    // Configura lo que ocurre al escanear o encontrar un error
-    html5QrCodeScanner.render(
-      (decodedText, decodedResult) => {
-        setQrData(decodedText); // Setea los datos cuando encuentra un código
-      },
-      (error) => {
-        console.log(`Error scanning: ${error}`);
+    // Obtener cámaras disponibles y seleccionar la cámara trasera
+    Html5Qrcode.getCameras().then((devices) => {
+      if (devices && devices.length) {
+        // Buscar una cámara trasera (con "back" o "rear")
+        const backCamera = devices.find(device => 
+          device.label.toLowerCase().includes('back') || device.label.toLowerCase().includes('rear')
+        );
+        const selectedCameraId = backCamera ? backCamera.id : devices[0].id;
+        setCameraId(selectedCameraId);
       }
-    );
-
-    // Limpiar el escáner al desmontar el componente
-    return () => {
-      html5QrCodeScanner.clear().catch((error) => {
-        console.error('Failed to clear QR Code scanner.', error);
-      });
-    };
+    }).catch(err => {
+      console.error('Error getting cameras: ', err);
+    });
   }, []);
+
+  useEffect(() => {
+    if (cameraId) {
+      const html5QrCode = new Html5Qrcode("reader");
+
+      // Función para validar si es una URL
+      const isValidURL = (string) => {
+        try {
+          new URL(string);
+          return true;
+        } catch (_) {
+          return false;
+        }
+      };
+
+      // Iniciar escaneo con la cámara seleccionada
+      html5QrCode.start(
+        cameraId,
+        {
+          fps: 10, // Velocidad de captura
+          qrbox: { width: 250, height: 250 } // Área de escaneo
+        },
+        (decodedText, decodedResult) => {
+          setQrData(decodedText); // Mostrar los datos escaneados
+
+          // Redirigir a la URL si es válida
+          if (isValidURL(decodedText)) {
+            window.location.href = decodedText;
+          }
+        },
+        (error) => {
+          console.warn(`Error scanning: ${error}`);
+        }
+      ).catch(err => {
+        console.error('Error starting QR scanner: ', err);
+      });
+
+      return () => {
+        html5QrCode.stop().then(() => {
+          console.log('QR scanning stopped.');
+        }).catch(err => {
+          console.error('Failed to stop QR scanning.', err);
+        });
+      };
+    }
+  }, [cameraId]);
 
   return (
     <div>
       <h1>QR Code Scanner</h1>
-      <div id="reader" style={{ width: '300px' }} ref={qrCodeRef}></div>
+      <div id="reader" style={{ width: '300px' }}></div>
       <p>Scanned QR Code Data: {qrData}</p>
     </div>
   );
