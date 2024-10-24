@@ -36,6 +36,12 @@ const SanoQuotationForm = () => {
     });
   };
 
+  const removeItem = (index) => {
+    const updatedItems = formData.items.filter((_, i) => i !== index);
+    setFormData({ ...formData, items: updatedItems });
+  };
+
+
   const exportToPDF = () => {
     const doc = new jsPDF();
 
@@ -260,6 +266,15 @@ const SanoQuotationForm = () => {
               <h3 className="text-xl font-bold">Servicios {index + 1}</h3>
               <div className="grid grid-cols-1 gap-4">
                 <div className="flex justify-between items-center">
+                   {/* Aquí agregamos el botón para eliminar el servicio */}
+                   <button
+                    type="button"
+                    className="absolute left-12 transform translate-x-2 translate-y-2 bg-red-500 text-white p-1 rounded-full"
+       
+                    onClick={() => removeItem(index)}
+                  >
+                    X
+                  </button>
                   <div className="flex-1 mr-2">
                     <label className="block">Descripción</label>
                     <input
@@ -270,6 +285,7 @@ const SanoQuotationForm = () => {
                       className="p-2 rounded border w-full text-black"
                     />
                   </div>
+                  
                   <div className="flex-1 mr-2">
                     <label className="block">Cantidad</label>
                     <input

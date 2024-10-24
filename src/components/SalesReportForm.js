@@ -31,6 +31,7 @@ export default function SalesReportList() {
   const [productoServicio, setProductoServicio] = useState('');
   const [comentarios, setComentarios] = useState('');
   const [status, setStatus] = useState('');
+  const [extraText, setExtraText] = useState('');
   const [userId, setUserId] = useState('');
   const [error, setError] = useState('');
   const [userRole, setUserRole] = useState('');
@@ -89,6 +90,7 @@ export default function SalesReportList() {
         productoServicio,
         comentarios,
         status,
+        extraText,
         userId,
       }, {
         headers: { Authorization: `Bearer ${token}` },
@@ -96,7 +98,7 @@ export default function SalesReportList() {
 
       const updatedReports = salesReports.map(report => 
         report.id === selectedReport.id 
-          ? { ...report, clienteProveedorProspecto, empresa, unidadNegocio, productoServicio, comentarios, status } 
+          ? { ...report, clienteProveedorProspecto, empresa, unidadNegocio, productoServicio, comentarios, status, extraText } 
           : report
       );
       setSalesReports(updatedReports);
@@ -118,6 +120,7 @@ export default function SalesReportList() {
         productoServicio,
         comentarios,
         status,
+        extraText,
         userId,
       }, {
         headers: { Authorization: `Bearer ${token}` },
@@ -140,7 +143,8 @@ export default function SalesReportList() {
       setProductoServicio(report.productoServicio);
       setComentarios(report.comentarios);
       setStatus(report.status);
-      setUserId(report.userId);
+      setExtraText(report.extraText);
+      setUserId(report.userId);      
     } else {
       // Clear fields for new report
       setClienteProveedorProspecto('');
@@ -149,6 +153,7 @@ export default function SalesReportList() {
       setProductoServicio('');
       setComentarios('');
       setStatus('');
+      setExtraText('');
       setUserId('');
     }
     setModalIsOpen(true);
@@ -191,6 +196,7 @@ export default function SalesReportList() {
         ["Producto/Servicio", report.productoServicio],
         ["Comentarios", report.comentarios],
         ["Status", report.status],
+        ["ExtraText", report.extraText],
       ];
 
       doc.autoTable({
@@ -211,8 +217,6 @@ export default function SalesReportList() {
   const filteredReports = salesReports.filter((report) =>
     report.clienteProveedorProspecto?.toLowerCase().includes(search.toLowerCase())
   );
-
-
 
   const exportAllReportsToPDF = () => {
     const doc = new jsPDF();
@@ -245,6 +249,7 @@ export default function SalesReportList() {
           ["Producto/Servicio", report.productoServicio],
           ["Comentarios", report.comentarios],
           ["Status", report.status],
+          ["ExtraText", report.extraText],
         ];
   
         doc.autoTable({
@@ -274,9 +279,8 @@ export default function SalesReportList() {
             Agregar nuevo reporte
           </button>
           <button onClick={exportAllReportsToPDF} className="bg-green-500 text-white p-2 rounded hover:bg-green-600">
-              Exportar todos a PDF
-            </button>
-          
+            Exportar todos a PDF
+          </button>
         </div>
 
         <div className="relative mb-4">
@@ -328,7 +332,6 @@ export default function SalesReportList() {
           </table>
         </div>
 
-        {/* Modal para actualizar o crear reporte */}
         <Modal
           isOpen={modalIsOpen}
           onRequestClose={closeModal}
@@ -434,6 +437,15 @@ export default function SalesReportList() {
                   className="w-full p-2 border rounded bg-[#374151] text-white"
                 />
               </div>
+              <div>
+                <label className="block text-white">Texto Extra</label>
+                <textarea
+                  value={extraText}
+                  onChange={(e) => setExtraText(e.target.value)}
+                  className="w-full p-2 border rounded bg-[#374151] text-white"
+                  placeholder="Agregar cualquier tipo de texto extra"
+                />
+              </div>
             </div>
             <button
               type="submit"
@@ -443,7 +455,6 @@ export default function SalesReportList() {
             </button>
           </form>
 
-          {/* Botón para exportar a PDF */}
           {selectedReport && (
             <button
               onClick={() => exportReportToPDF(selectedReport)}
