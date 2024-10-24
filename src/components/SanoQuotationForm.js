@@ -165,9 +165,12 @@ const SanoQuotationForm = () => {
 
   return (
     <div className="container mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-6">Cotización SANO</h1>
-      <form className="grid grid-cols-3 gap-6">
-        {/* Campos de información del cliente */}
+  <h1 className="text-2xl font-bold mb-6">Cotización SANO</h1>
+  <form className="grid grid-cols-1 gap-6">
+    {/* Campos de información del cliente */}
+    <div className="mb-8">
+      <h2 className="text-lg font-semibold mb-4">Información del Cliente</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block">Empresa</label>
           <input
@@ -175,7 +178,7 @@ const SanoQuotationForm = () => {
             name="empresa"
             value={formData.empresa}
             onChange={handleChange}
-            className="p-2 rounded border text-black"
+            className="p-2 rounded border w-full text-black"
           />
         </div>
         <div>
@@ -185,7 +188,7 @@ const SanoQuotationForm = () => {
             name="domicilio"
             value={formData.domicilio}
             onChange={handleChange}
-            className="p-2 rounded border text-black"
+            className="p-2 rounded border w-full text-black"
           />
         </div>
         <div>
@@ -195,7 +198,7 @@ const SanoQuotationForm = () => {
             name="atencionA"
             value={formData.atencionA}
             onChange={handleChange}
-            className="p-2 rounded border text-black"
+            className="p-2 rounded border w-full text-black"
           />
         </div>
         <div>
@@ -205,7 +208,7 @@ const SanoQuotationForm = () => {
             name="telefono"
             value={formData.telefono}
             onChange={handleChange}
-            className="p-2 rounded border text-black"
+            className="p-2 rounded border w-full text-black"
           />
         </div>
         <div>
@@ -215,7 +218,7 @@ const SanoQuotationForm = () => {
             name="movil"
             value={formData.movil}
             onChange={handleChange}
-            className="p-2 rounded border text-black"
+            className="p-2 rounded border w-full text-black"
           />
         </div>
         <div>
@@ -225,17 +228,17 @@ const SanoQuotationForm = () => {
             name="departamento"
             value={formData.departamento}
             onChange={handleChange}
-            className="p-2 rounded border text-black"
+            className="p-2 rounded border w-full text-black"
           />
         </div>
         <div>
           <label className="block">Correo Electrónico</label>
           <input
-            type="text"
+            type="email"
             name="correoElectronico"
             value={formData.correoElectronico}
             onChange={handleChange}
-            className="p-2 rounded border text-black"
+            className="p-2 rounded border w-full text-black"
           />
         </div>
         <div>
@@ -245,7 +248,7 @@ const SanoQuotationForm = () => {
             name="supervisorAsignado"
             value={formData.supervisorAsignado}
             onChange={handleChange}
-            className="p-2 rounded border text-black"
+            className="p-2 rounded border w-full text-black"
           />
         </div>
         <div>
@@ -255,108 +258,111 @@ const SanoQuotationForm = () => {
             name="fecha"
             value={formData.fecha}
             onChange={handleChange}
-            className="p-2 rounded border text-black"
+            className="p-2 rounded border w-full text-black"
           />
         </div>
-
-        {/* Items de la cotización */}
-                {/* Items de la cotización */}
-          {formData.items.map((item, index) => (
-            <div key={index} className="col-span-3 border-t pt-4 mt-4">
-              <h3 className="text-xl font-bold">Servicios {index + 1}</h3>
-              <div className="grid grid-cols-1 gap-4">
-                <div className="flex justify-between items-center">
-                   {/* Aquí agregamos el botón para eliminar el servicio */}
-                   <button
-                    type="button"
-                    className="absolute left-12 transform translate-x-2 translate-y-2 bg-red-500 text-white p-1 rounded-full"
-       
-                    onClick={() => removeItem(index)}
-                  >
-                    X
-                  </button>
-                  <div className="flex-1 mr-2">
-                    <label className="block">Descripción</label>
-                    <input
-                      type="text"
-                      name="descripcion"
-                      value={item.descripcion}
-                      onChange={(e) => handleChange(e, index)}
-                      className="p-2 rounded border w-full text-black"
-                    />
-                  </div>
-                  
-                  <div className="flex-1 mr-2">
-                    <label className="block">Cantidad</label>
-                    <input
-                      type="number"
-                      name="cantidad"
-                      value={item.cantidad}
-                      onChange={(e) => handleChange(e, index)}
-                      className="p-2 rounded border w-full text-black"
-                    />
-                  </div>
-                  <div className="flex-1 mr-2">
-                    <label className="block">Unidad</label>
-                    <input
-                      type="text"
-                      name="unidad"
-                      value={item.unidad}
-                      onChange={(e) => handleChange(e, index)}
-                      className="p-2 rounded border w-full text-black"
-                    />
-                  </div>
-                  <div className="flex-1 mr-2">
-                    <label className="block">Precio Unitario</label>
-                    <input
-                      type="number"
-                      name="precioUnitario"
-                      value={item.precioUnitario}
-                      onChange={(e) => handleChange(e, index)}
-                      className="p-2 rounded border w-full text-black"
-                    />
-                  </div>
-                  <div className="flex-1 mr-2">
-                    <label className="block">Total</label>
-                    <input
-                      type="number"
-                      name="total"
-                      value={item.total}
-                      onChange={(e) => handleChange(e, index)}
-                      className="p-2 rounded border w-full text-black"
-                    />
-                  </div>
-                  <div className="flex-1 mr-2">
-                    <label className="block">Comentarios</label>
-                    <textarea
-                      name="comentarios"
-                      value={item.comentarios}
-                      onChange={(e) => handleChange(e, index)}
-                      className="p-2 rounded border w-full text-black"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        <button
-          type="button"
-          className="bg-green-500 text-white p-2 rounded"
-          onClick={addNewItem}
-        >
-          Agregar Servicio
-        </button>
-
-        {/* Botón para exportar a PDF */}
-        <button
-          type="button"
-          className="bg-blue-500 text-white p-2 rounded"
-          onClick={exportToPDF}
-        >
-          Exportar a PDF
-        </button>
-      </form>
+      </div>
     </div>
+
+    {/* Items de la cotización */}
+    <div className="mb-8">
+      <h2 className="text-lg font-semibold mb-4">Servicios Cotizados</h2>
+      {formData.items.map((item, index) => (
+        <div key={index} className="border-t pt-4 mt-4 relative">
+          <h3 className="text-xl font-bold">Servicios {index + 1}</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Aquí agregamos el botón para eliminar el servicio */}
+            <div className="relative">
+              <label className="block">Descripción</label>
+              <input
+                type="text"
+                name="descripcion"
+                value={item.descripcion}
+                onChange={(e) => handleChange(e, index)}
+                className="p-2 rounded border w-full text-black"
+              />
+            </div>
+            <div>
+              <label className="block">Cantidad</label>
+              <input
+                type="number"
+                name="cantidad"
+                value={item.cantidad}
+                onChange={(e) => handleChange(e, index)}
+                className="p-2 rounded border w-full text-black"
+              />
+            </div>
+            <div>
+              <label className="block">Unidad</label>
+              <input
+                type="text"
+                name="unidad"
+                value={item.unidad}
+                onChange={(e) => handleChange(e, index)}
+                className="p-2 rounded border w-full text-black"
+              />
+            </div>
+            <div>
+              <label className="block">Precio Unitario</label>
+              <input
+                type="number"
+                name="precioUnitario"
+                value={item.precioUnitario}
+                onChange={(e) => handleChange(e, index)}
+                className="p-2 rounded border w-full text-black"
+              />
+            </div>
+            <div>
+              <label className="block">Total</label>
+              <input
+                type="number"
+                name="total"
+                value={item.total}
+                onChange={(e) => handleChange(e, index)}
+                className="p-2 rounded border w-full text-black"
+              />
+            </div>
+            <div>
+              <label className="block">Comentarios</label>
+              <textarea
+                name="comentarios"
+                value={item.comentarios}
+                onChange={(e) => handleChange(e, index)}
+                className="p-2 rounded border w-full text-black"
+              />
+              
+            </div>
+            <button
+                type="button"
+                className="bg-red-500 text-whit w-12 h-12 top-[5px]"
+                onClick={() => removeItem(index)}
+              >
+                X
+              </button>
+          </div>
+        </div>
+      ))}
+      <button
+        type="button"
+        className="bg-green-500 text-white p-2 rounded"
+        onClick={addNewItem}
+      >
+        Agregar Servicio
+      </button>
+    </div>
+
+    {/* Botón para exportar a PDF */}
+    <button
+      type="button"
+      className="bg-blue-500 text-white p-2 rounded"
+      onClick={exportToPDF}
+    >
+      Exportar a PDF
+    </button>
+  </form>
+</div>
+
+   
   );
 };
 
