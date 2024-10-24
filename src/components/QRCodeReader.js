@@ -35,13 +35,20 @@ const QRCodeReader = () => {
         }
       };
 
+      // Configuración adicional para asegurar la cámara trasera
+      const config = {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true
+        },
+        facingMode: { exact: "environment" } // Aquí forzamos la cámara trasera
+      };
+
       // Iniciar escaneo con la cámara seleccionada
       html5QrCode.start(
         cameraId,
-        {
-          fps: 10, // Velocidad de captura
-          qrbox: { width: 250, height: 250 } // Área de escaneo
-        },
+        config,
         (decodedText, decodedResult) => {
           setQrData(decodedText); // Mostrar los datos escaneados
 
