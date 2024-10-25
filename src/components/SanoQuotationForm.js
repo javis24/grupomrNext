@@ -13,6 +13,7 @@ const SanoQuotationForm = () => {
     correoElectronico: '',
     supervisorAsignado: '',
     fecha: '',
+    detalles: '',
     items: [
       { descripcion: '', cantidad: 1, unidad: '', precioUnitario: 0, total: 0, comentarios: '' }
     ],
@@ -128,25 +129,14 @@ const SanoQuotationForm = () => {
       });
 
        // Sección de Observaciones
-          doc.setFontSize(8);
+          doc.setFontSize(12);
           doc.setFillColor(255, 178, 107); 
           doc.rect(10, doc.lastAutoTable.finalY + 20, 190, 10, 'F');
-          doc.text("OBSERVACIONES", 105, doc.lastAutoTable.finalY + 27, null, 'center');
+          doc.text("DETALLES ADICIONALES", 105, doc.lastAutoTable.finalY + 27, null, 'center');
 
-          const observations = [
-            "Precios más IVA",
-            "Condiciones de pago: Transferencia bancaria",
-            "Contamos con todos los permisos necesarios para el desarrollo de nuestras actividades ante la SRNMA y SEMARNART",
-            "NUMERO DE AUTORIZACIÓN AMBIENTAL RERET-3-SRNMA-329-24",
-            "Nuestro personal cuenta con seguridad social, EPP y capacitación para realizar las maniobras necesarias",
-            "Esta Cotización tiene una vigencia de 15 días",
-            "Teléfono de atención: 871 132 05 44"
-          ];
-
-          // Centrando cada línea de las observaciones
-          observations.forEach((line, index) => {
-            doc.text(line, 105, doc.lastAutoTable.finalY + 35 + (index * 6), null, 'center');
-          });
+           // Insertar los detalles que el usuario ingresó en el campo de detalles
+          const detalles = formData.detalles || "No hay detalles adicionales.";
+          doc.text(detalles, 105, doc.lastAutoTable.finalY + 35, { align: 'center' });
 
           // Información de contacto
           doc.setFontSize(8);
@@ -261,6 +251,16 @@ const SanoQuotationForm = () => {
             className="p-2 rounded border w-full text-black"
           />
         </div>
+        <div className="mb-4">
+              <label className="block">Detalles</label>
+              <textarea
+                name="detalles"
+                value={formData.detalles}
+                onChange={handleChange}
+                className="p-2 rounded border w-full text-black"
+                placeholder="Agregar detalles adicionales"
+              />
+            </div>
       </div>
     </div>
 
