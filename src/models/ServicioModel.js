@@ -60,7 +60,12 @@ const Servicios = db.define('servicios', {
     rfc: {
         type: DataTypes.STRING,
         allowNull: false
+    },
+    detalles: { 
+        type: DataTypes.TEXT, 
+        allowNull: true
     }
+    
 }, {
     freezeTableName: true
 });

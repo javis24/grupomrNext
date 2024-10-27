@@ -31,9 +31,9 @@ export default async function handler(req, res) {
         }
   
         case 'POST': {
-          const { contactName, programacion, equipo, numeroEconomico, contenido, manifiesto, renta2024, recoleccion, disposicion, contacto, telefono, email, ubicacion, rfc } = req.body;
+          const { contactName, programacion, equipo, numeroEconomico, contenido, manifiesto, renta2024, recoleccion, disposicion, contacto, telefono, email, ubicacion, rfc, detalles } = req.body;
   
-          if (!contactName || !programacion || !equipo || !numeroEconomico || !contenido || !manifiesto || !renta2024 || !recoleccion || !contacto || !telefono || !email || !ubicacion || !rfc) {
+          if (!contactName || !programacion || !equipo || !numeroEconomico || !contenido || !manifiesto || !renta2024 || !recoleccion || !contacto || !telefono || !email || !ubicacion || !rfc || !detalles) {
             return res.status(400).json({ message: 'Required fields are missing' });
           }
   
@@ -53,6 +53,7 @@ export default async function handler(req, res) {
               email,
               ubicacion,
               rfc,
+              detalles,
               userId,
             });
   

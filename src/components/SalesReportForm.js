@@ -32,6 +32,7 @@ export default function SalesReportList() {
   const [comentarios, setComentarios] = useState('');
   const [status, setStatus] = useState('');
   const [extraText, setExtraText] = useState('');
+  const [detalles, setDetalles] = useState('');
   const [userId, setUserId] = useState('');
   const [error, setError] = useState('');
   const [userRole, setUserRole] = useState('');
@@ -91,14 +92,15 @@ export default function SalesReportList() {
         comentarios,
         status,
         extraText,
+        detalles,
         userId,
       }, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
+     
       const updatedReports = salesReports.map(report => 
         report.id === selectedReport.id 
-          ? { ...report, clienteProveedorProspecto, empresa, unidadNegocio, productoServicio, comentarios, status, extraText } 
+          ? { ...report, clienteProveedorProspecto, empresa, unidadNegocio, productoServicio, comentarios, status, extraText, detalles } 
           : report
       );
       setSalesReports(updatedReports);
@@ -121,6 +123,7 @@ export default function SalesReportList() {
         comentarios,
         status,
         extraText,
+        detalles,
         userId,
       }, {
         headers: { Authorization: `Bearer ${token}` },
@@ -144,6 +147,7 @@ export default function SalesReportList() {
       setComentarios(report.comentarios);
       setStatus(report.status);
       setExtraText(report.extraText);
+      setDetalles(report.detalles);
       setUserId(report.userId);      
     } else {
       // Clear fields for new report
@@ -154,6 +158,7 @@ export default function SalesReportList() {
       setComentarios('');
       setStatus('');
       setExtraText('');
+      setDetalles('');
       setUserId('');
     }
     setModalIsOpen(true);
@@ -209,6 +214,15 @@ export default function SalesReportList() {
           1: { halign: 'left', textColor: [0, 0, 0], cellWidth: 100 },
         }
       });
+       // Sección de Observaciones
+    doc.setFontSize(12);
+    doc.setFillColor(255, 178, 107); 
+    doc.rect(10, doc.lastAutoTable.finalY + 20, 190, 10, 'F');
+    doc.text("DETALLES ADICIONALES", 105, doc.lastAutoTable.finalY + 27, null, 'center');
+
+    // Insertar los detalles que el usuario ingresó en el campo de detalles del reporte
+    const detalles = report.detalles || "No hay detalles adicionales."; // Corregido aquí
+    doc.text(detalles, 105, doc.lastAutoTable.finalY + 35, { align: 'center' });
 
       doc.save(`Reporte_${report.clienteProveedorProspecto}.pdf`);
     };
@@ -264,11 +278,23 @@ export default function SalesReportList() {
         });
   
         currentY = doc.lastAutoTable.finalY + 15; // Añadir más espacio entre reportes
-      });
-  
-      doc.save('todos_los_reportes.pdf');
-    };
-  };
+
+        // Sección de Observaciones
+        doc.setFontSize(12);
+        doc.setFillColor(255, 178, 107); 
+        doc.rect(10, currentY + 20, 190, 10, 'F');
+        doc.text("DETALLES ADICIONALES", 105, currentY + 27, null, 'center');
+
+        // Insertar los detalles que el usuario ingresó en el campo de detalles del reporte
+        const detalles = report.detalles || "No hay detalles adicionales.";
+        doc.text(detalles, 105, currentY + 35, { align: 'center' });
+
+        currentY += 40; // Ajustar para espacio adicional después de cada reporte
+        });
+
+        doc.save('todos_los_reportes.pdf');
+        };
+        };
 
   return (
     <div className="p-4 bg-[#0e1624] text-white min-h-screen flex justify-center">
@@ -444,6 +470,15 @@ export default function SalesReportList() {
                   onChange={(e) => setExtraText(e.target.value)}
                   className="w-full p-2 border rounded bg-[#374151] text-white"
                   placeholder="Agregar cualquier tipo de texto extra"
+                />
+              </div>
+              <div>
+                <label className="block text-white">Detalles</label>
+                <textarea
+                  value={detalles}
+                  onChange={(e) => setDetalles(e.target.value)}
+                  className="w-full p-2 border rounded bg-[#374151] text-white"
+                  placeholder="Agregar detalles adicionales"
                 />
               </div>
             </div>

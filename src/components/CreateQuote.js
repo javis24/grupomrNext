@@ -5,6 +5,7 @@ import 'jspdf-autotable';
 const CreateQuote = () => {
   const [quoteNumber, setQuoteNumber] = useState(0);
   const [currentDate, setCurrentDate] = useState("");
+  const [detallesAdicionales, setDetallesAdicionales] = useState('');
 
   // Estado para almacenar los datos del cliente ingresados por el usuario
   const [clientData, setClientData] = useState({
@@ -16,7 +17,8 @@ const CreateQuote = () => {
     phone: '',
     mobile: '',
     supervisor: '',
-    assigned: ''
+    assigned: '',
+    detallesAdicionales: '',
   });
 
   // Estado para manejar filas dinámicas en la tabla de servicios
@@ -149,28 +151,16 @@ const CreateQuote = () => {
         }
       });
 
-      // Sección de observaciones
-      doc.setFontSize(8);
-      doc.setTextColor(0, 0, 0);
-      doc.setFillColor(255, 204, 0);
-      doc.rect(14, doc.lastAutoTable.finalY + 20, 182, 10, 'F');
-      doc.text("OBSERVACIONES", 105, doc.lastAutoTable.finalY + 27, null, 'center');
+     
 
-      const observations = [
-        "Precios más IVA",
-        "Condiciones de pago: Negociable",
-        "Contamos con todos los permisos necesarios para el desarrollo de nuestras actividades ante la SRNMA y SEMARNART",
-        "NÚMERO DE AUTORIZACIÓN AMBIENTAL RERET-1-SRNMA-005-24",
-        "Nuestro personal cuenta con seguridad social, EPP y capacitación para realizar las maniobras necesarias",
-        "Esta Cotización tiene una vigencia de 15 días",
-        "Teléfono de atención: 871-342 81 05"
-      ];
-
-      // Centrar las observaciones
-      observations.forEach((obs, index) => {
-        const obsTextWidth = doc.getTextWidth(obs);
-        doc.text(105 - (obsTextWidth / 2), doc.lastAutoTable.finalY + 37 + (index * 6), obs);
-      });
+       // Sección de detalles adicionales
+       doc.setFontSize(10);
+       doc.setTextColor(0, 0, 0);
+       doc.setFillColor(255, 204, 0);
+       doc.rect(14, doc.lastAutoTable.finalY + 60, 182, 10, 'F');
+       doc.text("DETALLES ADICIONALES", 105, doc.lastAutoTable.finalY + 67, null, 'center');
+ 
+       doc.text(detallesAdicionales || "No hay detalles adicionales.", 105, doc.lastAutoTable.finalY + 75, { align: 'center' }); 
 
        // Pie de página
        doc.setFontSize(8);
@@ -281,6 +271,16 @@ const CreateQuote = () => {
             className="p-2 rounded bg-[#374151] text-white w-full"
           />
         </div>
+        {/* Campo para Detalles Adicionales */}
+      <div className="mb-4">
+        <label className="block mb-2">Detalles Adicionales</label>
+        <textarea
+          value={detallesAdicionales}
+          onChange={(e) => setDetallesAdicionales(e.target.value)}
+          className="p-2 rounded bg-[#374151] text-white w-full"
+          rows="3"
+        ></textarea>
+      </div>
 
        
       </div>

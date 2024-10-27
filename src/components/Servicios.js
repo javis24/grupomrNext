@@ -39,6 +39,7 @@ export default function ServiceList() {
   const [email, setEmail] = useState('');
   const [ubicacion, setUbicacion] = useState('');
   const [rfc, setRfc] = useState('');
+  const [detalles, setDetalles] = useState('');
   const [userId, setUserId] = useState('');
   const [error, setError] = useState('');
   const [userRole, setUserRole] = useState('');
@@ -105,13 +106,14 @@ export default function ServiceList() {
         email,
         ubicacion,
         rfc,
+        detalles,
       }, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       const updatedServices = services.map(service => 
         service.id === selectedService.id 
-          ? { ...service, contactName, programacion, equipo, numeroEconomico, contenido, manifiesto, renta2024, recoleccion, disposicion, contacto, telefono, email, ubicacion, rfc } 
+          ? { ...service, contactName, programacion, equipo, numeroEconomico, contenido, manifiesto, renta2024, recoleccion, disposicion, contacto, telefono, email, ubicacion, rfc, detalles } 
           : service
       );
       setServices(updatedServices);
@@ -141,6 +143,7 @@ export default function ServiceList() {
         email,
         ubicacion,
         rfc,
+        detalles,
         userId,
       }, {
         headers: { Authorization: `Bearer ${token}` },
@@ -171,6 +174,7 @@ export default function ServiceList() {
       setEmail(service.email);
       setUbicacion(service.ubicacion);
       setRfc(service.rfc);
+      setDetalles(service.detalles)
       setUserId(service.userId);
     } else {
       // Limpiar campos si se crea un nuevo servicio
@@ -188,6 +192,7 @@ export default function ServiceList() {
       setEmail('');
       setUbicacion('');
       setRfc('');
+      setDetalles('');
       setUserId('');
     }
     setModalIsOpen(true);
@@ -200,31 +205,37 @@ export default function ServiceList() {
 
   const exportServiceToPDF = (service) => {
     const doc = new jsPDF();
-    const imgUrl = '/logo_mr.png';  // Ruta de tu logo
-
+  
+    // Obtener la fecha actual
+    const today = new Date();
+    const formattedDate = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
+  
+    // Logo del encabezado
+    const imgUrl = '/logo_mr.png'; // Ruta de tu logo
     const image = new Image();
     image.src = imgUrl;
-
+  
     image.onload = () => {
-      doc.addImage(image, 'PNG', 20, 10, 20, 20);
-
-      // Información de la empresa
+      doc.addImage(image, 'PNG', 10, 5, 50, 50);
+  
+      // Información de la empresa y cotización en el encabezado
+      doc.setFontSize(10);
+      doc.text("Materiales Reutilizables S.A. de C.V.", 100, 20, { align: 'center' });
+      doc.text("Benito Juarez 112 SUR, Col. 1ro de Mayo", 100, 27, { align: 'center' });
+      doc.text("Cd. Lerdo, Dgo. C.P. 35169", 100, 34, { align: 'center' });
+  
+      // Título de Cotización y Fecha
+      doc.setFillColor(255, 178, 107); // Color naranja
+      doc.rect(150, 20, 50, 15, 'F'); // Caja para "Cotización"
+      doc.rect(150, 40, 50, 15, 'F'); // Caja para "Fecha"
+  
       doc.setFontSize(12);
-      doc.text("Materiales Reutilizables S.A. de C.V.", 105, 20, { align: 'center' });
-      doc.text("Benito Juarez 112 SUR, Col. 1ro de Mayo", 105, 27, { align: 'center' });
-      doc.text("Cd. Lerdo, Dgo. C.P. 35169", 105, 32, { align: 'center' });
-      doc.text("MRE040121UBA", 105, 37, { align: 'center' });
-
-      // Sección de datos del servicio
-      doc.setFillColor(255, 204, 0); // Color amarillo
-      doc.rect(160, 20, 40, 10, 'F');
-      doc.setFontSize(14);
-      doc.setTextColor(0, 0, 0);
-      doc.text("SERVICIO", 180, 27, null, 'center'); 
-
-      // Información del servicio
+      doc.text("COTIZACIÓN", 175, 28, { align: 'center' });
+      doc.text(`Fecha: ${formattedDate}`, 175, 45, { align: 'center' });
+  
+      // Detalles del servicio
       const serviceDetails = [
-        ["NOMBRE Del CONTACTO", service.contactName],
+        ["NOMBRE DEL CONTACTO", service.contactName],
         ["PROGRAMACIÓN", service.programacion],
         ["EQUIPO", service.equipo],
         ["NÚMERO ECONÓMICO", service.numeroEconomico],
@@ -234,24 +245,50 @@ export default function ServiceList() {
         ["RECOLECCIÓN", `$ ${service.recoleccion}`],
         ["DISPOSICIÓN", `$ ${service.disposicion}`],
         ["UBICACIÓN", service.ubicacion],
-        ["CONTACTO", service.contacto],
-        ["TELÉFONO", service.telefono],
+        ["RFC", service.rfc],
+  
       ];
-
+  
+      // Tabla con detalles del servicio
       doc.autoTable({
+        head: [["DESCRIPCIÓN", "VALOR"]],
         body: serviceDetails,
-        startY: 50,
-        theme: 'plain',
-        styles: { cellPadding: 1, fontSize: 10, lineWidth: 0.1 },
-        columnStyles: {
-          0: { halign: 'left', textColor: [0, 0, 0], cellWidth: 60 },
-          1: { halign: 'left', textColor: [0, 0, 0], cellWidth: 100 },
-        }
+        startY: 60,  // Ajuste para empezar después del encabezado
+        theme: 'grid',
+        headStyles: { fillColor: [255, 178, 107] },
+        styles: { fontSize: 8, halign: 'left' },
+        margin: { left: 11 },
+        columnStyles: { 0: { cellWidth: 70 }, 1: { cellWidth: 120 } }
       });
-
-      doc.save(`${service.programacion}_details.pdf`);
+  
+      // Usamos doc.lastAutoTable.finalY después de que autoTable se ha generado
+      const finalY = doc.lastAutoTable.finalY; // Guardar el valor de Y final después de la tabla
+  
+      // Sección de Observaciones
+      doc.setFontSize(12);
+      doc.setFillColor(255, 178, 107); 
+      doc.rect(10, finalY + 20, 190, 10, 'F');
+      doc.text("DETALLES ADICIONALES", 105, finalY + 27, null, 'center');
+  
+      // Insertar los detalles que el usuario ingresó en el campo de detalles
+      const detalles = service.detalles || "No hay detalles adicionales.";
+      doc.text(detalles, 105, finalY + 35, { align: 'center' });
+  
+      // Información de contacto
+      doc.setFontSize(8);
+      doc.text("Comercialización Materiales Reutilizables", 105, finalY + 85, null, 'center');
+      doc.setFontSize(10);
+      doc.text("Ing. Gustavo Salgado", 105, finalY + 90, null, 'center');
+      doc.text("Gerencia General", 105, finalY + 95, null, 'center');
+      doc.text("gerencia@sanolaguna.com", 105, finalY + 100, null, 'center');
+  
+      // Guardar el archivo PDF
+      doc.save(`${service.programacion}_cotizacion.pdf`);
     };
   };
+  
+  
+
 
   const filteredServices = services.filter((service) =>
     service.programacion?.toLowerCase().includes(search.toLowerCase())
@@ -259,30 +296,45 @@ export default function ServiceList() {
 
   const exportAllServicesToPDF = () => {
     const doc = new jsPDF();
-    const imgUrl = '/logo_mr.png';  // Ruta de tu logo
   
-    let currentY = 10;  // Empezamos desde la parte superior del PDF
+    // Obtener la fecha actual
+    const today = new Date();
+    const formattedDate = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
   
+    // Logo del encabezado
+    const imgUrl = '/logo_mr.png'; // Ruta de tu logo
     const image = new Image();
     image.src = imgUrl;
   
     image.onload = () => {
-      doc.addImage(image, 'PNG', 20, 10, 20, 20);
-      
+      doc.addImage(image, 'PNG', 10, 5, 50, 50);
+  
+      // Información de la empresa en el encabezado
+      doc.setFontSize(10);
+      doc.text("Materiales Reutilizables S.A. de C.V.", 100, 20, { align: 'center' });
+      doc.text("Benito Juarez 112 SUR, Col. 1ro de Mayo", 100, 27, { align: 'center' });
+      doc.text("Cd. Lerdo, Dgo. C.P. 35169", 100, 34, { align: 'center' });
+  
+      // Título de Cotización y Fecha
+      doc.setFillColor(255, 178, 107); // Color naranja
+      doc.rect(150, 20, 50, 15, 'F'); // Caja para "Cotización"
+      doc.rect(150, 40, 50, 15, 'F'); // Caja para "Fecha"
+  
       doc.setFontSize(12);
-      doc.text("Materiales Reutilizables S.A. de C.V.", 105, currentY + 10, { align: 'center' });
-      doc.text("Benito Juarez 112 SUR, Col. 1ro de Mayo", 105, currentY + 17, { align: 'center' });
-      doc.text("Cd. Lerdo, Dgo. C.P. 35169", 105, currentY + 22, { align: 'center' });
-      doc.text("MRE040121UBA", 105, currentY + 27, { align: 'center' });
+      doc.text("SERVICIOS", 175, 28, { align: 'center' });
+      doc.text(`Fecha: ${formattedDate}`, 175, 45, { align: 'center' });
+  
+      let currentY = 60; // Empezamos después del encabezado
   
       services.forEach((service, index) => {
         // Añadir encabezado para cada servicio
         doc.setFontSize(12);
         doc.setTextColor(0, 0, 0);
-        doc.text(`Servicio ${index + 1}`, 20, currentY + 40);
+        doc.text(`Servicio ${index + 1}`, 20, currentY);
   
+        // Detalles del servicio
         const serviceDetails = [
-          ["NOMBRE Del CONTACTO", service.contactName],
+          ["NOMBRE DEL CONTACTO", service.contactName],
           ["PROGRAMACIÓN", service.programacion],
           ["EQUIPO", service.equipo],
           ["NÚMERO ECONÓMICO", service.numeroEconomico],
@@ -292,27 +344,48 @@ export default function ServiceList() {
           ["RECOLECCIÓN", `$ ${service.recoleccion}`],
           ["DISPOSICIÓN", `$ ${service.disposicion}`],
           ["UBICACIÓN", service.ubicacion],
-          ["CONTACTO", service.contacto],
-          ["TELÉFONO", service.telefono],
+          ["RFC", service.rfc],
         ];
   
+        // Generar tabla con los detalles del servicio
         doc.autoTable({
+          head: [["DESCRIPCIÓN", "VALOR"]],
           body: serviceDetails,
-          startY: currentY + 45,  // Ajustar el inicio en Y para cada servicio
-          theme: 'plain',
-          styles: { cellPadding: 1, fontSize: 12, lineWidth: 0.1 },
-          columnStyles: {
-            0: { halign: 'left', textColor: [0, 0, 0], cellWidth: 60 },
-            1: { halign: 'left', textColor: [0, 0, 0], cellWidth: 100 },
-          },
+          startY: currentY + 10,
+          theme: 'grid',
+          headStyles: { fillColor: [255, 178, 107] },
+          styles: { fontSize: 8, halign: 'left' },
+          margin: { left: 11 },
+          columnStyles: { 0: { cellWidth: 70 }, 1: { cellWidth: 120 } }
         });
   
-        currentY = doc.lastAutoTable.finalY + 15; // Añadir más espacio entre servicios
+        // Actualizar currentY para que la siguiente tabla no se sobreponga
+        currentY = doc.lastAutoTable.finalY + 20;
       });
   
+      // Sección de Observaciones para todos los servicios
+      doc.setFontSize(12);
+      doc.setFillColor(255, 178, 107); 
+      doc.rect(10, currentY, 190, 10, 'F');
+      doc.text("DETALLES ADICIONALES", 105, currentY + 7, null, 'center');
+  
+      const detalles = services.detalles || "No hay detalles adicionales.";
+      doc.setFontSize(10);
+      doc.text(detalles, 105, currentY + 15, { align: 'center' });
+  
+      // Información de contacto
+      doc.setFontSize(8);
+      doc.text("Comercialización Materiales Reutilizables", 105, currentY + 45, null, 'center');
+      doc.setFontSize(10);
+      doc.text("Ing. Gustavo Salgado", 105, currentY + 50, null, 'center');
+      doc.text("Gerencia General", 105, currentY + 55, null, 'center');
+      doc.text("gerencia@sanolaguna.com", 105, currentY + 60, null, 'center');
+  
+      // Guardar el archivo PDF
       doc.save('todos_los_servicios.pdf');
     };
   };
+  
   
 
   return (
@@ -530,6 +603,17 @@ export default function ServiceList() {
                   className="w-full p-2 border rounded bg-[#374151] text-white"
                 />
               </div>
+              <div>
+                <label className="block text-white">Detalless</label>
+                <textarea
+                name="detalles"
+                value={detalles}
+                onChange={(e) => setDetalles(e.target.value)}
+                className="w-full p-2 border rounded bg-[#374151] text-white"
+                placeholder="Agregar detalles adicionales"
+              />
+              </div>
+              
             </div>
             <button
               type="submit"
