@@ -35,19 +35,18 @@ const QRCodeReader = () => {
         }
       };
 
-      // Configuración adicional para asegurar la cámara trasera
+      // Configuración de escaneo usando solo `cameraId` 
       const config = {
         fps: 10,
         qrbox: { width: 250, height: 250 },
         experimentalFeatures: {
           useBarCodeDetectorIfSupported: true
         },
-        facingMode: { exact: "environment" } // Aquí forzamos la cámara trasera
       };
 
       // Iniciar escaneo con la cámara seleccionada
       html5QrCode.start(
-        cameraId,
+        cameraId,  // Usa el id de la cámara trasera
         config,
         (decodedText, decodedResult) => {
           setQrData(decodedText); // Mostrar los datos escaneados
@@ -77,7 +76,7 @@ const QRCodeReader = () => {
   return (
     <div>
       <h1>QR Code Scanner</h1>
-      <div id="reader" style={{ width: '300px', height: '100vh' }}></div>
+      <div id="reader" style={{ width: '100%', height: '100vh' }}></div>
       <p>Scanned QR Code Data: {qrData}</p>
     </div>
   );

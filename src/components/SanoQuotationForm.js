@@ -140,11 +140,8 @@ const SanoQuotationForm = () => {
 
           // Información de contacto
           doc.setFontSize(8);
-          doc.text("Comercialización SANO", 105, doc.lastAutoTable.finalY + 85, null, 'center');
-          doc.setFontSize(10);
-          doc.text("Ing. Gustavo Salgado", 105, doc.lastAutoTable.finalY + 90, null, 'center');
-          doc.text("Gerencia General", 105, doc.lastAutoTable.finalY + 95, null, 'center');
-          doc.text("gerencia@sanolaguna.com", 105, doc.lastAutoTable.finalY + 100, null, 'center');
+          doc.text("COMERCIALIZACIÓN SANO", 105, doc.lastAutoTable.finalY + 85, null, 'center');
+      
 
 
 
