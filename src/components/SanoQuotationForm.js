@@ -112,8 +112,8 @@ const SanoQuotationForm = () => {
         item.descripcion,
         item.cantidad,
         item.unidad,
-        item.precioUnitario,
-        item.total,
+        `$${item.precioUnitario.toFixed(2)}`, // Formato con $ en precio unitario
+        `$${item.total.toFixed(2)}`, 
         item.comentarios
       ]);
 
@@ -307,7 +307,7 @@ const SanoQuotationForm = () => {
                 value={item.precioUnitario}
                 onChange={(e) => handleChange(e, index)}
                 className="p-2 rounded border w-full text-black"
-              />
+              /> 
             </div>
             <div>
               <label className="block">Total</label>

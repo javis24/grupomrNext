@@ -8,20 +8,17 @@ export default function UploadList() {
   const [searchTerm, setSearchTerm] = useState('');
   const [userEmail, setUserEmail] = useState('');
   const [error, setError] = useState('');
+  const [fileType, setFileType] = useState('Documento 1'); // Estado para el tipo de archivo
 
   useEffect(() => {
-    // Obtener el token JWT del almacenamiento local
     const token = localStorage.getItem('token');
-    
     if (token) {
-      const decodedToken = jwt.decode(token); // Decodificamos el token
-      setUserEmail(decodedToken.email); // Guardamos el email del usuario autenticado
+      const decodedToken = jwt.decode(token);
+      setUserEmail(decodedToken.email);
     }
-    
-    fetchFiles(); // Cargamos la lista de archivos
+    fetchFiles();
   }, []);
 
-  // Función para obtener la lista de archivos
   const fetchFiles = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -35,12 +32,20 @@ export default function UploadList() {
     }
   };
 
-  // Función para manejar la selección de archivo
   const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      // Verificar el prefijo del nombre de archivo
+      const filename = selectedFile.name.toLowerCase();
+      if (filename.startsWith('ordende')) {
+        setFileType('Orden Compra');
+      } else {
+        setFileType('Documento 1');
+      }
+      setFile(selectedFile);
+    }
   };
 
-  // Función para subir el archivo
   const handleUpload = async () => {
     if (!file) {
       alert('Por favor selecciona un archivo');
@@ -49,6 +54,7 @@ export default function UploadList() {
 
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('type', fileType); // Añadir el tipo de archivo
 
     try {
       const token = localStorage.getItem('token');
@@ -58,32 +64,37 @@ export default function UploadList() {
           'Content-Type': 'multipart/form-data',
         },
       });
-      fetchFiles(); // Actualizamos la lista de archivos después de subir
-      setFile(null); // Limpiar la selección
+      fetchFiles();
+      setFile(null);
+      alert('Archivo subido exitosamente');
     } catch (error) {
       console.error('Error al subir archivo:', error);
       alert('Hubo un error al subir el archivo');
     }
   };
 
-  // Función para eliminar un archivo
   const handleDelete = async (fileId) => {
     try {
       const token = localStorage.getItem('token');
       await axios.delete(`/api/files/${fileId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      fetchFiles(); // Actualizar la lista después de eliminar
+      fetchFiles();
     } catch (error) {
       console.error('Error al eliminar archivo:', error);
       alert('Hubo un error al eliminar el archivo');
     }
   };
 
-  // Filtrar la lista de archivos por el término de búsqueda
-  const filteredFiles = fileList.filter((file) =>
-    file.filename.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+// Archivos filtrados por término de búsqueda
+const filteredFiles = fileList.filter((file) =>
+  file.filename.toLowerCase().includes(searchTerm.toLowerCase())
+);
+
+// Clasificar los archivos en "Documento 1" y "Ordenes de Compra" basados en el prefijo en el nombre del archivo
+const documents = filteredFiles.filter(file => !file.filename.toLowerCase().startsWith('ordende'));
+const orders = filteredFiles.filter(file => file.filename.toLowerCase().startsWith('ordende'));
+
 
   return (
     <div className="container mx-auto p-4 bg-[#0e1624] text-white min-h-screen flex flex-col">
@@ -91,11 +102,11 @@ export default function UploadList() {
       
       {/* Formulario para subir archivos */}
       <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
-        <div className="flex items-center">
+        <div className="flex items-center space-x-2">
           <input
             type="file"
             onChange={handleFileChange}
-            className="border p-2 rounded-md mr-2 bg-[#1f2937] text-white"
+            className="border p-2 rounded-md bg-[#1f2937] text-white"
           />
           <button
             onClick={handleUpload}
@@ -119,9 +130,10 @@ export default function UploadList() {
 
       {error && <p className="text-red-500 text-center">{error}</p>}
 
-      {/* Tabla de archivos */}
-      {filteredFiles.length === 0 ? (
-        <p className="text-center mt-4">No hay archivos subidos.</p>
+      {/* Tabla de Documentos 1 */}
+      <h3 className="text-xl font-semibold mt-4 mb-2">Documento 1</h3>
+      {documents.length === 0 ? (
+        <p className="text-center mt-4">No hay documentos subidos.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="min-w-full bg-[#1f2937] text-left rounded-lg border border-gray-600">
@@ -132,7 +144,7 @@ export default function UploadList() {
               </tr>
             </thead>
             <tbody>
-              {filteredFiles.map((file) => (
+              {documents.map((file) => (
                 <tr key={file.id} className="hover:bg-[#4b5563]">
                   <td className="px-4 py-2">{file.filename}</td>
                   <td className="px-4 py-2">
@@ -145,7 +157,50 @@ export default function UploadList() {
                       >
                         Descargar
                       </a>
-                      {/* Mostrar botón de eliminar solo para usuarios permitidos */}
+                      {(userEmail === 'coordinadora@grupomrlaguna.com' || userEmail === 'mgaliano@grupomrlaguna.com') && (
+                        <button
+                          onClick={() => handleDelete(file.id)}
+                          className="bg-red-500 text-white p-2 rounded-md hover:bg-red-700"
+                        >
+                          Eliminar
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Tabla de Ordenes de Compra */}
+      <h3 className="text-xl font-semibold mt-4 mb-2">Ordenes de Compra</h3>
+      {orders.length === 0 ? (
+        <p className="text-center mt-4">No hay ordenes de compra subidas.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full bg-[#1f2937] text-left rounded-lg border border-gray-600">
+            <thead>
+              <tr className="bg-[#374151]">
+                <th className="px-4 py-2">Nombre del Archivo</th>
+                <th className="px-4 py-2">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.map((file) => (
+                <tr key={file.id} className="hover:bg-[#4b5563]">
+                  <td className="px-4 py-2">{file.filename}</td>
+                  <td className="px-4 py-2">
+                    <div className="flex space-x-4">
+                      <a
+                        href={file.filepath}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-green-500 text-white p-2 rounded-md hover:bg-green-700"
+                      >
+                        Descargar
+                      </a>
                       {(userEmail === 'coordinadora@grupomrlaguna.com' || userEmail === 'mgaliano@grupomrlaguna.com') && (
                         <button
                           onClick={() => handleDelete(file.id)}

@@ -288,8 +288,9 @@ const CreditRequestForm = () => {
           ["DEPARTAMENTO", "NOMBRE", "TEL / MOVIL", "CORREO"],
           ["COMPRAS", formData.comprasNombre, formData.comprasTel, formData.comprasCorreo],
           ["PAGOS", formData.pagosNombre, formData.pagosTel, formData.pagosCorreo],
-          ["USUARIO/OPERACIÓN", formData.usuarioNombre, formData.usuarioTel, formData.usuarioCorreo],
-          ["OTRO:", formData.otroNombre, formData.otroTel, formData.otroCorreo]
+          ["CONTABILIDAD:", formData.otroNombre, formData.otroTel, formData.otroCorreo],
+          ["USUARIO/OPERACIÓN", formData.usuarioNombre, formData.usuarioTel, formData.usuarioCorreo]
+         
         ];
 
         doc.autoTable({
@@ -551,7 +552,6 @@ doc.text("POR FAVOR ANEXAR LOS SIGUIENTES DOCUMENTOS (De forma digital)", 105, d
 
 // Lista de títulos de los documentos
 const documentTitles = [
-  "CIF RECENTE",
   "COMPROBANTE DE DOMICILIO RECENTE",
   "IDENTIFICACION OFICIAL (EN EL CASO DE PERSONA MORAL, ID DEL REPRESENTANTE LEGAL)",
   "CARÁTULA DEL ESTADO DE CUENTA, SOLO EN DONDE SE VEAN LOS DATOS BANCARIOS",
@@ -965,6 +965,16 @@ doc.text("PARA ESCANEAR Y ENVIAR POR VÍA DIGITAL.", 40, linePositionY + 85);
                         />
                       </div>
                       <div>
+                        <label className="block">Contabilidad</label>
+                        <input
+                          type="text"
+                          name="otro"
+                          value={formData.otro}
+                          onChange={handleChange}
+                          className="p-2 rounded border w-full text-black"
+                        />
+                      </div>
+                      <div>
                         <label className="block">Usuario/Operación</label>
                         <input
                           type="text"
@@ -974,16 +984,7 @@ doc.text("PARA ESCANEAR Y ENVIAR POR VÍA DIGITAL.", 40, linePositionY + 85);
                           className="p-2 rounded border w-full text-black"
                         />
                       </div>
-                      <div>
-                        <label className="block">Otro</label>
-                        <input
-                          type="text"
-                          name="otro"
-                          value={formData.otro}
-                          onChange={handleChange}
-                          className="p-2 rounded border w-full text-black"
-                        />
-                      </div>
+                   
                       <div>
                         <label className="block">Tel / Movil</label>
                         <input
