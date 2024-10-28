@@ -1678,14 +1678,6 @@ doc.text("PARA ESCANEAR Y ENVIAR POR VÍA DIGITAL.", 40, linePositionY + 85);
                               />
                             </div>
                           </div>
-
-
-
-
-
-
-
-
                   </div>
             </div>
 

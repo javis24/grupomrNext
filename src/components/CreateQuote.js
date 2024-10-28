@@ -179,193 +179,203 @@ const CreateQuote = () => {
    };
 
   return (
-    <div className="p-8 bg-[#0e1624] text-white">
-      <h2 className="text-2xl font-bold mb-4"> Cotización MR</h2>
-
-      {/* Formulario para ingresar datos del cliente */}
-      <div className="grid grid-cols-3 gap-4 mb-4">
-        <div>
-          <label className="block mb-2">Empresa</label>
-          <input
-            type="text"
-            name="companyName"
-            value={clientData.companyName}
-            onChange={handleClientInputChange}
-            className="p-2 rounded bg-[#374151] text-white w-full"
-          />
-        </div>
-
-        <div>
-          <label className="block mb-2">Domicilio</label>
-          <input
-            type="text"
-            name="address"
-            value={clientData.address}
-            onChange={handleClientInputChange}
-            className="p-2 rounded bg-[#374151] text-white w-full"
-          />
-        </div>
-
-        <div>
-          <label className="block mb-2">Atención a</label>
-          <input
-            type="text"
-            name="attentionTo"
-            value={clientData.attentionTo}
-            onChange={handleClientInputChange}
-            className="p-2 rounded bg-[#374151] text-white w-full"
-          />
-        </div>
-
-        <div>
-          <label className="block mb-2">Departamento</label>
-          <input
-            type="text"
-            name="department"
-            value={clientData.department}
-            onChange={handleClientInputChange}
-            className="p-2 rounded bg-[#374151] text-white w-full"
-          />
-        </div>
-
-        <div>
-          <label className="block mb-2">Correo Electrónico</label>
-          <input
-            type="email"
-            name="email"
-            value={clientData.email}
-            onChange={handleClientInputChange}
-            className="p-2 rounded bg-[#374151] text-white w-full"
-          />
-        </div>
-
-        <div>
-          <label className="block mb-2">Teléfono</label>
-          <input
-            type="text"
-            name="phone"
-            value={clientData.phone}
-            onChange={handleClientInputChange}
-            className="p-2 rounded bg-[#374151] text-white w-full"
-          />
-        </div>
-
-        <div>
-          <label className="block mb-2">Móvil</label>
-          <input
-            type="text"
-            name="mobile"
-            value={clientData.mobile}
-            onChange={handleClientInputChange}
-            className="p-2 rounded bg-[#374151] text-white w-full"
-          />
-        </div>
-
-        <div>
-          <label className="block mb-2">Asesor Comercial</label>
-          <input
-            type="text"
-            name="supervisor"
-            value={clientData.supervisor}
-            onChange={handleClientInputChange}
-            className="p-2 rounded bg-[#374151] text-white w-full"
-          />
-        </div>
-        {/* Campo para Detalles Adicionales */}
-      <div className="mb-4">
-        <label className="block mb-2">Detalles Adicionales</label>
-        <textarea
-          value={detallesAdicionales}
-          onChange={(e) => setDetallesAdicionales(e.target.value)}
-          className="p-2 rounded bg-[#374151] text-white w-full"
-          rows="3"
-        ></textarea>
-      </div>
-
-       
-      </div>
-
-      {/* Formulario dinámico para agregar servicios */}
-      <h3 className="text-xl font-semibold mb-4">Servicios/Productos</h3>
-      {serviceRows.map((row, index) => (
-        <div key={index} className="grid grid-cols-4 gap-4 mb-2">
-          <input
-            type="text"
-            name="description"
-            placeholder="Descripción"
-            value={row.description}
-            onChange={(e) => handleRowChange(index, e)}
-            className="p-2 rounded bg-[#374151] text-white w-full"
-          />
-          <input
-            type="text"
-            name="um"
-            placeholder="UM"
-            value={row.um}
-            onChange={(e) => handleRowChange(index, e)}
-            className="p-2 rounded bg-[#374151] text-white w-full"
-          />
-          <input
-            type="number"
-            name="pu"
-            placeholder="P.U."
-            value={row.pu}
-            onChange={(e) => handleRowChange(index, e)}
-            className="p-2 rounded bg-[#374151] text-white w-full"
-          />
-          <input
-            type="text"
-            name="comments"
-            placeholder="Cantidad"
-            value={row.comments}
-            onChange={(e) => handleRowChange(index, e)}
-            className="p-2 rounded bg-[#374151] text-white w-full"
-          />
-          <input
-            type="text"
-            name="comments"
-            placeholder="Sub Total"
-            value={row.comments}
-            onChange={(e) => handleRowChange(index, e)}
-            className="p-2 rounded bg-[#374151] text-white w-full"
-          />
-           <input
-            type="text"
-            name="comments"
-            placeholder="Comentarios"
-            value={row.comments}
-            onChange={(e) => handleRowChange(index, e)}
-            className="p-2 rounded bg-[#374151] text-white w-full"
-          />
-           <input
-            type="text"
-            name="comments"
-            placeholder="Observaciones"
-            value={row.comments}
-            onChange={(e) => handleRowChange(index, e)}
-            className="p-2 rounded bg-[#374151] text-white w-full"
-          />
-          
-        </div>
+          <div className="container mx-auto p-6">
+          <h1 className="text-2xl font-bold mb-6">Cotización MR</h1>
+          <form className="grid grid-cols-1 gap-6">
+            {/* Campos de información del cliente */}
+            <div className="mb-8">
+              <h2 className="text-lg font-semibold mb-4">Información del Cliente</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block">Empresa</label>
+                  <input
+                    type="text"
+                    name="companyName"
+                    value={clientData.companyName}
+                    onChange={handleClientInputChange}
+                    className="p-2 rounded border w-full text-black"
+                  />
+                </div>
+                <div>
+                  <label className="block">Domicilio</label>
+                  <input
+                    type="text"
+                    name="address"
+                    value={clientData.address}
+                    onChange={handleClientInputChange}
+                    className="p-2 rounded border w-full text-black"
+                  />
+                </div>
+                <div>
+                  <label className="block">Atención a</label>
+                  <input
+                    type="text"
+                    name="attentionTo"
+                    value={clientData.attentionTo}
+                    onChange={handleClientInputChange}
+                    className="p-2 rounded border w-full text-black"
+                  />
+                </div>
+                <div>
+                  <label className="block">Teléfono</label>
+                  <input
+                    type="text"
+                    name="phone"
+                    value={clientData.phone}
+                    onChange={handleClientInputChange}
+                    className="p-2 rounded border w-full text-black"
+                  />
+                </div>
+                <div>
+                  <label className="block">Móvil</label>
+                  <input
+                    type="text"
+                    name="mobile"
+                    value={clientData.mobile}
+                    onChange={handleClientInputChange}
+                    className="p-2 rounded border w-full text-black"
+                  />
+                </div>
+                <div>
+                  <label className="block">Departamento</label>
+                  <input
+                    type="text"
+                    name="department"
+                    value={clientData.department}
+                    onChange={handleClientInputChange}
+                    className="p-2 rounded border w-full text-black"
+                  />
+                </div>
+                <div>
+                  <label className="block">Correo Electrónico</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={clientData.email}
+                    onChange={handleClientInputChange}
+                    className="p-2 rounded border w-full text-black"
+                  />
+                </div>
+                <div>
+                  <label className="block">Asesor Comercial</label>
+                  <input
+                    type="text"
+                    name="supervisor"
+                    value={clientData.supervisor}
+                    onChange={handleClientInputChange}
+                    className="p-2 rounded border w-full text-black"
+                  />
+                </div>
+                {/* Campo para Detalles Adicionales */}
+                <div className="mb-4">
+                  <label className="block">Detalles Adicionales</label>
+                  <textarea
+                    value={detallesAdicionales}
+                    onChange={(e) => setDetallesAdicionales(e.target.value)}
+                    className="p-2 rounded border w-full text-black"
+                    placeholder="Agregar detalles adicionales"
+                  />
+                </div>
+              </div>
+            </div>
         
-      ))}
-
-      {/* Botón para agregar una nueva fila */}
-      <button
-        onClick={addRow}
-        className="mb-4 p-2 bg-green-500 rounded text-white hover:bg-green-600"
-      >
-        Agregar Fila
-      </button>
-
-      {/* Botón para generar PDF */}
-      <button
-        onClick={generatePDF}
-        className="p-2 bg-blue-500 rounded text-white hover:bg-blue-600"
-      >
-        Generar PDF
-      </button>
-    </div>
+            {/* Items de la cotización */}
+            <div className="mb-8">
+              <h2 className="text-lg font-semibold mb-4">Servicios/Productos Cotizados</h2>
+              {serviceRows.map((row, index) => (
+                <div key={index} className="border-t pt-4 mt-4 relative">
+                  <h3 className="text-xl font-bold">Servicio {index + 1}</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="relative">
+                      <label className="block">Descripción</label>
+                      <input
+                        type="text"
+                        name="description"
+                        value={row.description}
+                        onChange={(e) => handleRowChange(index, e)}
+                        className="p-2 rounded border w-full text-black"
+                      />
+                    </div>
+                    <div>
+                      <label className="block">Cantidad</label>
+                      <input
+                        type="number"
+                        name="cantidad"
+                        value={row.cantidad}
+                        onChange={(e) => handleRowChange(index, e)}
+                        className="p-2 rounded border w-full text-black"
+                      />
+                    </div>
+                    <div>
+                      <label className="block">Unidad</label>
+                      <input
+                        type="text"
+                        name="um"
+                        value={row.um}
+                        onChange={(e) => handleRowChange(index, e)}
+                        className="p-2 rounded border w-full text-black"
+                      />
+                    </div>
+                    <div>
+                      <label className="block">Precio Unitario</label>
+                      <input
+                        type="number"
+                        name="pu"
+                        value={row.pu}
+                        onChange={(e) => handleRowChange(index, e)}
+                        className="p-2 rounded border w-full text-black"
+                      />
+                    </div>
+                    <div>
+                      <label className="block">Total</label>
+                      <input
+                        type="number"
+                        name="total"
+                        value={row.total}
+                        onChange={(e) => handleRowChange(index, e)}
+                        className="p-2 rounded border w-full text-black"
+                      />
+                    </div>
+                    <div>
+                      <label className="block">Comentarios</label>
+                      <textarea
+                        name="comments"
+                        value={row.comments}
+                        onChange={(e) => handleRowChange(index, e)}
+                        className="p-2 rounded border w-full text-black"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      className="bg-red-500 text-white w-12 h-12 top-[5px]"
+                      onClick={() => removeRow(index)}
+                    >
+                      X
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <button
+                type="button"
+                className="bg-green-500 text-white p-2 rounded"
+                onClick={addRow}
+              >
+                Agregar Servicio
+              </button>
+            </div>
+        
+            {/* Botón para exportar a PDF */}
+            <button
+              type="button"
+              className="bg-blue-500 text-white p-2 rounded"
+              onClick={generatePDF}
+            >
+              Exportar a PDF
+            </button>
+          </form>
+        </div>
+  
+  
   );
 };
 
