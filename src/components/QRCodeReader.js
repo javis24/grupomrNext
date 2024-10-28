@@ -75,11 +75,11 @@ const QRCodeReader = () => {
   }, [cameraId]);
 
   return (
-    <div>
-      <h1>QR Code Scanner</h1>
-      <div id="reader" style={{ width: '300px' }}></div>
-      <p>Scanned QR Code Data: {qrData}</p>
-    </div>
+    <div style={{ height: '200vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        <h1>QR Code Scanner</h1>
+        <div id="reader" style={{ width: '100%', height: '200vh' }}></div>
+        <p>Scanned QR Code Data: {qrData}</p>
+      </div>
   );
 };
 
