@@ -441,9 +441,9 @@ export default function ServiceList() {
                   <td className="px-4 py-2">{service.numeroEconomico}</td>
                   <td className="px-4 py-2">{service.contenido}</td>
                   <td className="px-4 py-2">{service.manifiesto}</td>
-                  <td className="px-4 py-2">$ {typeof service.renta2024 === 'number' ? service.renta2024.toFixed(2) : '-'}</td>
-                  <td className="px-4 py-2">{typeof service.recoleccion === 'number' ? service.recoleccion.toFixed(2) : '-'}</td>
-                  <td className="px-4 py-2">{typeof service.disposicion === 'number' ? service.disposicion.toFixed(2) : '-'}</td>
+                  <td className="px-4 py-2">$ {!isNaN(Number(service.renta2024)) ? Number(service.renta2024).toFixed(2) : '-'}</td>
+                  <td className="px-4 py-2">$ {!isNaN(Number(service.recoleccion)) ? Number(service.recoleccion).toFixed(2) : '-'}</td>
+                  <td className="px-4 py-2">$ {!isNaN(Number(service.disposicion)) ? Number(service.disposicion).toFixed(2) : '-'}</td>
                   <td className="px-4 py-2">{service.ubicacion}</td>
                   <td className="px-4 py-2">{service.contacto}</td>
                   <td className="px-4 py-2">{service.telefono}</td>
