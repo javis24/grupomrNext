@@ -21,7 +21,7 @@ export default function BusinessUnitGraphs() {
       const token = localStorage.getItem('token');
       try {
         // Obtener los reportes
-        const reportResponse = await axios.get('/api/business-graficas/index', {
+        const reportResponse = await axios.get('/api/business-graficas', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -30,7 +30,7 @@ export default function BusinessUnitGraphs() {
   
         // Suponiendo que la API de `/api/business-graficas/index` ya devuelve los archivos importados
         // si no, tendrías que hacer una petición adicional a una ruta de archivos importados
-        const filesResponse = await axios.get('/api/business-graficas/index', {
+        const filesResponse = await axios.get('/api/business-graficas', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -49,7 +49,7 @@ export default function BusinessUnitGraphs() {
       const token = localStorage.getItem('token');
       try {
         // Obtener los reportes
-        const reportResponse = await axios.get('/api/business-graficas/index', {
+        const reportResponse = await axios.get('/api/business-graficas', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -57,7 +57,7 @@ export default function BusinessUnitGraphs() {
         setUnitReports(reportResponse.data);
   
         // Obtener los archivos importados
-        const filesResponse = await axios.get('/api/business-graficas/get-imported-files', {
+        const filesResponse = await axios.get('/api/business-graficas', {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -101,7 +101,7 @@ export default function BusinessUnitGraphs() {
       // Enviar los datos al backend para guardarlos en la base de datos
       try {
         const token = localStorage.getItem('token'); // Obtener el token de autenticación si es necesario
-        await axios.post('/api/business-graficas/index', { reports: updatedReports }, {
+        await axios.post('/api/business-graficas', { reports: updatedReports }, {
           headers: {
             'Authorization': `Bearer ${token}`, // Asegúrate de enviar el token si es requerido
           },
@@ -156,6 +156,28 @@ export default function BusinessUnitGraphs() {
 
   const handlePeriodChange = (period) => {
     setSelectedPeriod(period);
+  };
+
+     // Función para descargar un archivo
+  const downloadFile = async (file) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`/api/download-file/${file.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        responseType: 'blob' // Esto asegura que el archivo se descargue como un blob
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${file.name}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+    } catch (error) {
+      console.error('Error al descargar el archivo:', error);
+    }
   };
 
   return (
@@ -229,15 +251,36 @@ export default function BusinessUnitGraphs() {
           {importedFiles.length === 0 ? (
             <p className="text-center text-gray-400">No se han importado archivos aún.</p>
           ) : (
-            <ul className="list-disc list-inside">
-              {importedFiles.map((file, index) => (
-                <li key={index}>
-                  {file.name} - {new Date(file.createdAt).toLocaleDateString()}
-                </li>
-              ))}
-            </ul>
+            <table className="w-full text-left table-auto">
+              <thead>
+                <tr>
+                  <th className="p-2 text-gray-200 border-b border-gray-600">Nombre del Reporte</th>
+                  <th className="p-2 text-gray-200 border-b border-gray-600">Fecha</th>
+                  <th className="p-2 text-gray-200 border-b border-gray-600">Descarga</th>
+                </tr>
+              </thead>
+              <tbody>
+                {importedFiles.map((file, index) => (
+                  <tr key={index} className="hover:bg-gray-700">
+                    <td className="p-2 border-b border-gray-600">{file.name}</td>
+                    <td className="p-2 border-b border-gray-600">
+                      {new Date(file.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="p-2 border-b border-gray-600">
+                      <button
+                        onClick={() => downloadFile(file)}
+                        className="bg-blue-500 text-white p-1 rounded hover:bg-blue-600"
+                      >
+                        Descargar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
         </div>
+
       </div>
     </div>
       );
