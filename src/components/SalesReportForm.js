@@ -23,6 +23,8 @@ const customStyles = {
 export default function SalesReportList() {
   const [salesReports, setSalesReports] = useState([]);
   const [search, setSearch] = useState('');
+  const [startDate, setStartDate] = useState(''); // Fecha de inicio del filtro
+  const [endDate, setEndDate] = useState('');     // Fecha de fin del filtro
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
   const [clienteProveedorProspecto, setClienteProveedorProspecto] = useState('');
@@ -111,6 +113,32 @@ export default function SalesReportList() {
     }
   };
 
+  const handleCreateAndContinue = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post('/api/sales/', {
+        clienteProveedorProspecto,
+        empresa,
+        unidadNegocio,
+        productoServicio,
+        comentarios,
+        status,
+        extraText,
+        detalles,
+        userId,
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      fetchSalesReports();
+      clearForm();
+    } catch (error) {
+      console.error('Error creating sales report:', error);
+      setError('Failed to create sales report. Please try again.');
+    }
+  };
+
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
@@ -150,28 +178,41 @@ export default function SalesReportList() {
       setDetalles(report.detalles);
       setUserId(report.userId);      
     } else {
-      // Clear fields for new report
-      setClienteProveedorProspecto('');
-      setEmpresa('');
-      setUnidadNegocio('');
-      setProductoServicio('');
-      setComentarios('');
-      setStatus('');
-      setExtraText('');
-      setDetalles('');
-      setUserId('');
+      clearForm();
     }
     setModalIsOpen(true);
+  };
+
+  const clearForm = () => {
+    setClienteProveedorProspecto('');
+    setEmpresa('');
+    setUnidadNegocio('');
+    setProductoServicio('');
+    setComentarios('');
+    setStatus('');
+    setExtraText('');
+    setDetalles('');
+    setUserId('');
   };
 
   const closeModal = () => {
     setModalIsOpen(false);
     setSelectedReport(null);
+    clearForm();
   };
+
+  const filteredReports = salesReports.filter((report) => {
+    const matchesSearch = report.clienteProveedorProspecto?.toLowerCase().includes(search.toLowerCase());
+    const matchesDate = (!startDate || new Date(report.createdAt) >= new Date(startDate)) &&
+                        (!endDate || new Date(report.createdAt) <= new Date(endDate));
+    return matchesSearch && matchesDate;
+  });
 
   const exportReportToPDF = (report) => {
     const doc = new jsPDF();
     const imgUrl = '/logo_mr.png';  // Ruta de tu logo
+    const token = localStorage.getItem('token');
+    const userEmail = token ? jwt.decode(token).email : "No disponible";
 
     const image = new Image();
     image.src = imgUrl;
@@ -185,6 +226,7 @@ export default function SalesReportList() {
       doc.text("Benito Juarez 112 SUR, Col. 1ro de Mayo", 105, 27, { align: 'center' });
       doc.text("Cd. Lerdo, Dgo. C.P. 35169", 105, 32, { align: 'center' });
       doc.text("MRE040121UBA", 105, 37, { align: 'center' });
+      doc.text(`Usuario: ${userEmail}`, 105, 44, { align: 'center' });
 
       // Sección de datos del reporte
       doc.setFillColor(255, 204, 0); // Color amarillo
@@ -192,6 +234,11 @@ export default function SalesReportList() {
       doc.setFontSize(14);
       doc.setTextColor(0, 0, 0);
       doc.text("REPORTE", 180, 27, null, 'center'); 
+
+
+    doc.setFontSize(10);
+    const formattedDate = new Date(report.createdAt).toLocaleDateString();
+    doc.text(`Fecha de creación: ${formattedDate}`, 180, 38, null, 'center');
 
       // Información del reporte
       const reportDetails = [
@@ -214,27 +261,19 @@ export default function SalesReportList() {
           1: { halign: 'left', textColor: [0, 0, 0], cellWidth: 100 },
         }
       });
-       // Sección de Observaciones
-    doc.setFontSize(12);
-    doc.setFillColor(255, 178, 107); 
-    doc.rect(10, doc.lastAutoTable.finalY + 20, 190, 10, 'F');
-    doc.text("DETALLES ADICIONALES", 105, doc.lastAutoTable.finalY + 27, null, 'center');
-
-    // Insertar los detalles que el usuario ingresó en el campo de detalles del reporte
-    const detalles = report.detalles || "No hay detalles adicionales."; // Corregido aquí
-    doc.text(detalles, 105, doc.lastAutoTable.finalY + 35, { align: 'center' });
+       
 
       doc.save(`Reporte_${report.clienteProveedorProspecto}.pdf`);
     };
   };
 
-  const filteredReports = salesReports.filter((report) =>
-    report.clienteProveedorProspecto?.toLowerCase().includes(search.toLowerCase())
-  );
+
 
   const exportAllReportsToPDF = () => {
     const doc = new jsPDF();
     const imgUrl = '/logo_mr.png';  // Ruta de tu logo
+    const token = localStorage.getItem('token');
+    const userEmail = token ? jwt.decode(token).email : "No disponible"; 
   
     let currentY = 10;  // Empezamos desde la parte superior del PDF
   
@@ -249,12 +288,18 @@ export default function SalesReportList() {
       doc.text("Benito Juarez 112 SUR, Col. 1ro de Mayo", 105, currentY + 17, { align: 'center' });
       doc.text("Cd. Lerdo, Dgo. C.P. 35169", 105, currentY + 22, { align: 'center' });
       doc.text("MRE040121UBA", 105, currentY + 27, { align: 'center' });
+      
   
       salesReports.forEach((report, index) => {
-        // Añadir encabezado para cada reporte
         doc.setFontSize(12);
         doc.setTextColor(0, 0, 0);
         doc.text(`Reporte ${index + 1}`, 20, currentY + 40);
+        doc.text(`Usuario: ${userEmail}`, 105, currentY + 32, { align: 'center' });
+  
+        const formattedDate = new Date(report.createdAt).toLocaleDateString();
+        doc.setFontSize(10);
+        doc.text(`Fecha de creación: ${formattedDate}`, 180, currentY + 40, null, 'center');
+  
   
         const reportDetails = [
           ["Cliente/Proveedor/Prospecto", report.clienteProveedorProspecto],
@@ -277,19 +322,7 @@ export default function SalesReportList() {
           },
         });
   
-        currentY = doc.lastAutoTable.finalY + 15; // Añadir más espacio entre reportes
-
-        // Sección de Observaciones
-        doc.setFontSize(12);
-        doc.setFillColor(255, 178, 107); 
-        doc.rect(10, currentY + 20, 190, 10, 'F');
-        doc.text("DETALLES ADICIONALES", 105, currentY + 27, null, 'center');
-
-        // Insertar los detalles que el usuario ingresó en el campo de detalles del reporte
-        const detalles = report.detalles || "No hay detalles adicionales.";
-        doc.text(detalles, 105, currentY + 35, { align: 'center' });
-
-        currentY += 40; // Ajustar para espacio adicional después de cada reporte
+        currentY = doc.lastAutoTable.finalY + 5; // Añadir más espacio entre reportes    
         });
 
         doc.save('todos_los_reportes.pdf');
@@ -309,13 +342,26 @@ export default function SalesReportList() {
           </button>
         </div>
 
-        <div className="relative mb-4">
+        {/* Filtros de búsqueda y fecha */}
+        <div className="flex space-x-4 mb-4">
           <input
             type="text"
             placeholder="Buscar un reporte"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full p-2 rounded bg-[#1f2937] text-white"
+            className="w-1/3 p-2 rounded bg-[#1f2937] text-white"
+          />
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="p-2 rounded bg-[#1f2937] text-white"
+          />
+          <input
+            type="date"
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            className="p-2 rounded bg-[#1f2937] text-white"
           />
         </div>
 
@@ -498,6 +544,12 @@ export default function SalesReportList() {
               Exportar al PDF
             </button>
           )}
+          <button
+              onClick={handleCreateAndContinue}
+              className="ml-2 bg-green-500 text-white p-2 rounded hover:bg-green-600"
+            >
+              Agregar y Continuar
+            </button>
           <button onClick={closeModal} className="mt-4 bg-gray-500 text-white p-2 rounded hover:bg-gray-600">
             Cerrar
           </button>

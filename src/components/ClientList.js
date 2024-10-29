@@ -130,10 +130,12 @@ export default function ClientList() {
     }
   };
 
-  // Filtro dinámico basado en el campo seleccionado
-  const filteredClients = clients.filter((client) =>
-    client[filterField]?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredClients = clients.filter((client) => {
+    const fieldValue = client[filterField] ? client[filterField].toString().toLowerCase() : '';
+    console.log(`Filtering by ${filterField}: checking "${fieldValue}" against "${search.toLowerCase()}"`);
+    return fieldValue.includes(search.toLowerCase());
+  });
+  
 
   // Función para exportar un solo cliente a PDF con estilo
 const exportClientToPDF = (client) => {
@@ -333,6 +335,7 @@ const exportAllClientsToPDF = () => {
           <option value="address">Dirección</option>
           <option value="contactName">Nombre del Cliente</option>
           <option value="contactPhone">Teléfono del Cliente</option>
+          <option value="planta">Planta</option>
           <option value="email">Email</option>
         </select>
 
@@ -468,7 +471,7 @@ const exportAllClientsToPDF = () => {
               </div>
 
               <div className="mb-4">
-                <label className="block text-white mb-2">Posición</label>
+                <label className="block text-white mb-2">Departamento</label>
                 <input
                   type="text"
                   value={newClient.position}
@@ -485,6 +488,7 @@ const exportAllClientsToPDF = () => {
                 className="w-full p-2 rounded bg-[#1f2937] text-white"
               />
             </div>
+          
             </div>
 
             <button type="submit" className="bg-blue-500 text-white p-2 rounded mt-4">
