@@ -38,6 +38,7 @@ export default function ClientList() {
     email: '',
     position: '',
     planta: '',
+    producto: '',
   });
 
   useEffect(() => {
@@ -91,6 +92,7 @@ export default function ClientList() {
         email: '',
         position: '',
         planta: '',
+        producto: '',
       });
     }
     setModalIsOpen(true);
@@ -173,6 +175,7 @@ const exportClientToPDF = (client) => {
       ["CORREO ELECTRÓNICO", client.email],
       ["CARGO", client.position],
       ["PLANTA", client.planta],
+      ["PRODUCTO", client.producto],
     ];
 
     // Ajustar la tabla para que sea más compacta
@@ -486,6 +489,16 @@ const exportAllClientsToPDF = () => {
                 value={newClient.planta}
                 onChange={(e) => setNewClient({ ...newClient, planta: e.target.value })}
                 className="w-full p-2 rounded bg-[#1f2937] text-white"
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-white mb-2">Producto</label>
+              <input
+                type="text"
+                value={newClient.producto}
+                onChange={(e) => setNewClient({ ...newClient, producto: e.target.value })}
+                className="w-full p-2 rounded bg-[#1f2937] text-white"
+                required
               />
             </div>
           

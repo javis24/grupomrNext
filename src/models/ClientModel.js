@@ -80,6 +80,10 @@ const Clients = db.define('clients', {
             len: [0, 100]
         }
     },
+    producto: { 
+        type: DataTypes.STRING,
+        allowNull: true,
+        },
     userId: {
         type: DataTypes.INTEGER,
         allowNull: false,

@@ -10,7 +10,7 @@ export default async function handler(req, res) {
 
     switch (method) {
       case 'PUT': {
-        const { fullName, companyName, businessTurn, address, contactName, contactPhone, email, position, planta } = req.body;
+        const { fullName, companyName, businessTurn, address, contactName, contactPhone, email, position, planta, producto } = req.body;
 
         // Validar los campos requeridos
         if (!fullName || !companyName || !businessTurn || !address || !planta) {
@@ -38,7 +38,8 @@ export default async function handler(req, res) {
           client.contactPhone = contactPhone || client.contactPhone;
           client.email = email || client.email;
           client.position = position || client.position;
-          client.planta = planta || client.planta; // Incluir el campo planta
+          client.planta = planta || client.planta;
+          client.producto = producto || client.producto;
 
           await client.save();
 

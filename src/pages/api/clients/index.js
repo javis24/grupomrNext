@@ -48,7 +48,7 @@ export default async function handler(req, res) {
       }
 
       case 'POST': {
-        const { fullName, companyName, businessTurn, address, contactName, contactPhone, email, position, planta } = req.body;
+        const { fullName, companyName, businessTurn, address, contactName, contactPhone, email, position, planta, producto } = req.body;
 
         // Verificar campos requeridos
         if (!fullName || !companyName || !businessTurn || !address || !planta) {
@@ -66,7 +66,8 @@ export default async function handler(req, res) {
             contactPhone,
             email,
             position,
-            planta, // Incluir el nuevo campo "Planta"
+            planta, 
+            producto,
             userId,  // Asociar cliente con el usuario autenticado
           });
 
