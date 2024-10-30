@@ -9,6 +9,7 @@ export default function FileUploadWithSendEmail() {
   const [error, setError] = useState('');
   const [clientEmails, setClientEmails] = useState([]); // Estado para almacenar emails de ClientList
   const [selectedEmail, setSelectedEmail] = useState(''); // Email seleccionado para enviar el archivo
+  const [emailMessage, setEmailMessage] = useState(''); 
 
   // Cargar emails de clientes al montar el componente
   useEffect(() => {
@@ -75,6 +76,20 @@ export default function FileUploadWithSendEmail() {
     } catch (error) {
       console.error('Error al subir archivo:', error);
       alert('Hubo un error al subir el archivo');
+    }
+  };
+
+  const handleDeleteFile = async (fileId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`/api/files/${fileId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      fetchFiles(); // Recargar la lista de archivos
+      alert('Archivo eliminado exitosamente');
+    } catch (error) {
+      console.error('Error al eliminar archivo:', error);
+      alert('Hubo un error al eliminar el archivo');
     }
   };
 
@@ -147,8 +162,8 @@ export default function FileUploadWithSendEmail() {
           <table className="min-w-full bg-[#1f2937] text-left rounded-lg border border-gray-600">
             <thead>
               <tr className="bg-[#374151]">
-                <th className="px-4 py-2">Nombre del Archivo</th>
-                <th className="px-4 py-2">Fecha de Subida</th>
+                <th className="px-4 py-2">Nombre</th>
+                <th className="px-4 py-2">Fecha</th>
                 <th className="px-4 py-2">Acciones</th>
               </tr>
             </thead>
@@ -168,6 +183,13 @@ export default function FileUploadWithSendEmail() {
                       >
                         Descargar
                       </a>
+                      <button
+                        onClick={() => handleDeleteFile(file.id)}
+                        className="bg-red-500 text-white rounded-md hover:bg-red-700 text-center 
+                                   sm:px-4 sm:py-2 px-2 py-1 text-xs sm:text-sm"
+                      >
+                        Eliminar
+                      </button>
                       {/* Enviar por correo */}
                       <select
                         value={selectedEmail}
@@ -189,6 +211,12 @@ export default function FileUploadWithSendEmail() {
                         Enviar
                       </button>
                     </div>
+                    <textarea
+                      value={emailMessage}
+                      onChange={(e) => setEmailMessage(e.target.value)}
+                      placeholder="Escribe un mensaje para el destinatario..."
+                      className="mt-2 w-full rounded-md p-2 bg-[#1f2937] text-white text-sm"
+                    />
                   </td>
                 </tr>
               ))}
