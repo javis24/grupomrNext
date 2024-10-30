@@ -1,37 +1,35 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import jwt from 'jsonwebtoken';
 
 export default function FileUploadWithSendEmail() {
   const [file, setFile] = useState(null);
   const [fileList, setFileList] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState('');
-  const [clientEmails, setClientEmails] = useState([]); // Estado para almacenar emails de ClientList
+  const [plants, setPlants] = useState([]); // Estado para almacenar las plantas
+  const [selectedPlant, setSelectedPlant] = useState(''); // Planta seleccionada
+  const [clientEmails, setClientEmails] = useState([]); // Emails de clientes basados en la planta seleccionada
   const [selectedEmail, setSelectedEmail] = useState(''); // Email seleccionado para enviar el archivo
-  const [emailMessage, setEmailMessage] = useState(''); 
+  const [emailMessage, setEmailMessage] = useState(''); // Mensaje personalizado para el email
 
-  // Cargar emails de clientes al montar el componente
+  // Cargar plantas y archivos al montar el componente
   useEffect(() => {
-    fetchClientEmails();
+    fetchPlants();
     fetchFiles();
   }, []);
 
-  const fetchClientEmails = async () => {
+  const fetchPlants = async () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get('/api/clients', {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // Filtrar clientes cuya planta contenga "tarimas" y obtener sus emails
-      const emails = response.data
-        .filter((client) => client.planta && client.planta.toLowerCase().includes('tarimas'))
-        .map((client) => client.email);
-
-      setClientEmails(emails);
+      // Obtener una lista única de plantas
+      const uniquePlants = [...new Set(response.data.map((client) => client.planta))];
+      setPlants(uniquePlants);
     } catch (error) {
-      console.error('Error al obtener los emails de clientes:', error);
+      console.error('Error al obtener las plantas:', error);
     }
   };
 
@@ -104,11 +102,37 @@ export default function FileUploadWithSendEmail() {
         email: selectedEmail,
         fileUrl: file.filepath,
         fileName: file.filename,
+        message: emailMessage, // Agregar el mensaje personalizado al enviar
       });
       alert('Archivo enviado exitosamente a ' + selectedEmail);
     } catch (error) {
       console.error('Error al enviar archivo por correo:', error);
       alert('Hubo un error al enviar el archivo');
+    }
+  };
+
+  const handlePlantSelection = async (plant) => {
+    setSelectedPlant(plant);
+    setSelectedEmail(''); // Limpiar el email seleccionado cuando se cambia la planta
+
+    if (plant) {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get('/api/clients', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        // Filtrar emails de los clientes que tienen la planta seleccionada
+        const emails = response.data
+          .filter((client) => client.planta && client.planta.toLowerCase() === plant.toLowerCase())
+          .map((client) => client.email);
+
+        setClientEmails(emails);
+      } catch (error) {
+        console.error('Error al obtener los emails de clientes:', error);
+      }
+    } else {
+      setClientEmails([]);
     }
   };
 
@@ -162,8 +186,8 @@ export default function FileUploadWithSendEmail() {
           <table className="min-w-full bg-[#1f2937] text-left rounded-lg border border-gray-600">
             <thead>
               <tr className="bg-[#374151]">
-                <th className="px-4 py-2">Nombre</th>
-                <th className="px-4 py-2">Fecha</th>
+                <th className="px-4 py-2">Nombre del Archivo</th>
+                <th className="px-4 py-2">Fecha de Subida</th>
                 <th className="px-4 py-2">Acciones</th>
               </tr>
             </thead>
@@ -173,7 +197,7 @@ export default function FileUploadWithSendEmail() {
                   <td className="px-4 py-2">{file.filename}</td>
                   <td className="px-4 py-2">{new Date(file.createdAt).toLocaleDateString()}</td>
                   <td className="px-4 py-2">
-                    <div className="flex flex-col space-y-2 md:flex-row md:space-x-4">
+                    <div className="flex flex-col space-y-2 md:flex-row md:space-x-2">
                       <a
                         href={file.filepath}
                         target="_blank"
@@ -190,11 +214,25 @@ export default function FileUploadWithSendEmail() {
                       >
                         Eliminar
                       </button>
+                      {/* Selección de planta */}
+                      <select
+                        value={selectedPlant}
+                        onChange={(e) => handlePlantSelection(e.target.value)}
+                        className="rounded bg-[#1f2937] text-white sm:text-base text-xs sm:px-4 sm:py-2 px-2 py-1"
+                      >
+                        <option value="">Seleccionar Planta</option>
+                        {plants.map((plant, index) => (
+                          <option key={index} value={plant}>
+                            {plant}
+                          </option>
+                        ))}
+                      </select>
                       {/* Enviar por correo */}
                       <select
                         value={selectedEmail}
                         onChange={(e) => setSelectedEmail(e.target.value)}
                         className="rounded bg-[#1f2937] text-white sm:text-base text-xs sm:px-4 sm:py-2 px-2 py-1"
+                        disabled={!selectedPlant} // Deshabilitar si no se selecciona una planta
                       >
                         <option value="">Seleccionar Email</option>
                         {clientEmails.map((email, index) => (
@@ -210,13 +248,13 @@ export default function FileUploadWithSendEmail() {
                       >
                         Enviar
                       </button>
+                      <textarea
+                        value={emailMessage}
+                        onChange={(e) => setEmailMessage(e.target.value)}
+                        placeholder="Mensaje opcional"
+                        className="rounded bg-[#1f2937] text-white p-2 sm:text-sm text-xs mt-2"
+                      />
                     </div>
-                    <textarea
-                      value={emailMessage}
-                      onChange={(e) => setEmailMessage(e.target.value)}
-                      placeholder="Escribe un mensaje para el destinatario..."
-                      className="mt-2 w-full rounded-md p-2 bg-[#1f2937] text-white text-sm"
-                    />
                   </td>
                 </tr>
               ))}
