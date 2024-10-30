@@ -101,34 +101,38 @@ export default function FileUploadWithSendEmail() {
   return (
     <div className="container mx-auto p-4 bg-[#0e1624] text-white min-h-screen flex flex-col">
       <h2 className="text-2xl font-semibold mb-4 text-center">Gestión de Archivos PDF con Envío de Correo</h2>
-      
-      {/* Formulario para subir archivos */}
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
-        <div className="flex items-center space-x-2">
-          <input
-            type="file"
-            onChange={handleFileChange}
-            className="border p-2 rounded-md bg-[#1f2937] text-white"
-          />
-          <button
-            onClick={handleUpload}
-            className="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-700"
-          >
-            Subir Archivo
-          </button>
-        </div>
 
-        {/* Buscador */}
-        <div className="mt-4 sm:mt-0">
-          <input
-            type="text"
-            placeholder="Buscar archivo..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="border p-2 rounded-md bg-[#1f2937] text-white"
-          />
-        </div>
-      </div>
+      <div className="w-full sm:w-auto mx-0 max-w-xs sm:max-w-full">
+            {/* Formulario para subir archivos */}
+            <div className="flex flex-col space-y-4 sm:flex-row sm:justify-between sm:space-y-0 sm:space-x-4 mb-4">
+                <div className="flex flex-col space-y-2 sm:flex-row sm:space-x-2">
+                <input
+                    type="file"
+                    onChange={handleFileChange}
+                    className="border p-2 rounded-md bg-[#1f2937] text-white w-full sm:w-auto"
+                />
+                <button
+                    onClick={handleUpload}
+                    className="bg-blue-500 text-white rounded-md hover:bg-blue-700 px-4 py-2 text-sm"
+                >
+                    Subir
+                </button>
+                </div>
+
+                {/* Buscador */}
+                <div className="flex flex-col w-full sm:w-auto">
+                <input
+                    type="text"
+                    placeholder="Buscar archivo..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="border p-2 rounded-md bg-[#1f2937] text-white w-full sm:w-auto"
+                />
+                </div>
+            </div>
+            </div>
+
+
 
       {error && <p className="text-red-500 text-center">{error}</p>}
 
@@ -146,44 +150,48 @@ export default function FileUploadWithSendEmail() {
               </tr>
             </thead>
             <tbody>
-              {filteredFiles.map((file) => (
-                <tr key={file.id} className="hover:bg-[#4b5563]">
-                  <td className="px-4 py-2">{file.filename}</td>
-                  <td className="px-4 py-2">{new Date(file.createdAt).toLocaleDateString()}</td>
-                  <td className="px-4 py-2">
-                    <div className="flex space-x-4">
-                      <a
-                        href={file.filepath}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="bg-green-500 text-white p-2 rounded-md hover:bg-green-700"
-                      >
-                        Descargar
-                      </a>
-                      {/* Enviar por correo */}
-                      <select
-                        value={selectedEmail}
-                        onChange={(e) => setSelectedEmail(e.target.value)}
-                        className="p-2 rounded bg-[#1f2937] text-white"
-                      >
-                        <option value="">Seleccionar Email</option>
-                        {clientEmails.map((email, index) => (
-                          <option key={index} value={email}>
-                            {email}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        onClick={() => handleSendEmail(file)}
-                        className="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-700"
-                      >
-                        Enviar
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+  {filteredFiles.map((file) => (
+    <tr key={file.id} className="hover:bg-[#4b5563]">
+      <td className="px-4 py-2">{file.filename}</td>
+      <td className="px-4 py-2">{new Date(file.createdAt).toLocaleDateString()}</td>
+      <td className="px-4 py-2">
+        <div className="flex flex-col space-y-2 md:flex-row md:space-x-4">
+          <a
+            href={file.filepath}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-green-500 text-white rounded-md hover:bg-green-700 text-center 
+                       sm:px-4 sm:py-2 px-2 py-1 text-xs sm:text-sm"
+          >
+            Descargar
+          </a>
+          {/* Enviar por correo */}
+          <select
+            value={selectedEmail}
+            onChange={(e) => setSelectedEmail(e.target.value)}
+            className="rounded bg-[#1f2937] text-white sm:text-base text-xs sm:px-4 sm:py-2 px-2 py-1"
+          >
+            <option value="">Seleccionar Email</option>
+            {clientEmails.map((email, index) => (
+              <option key={index} value={email}>
+                {email}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={() => handleSendEmail(file)}
+            className="bg-blue-500 text-white rounded-md hover:bg-blue-700 text-center 
+                       sm:px-4 sm:py-2 px-2 py-1 text-xs sm:text-sm"
+          >
+            Enviar
+          </button>
+        </div>
+      </td>
+    </tr>
+  ))}
+</tbody>
+
+
           </table>
         </div>
       )}
