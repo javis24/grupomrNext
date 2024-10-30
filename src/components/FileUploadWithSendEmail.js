@@ -22,7 +22,12 @@ export default function FileUploadWithSendEmail() {
       const response = await axios.get('/api/clients', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const emails = response.data.map((client) => client.email); // Solo extraemos emails
+
+      // Filtrar clientes cuya planta contenga "tarimas" y obtener sus emails
+      const emails = response.data
+        .filter((client) => client.planta && client.planta.toLowerCase().includes('tarimas'))
+        .map((client) => client.email);
+
       setClientEmails(emails);
     } catch (error) {
       console.error('Error al obtener los emails de clientes:', error);
@@ -103,36 +108,34 @@ export default function FileUploadWithSendEmail() {
       <h2 className="text-2xl font-semibold mb-4 text-center">Gestión de Archivos PDF con Envío de Correo</h2>
 
       <div className="w-full sm:w-auto mx-0 max-w-xs sm:max-w-full">
-            {/* Formulario para subir archivos */}
-            <div className="flex flex-col space-y-4 sm:flex-row sm:justify-between sm:space-y-0 sm:space-x-4 mb-4">
-                <div className="flex flex-col space-y-2 sm:flex-row sm:space-x-2">
-                <input
-                    type="file"
-                    onChange={handleFileChange}
-                    className="border p-2 rounded-md bg-[#1f2937] text-white w-full sm:w-auto"
-                />
-                <button
-                    onClick={handleUpload}
-                    className="bg-blue-500 text-white rounded-md hover:bg-blue-700 px-4 py-2 text-sm"
-                >
-                    Subir
-                </button>
-                </div>
+        {/* Formulario para subir archivos */}
+        <div className="flex flex-col space-y-4 sm:flex-row sm:justify-between sm:space-y-0 sm:space-x-4 mb-4">
+          <div className="flex flex-col space-y-2 sm:flex-row sm:space-x-2">
+            <input
+              type="file"
+              onChange={handleFileChange}
+              className="border p-2 rounded-md bg-[#1f2937] text-white w-full sm:w-auto"
+            />
+            <button
+              onClick={handleUpload}
+              className="bg-blue-500 text-white rounded-md hover:bg-blue-700 px-4 py-2 text-sm"
+            >
+              Subir
+            </button>
+          </div>
 
-                {/* Buscador */}
-                <div className="flex flex-col w-full sm:w-auto">
-                <input
-                    type="text"
-                    placeholder="Buscar archivo..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="border p-2 rounded-md bg-[#1f2937] text-white w-full sm:w-auto"
-                />
-                </div>
-            </div>
-            </div>
-
-
+          {/* Buscador */}
+          <div className="flex flex-col w-full sm:w-auto">
+            <input
+              type="text"
+              placeholder="Buscar archivo..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="border p-2 rounded-md bg-[#1f2937] text-white w-full sm:w-auto"
+            />
+          </div>
+        </div>
+      </div>
 
       {error && <p className="text-red-500 text-center">{error}</p>}
 
@@ -150,48 +153,46 @@ export default function FileUploadWithSendEmail() {
               </tr>
             </thead>
             <tbody>
-  {filteredFiles.map((file) => (
-    <tr key={file.id} className="hover:bg-[#4b5563]">
-      <td className="px-4 py-2">{file.filename}</td>
-      <td className="px-4 py-2">{new Date(file.createdAt).toLocaleDateString()}</td>
-      <td className="px-4 py-2">
-        <div className="flex flex-col space-y-2 md:flex-row md:space-x-4">
-          <a
-            href={file.filepath}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-green-500 text-white rounded-md hover:bg-green-700 text-center 
-                       sm:px-4 sm:py-2 px-2 py-1 text-xs sm:text-sm"
-          >
-            Descargar
-          </a>
-          {/* Enviar por correo */}
-          <select
-            value={selectedEmail}
-            onChange={(e) => setSelectedEmail(e.target.value)}
-            className="rounded bg-[#1f2937] text-white sm:text-base text-xs sm:px-4 sm:py-2 px-2 py-1"
-          >
-            <option value="">Seleccionar Email</option>
-            {clientEmails.map((email, index) => (
-              <option key={index} value={email}>
-                {email}
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={() => handleSendEmail(file)}
-            className="bg-blue-500 text-white rounded-md hover:bg-blue-700 text-center 
-                       sm:px-4 sm:py-2 px-2 py-1 text-xs sm:text-sm"
-          >
-            Enviar
-          </button>
-        </div>
-      </td>
-    </tr>
-  ))}
-</tbody>
-
-
+              {filteredFiles.map((file) => (
+                <tr key={file.id} className="hover:bg-[#4b5563]">
+                  <td className="px-4 py-2">{file.filename}</td>
+                  <td className="px-4 py-2">{new Date(file.createdAt).toLocaleDateString()}</td>
+                  <td className="px-4 py-2">
+                    <div className="flex flex-col space-y-2 md:flex-row md:space-x-4">
+                      <a
+                        href={file.filepath}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-green-500 text-white rounded-md hover:bg-green-700 text-center 
+                                   sm:px-4 sm:py-2 px-2 py-1 text-xs sm:text-sm"
+                      >
+                        Descargar
+                      </a>
+                      {/* Enviar por correo */}
+                      <select
+                        value={selectedEmail}
+                        onChange={(e) => setSelectedEmail(e.target.value)}
+                        className="rounded bg-[#1f2937] text-white sm:text-base text-xs sm:px-4 sm:py-2 px-2 py-1"
+                      >
+                        <option value="">Seleccionar Email</option>
+                        {clientEmails.map((email, index) => (
+                          <option key={index} value={email}>
+                            {email}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={() => handleSendEmail(file)}
+                        className="bg-blue-500 text-white rounded-md hover:bg-blue-700 text-center 
+                                   sm:px-4 sm:py-2 px-2 py-1 text-xs sm:text-sm"
+                      >
+                        Enviar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
           </table>
         </div>
       )}
