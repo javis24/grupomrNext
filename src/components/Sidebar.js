@@ -44,13 +44,14 @@ export default function Sidebar() {
  const canViewReportesUnidadNegocio = [ ''].includes(userEmail);
  const canViewReportesMensuales = userEmail === 'direccion@grupomrlaguna.com';
  const canViewCotizaciones = ['mgaliano@grupomrlaguna.com', 'Hdelbosque@grupomrlaguna.com', 'luispatino@grupomrlaguna.com', 'gustavosalgado@grupomrlaguna.com'].includes(userEmail);
- const canViewServicios = ['direccion@grupomrlaguna.com', 'mgaliano@grupomrlaguna.com'].includes(userEmail);
- const canViewClientes = ['direccion@grupomrlaguna.com', 'mgaliano@grupomrlaguna.com', 'Hdelbosque@grupomrlaguna.com', 'luispatino@grupomrlaguna.com', 'gustavosalgado@grupomrlaguna.com'].includes(userEmail);
+ const canViewServicios = ['direccion@grupomrlaguna.com', 'mgaliano@grupomrlaguna.com', 'logistica@grupomrlaguna.com'].includes(userEmail);
+ const canViewClientes = ['direccion@grupomrlaguna.com', 'mgaliano@grupomrlaguna.com', 'Hdelbosque@grupomrlaguna.com', 'luispatino@grupomrlaguna.com', 'gustavosalgado@grupomrlaguna.com', 'tarimas@grupomrlaguna.com'].includes(userEmail);
  const canViewCreditos = ['mgaliano@grupomrlaguna.com', 'Hdelbosque@grupomrlaguna.com', 'gustavosalgado@grupomrlaguna.com'].includes(userEmail);
  const canViewCalendario = ['mgaliano@grupomrlaguna.com', 'Hdelbosque@grupomrlaguna.com', 'gustavosalgado@grupomrlaguna.com', 'luispatino@grupomrlaguna.com'].includes(userEmail);
  const canViewChat = ['mgaliano@grupomrlaguna.com', 'Hdelbosque@grupomrlaguna.com', 'gustavosalgado@grupomrlaguna.com', 'luispatino@grupomrlaguna.com'].includes(userEmail);
  const canViewIncidencias = ['mgaliano@grupomrlaguna.com', 'Hdelbosque@grupomrlaguna.com', 'gustavosalgado@grupomrlaguna.com', 'luispatino@grupomrlaguna.com'].includes(userEmail);
- const hasTotalAccess = userEmail === 'coordinadora@grupomrlaguna.com';
+ const hasTotalAccess = ['coordinadora@grupomrlaguna.com', 'facturacion@grupomrlaguna.com'].includes(userEmail);
+ const hasPDF = ['tarimas@grupomrlaguna.com', 'logistica@grupomrlaguna.com'].includes(userEmail);
  const canViewAsesores = ['direccion@grupomrlaguna.com', 'coordinadora@grupomrlaguna.com'].includes(userEmail); 
 
  console.log('Acceso a Asesores:', canViewAsesores, hasTotalAccess); // Debugging
@@ -138,7 +139,7 @@ export default function Sidebar() {
               </Link>
             </li>
           )}
-            {(canViewCotizaciones || hasTotalAccess) && (
+            {(canViewCotizaciones || hasTotalAccess || hasPDF) && (
             <li className="mb-4">
               <Link href="/archivos" className="flex items-center p-2 rounded hover:bg-[#374151]">
                 {!isCollapsed && 'PDF'}

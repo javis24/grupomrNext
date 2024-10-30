@@ -102,6 +102,7 @@ const orders = filteredFiles.filter(file => file.filename.toLowerCase().startsWi
       
       {/* Formulario para subir archivos */}
       <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
+      {!['tarimas@grupomrlaguna.com', 'logistica@grupomrlaguna.com', 'facturacion@grupomrlaguna.com' ].includes(userEmail) && (
         <div className="flex items-center space-x-2">
           <input
             type="file"
@@ -115,6 +116,7 @@ const orders = filteredFiles.filter(file => file.filename.toLowerCase().startsWi
             Subir Archivo
           </button>
         </div>
+          )}
 
         {/* Buscador */}
         <div className="mt-4 sm:mt-0">
@@ -130,6 +132,9 @@ const orders = filteredFiles.filter(file => file.filename.toLowerCase().startsWi
 
       {error && <p className="text-red-500 text-center">{error}</p>}
 
+       {/* Mostrar "Documento 1" solo para usuarios distintos a tarimas@grupomrlaguna.com */}
+       {!['tarimas@grupomrlaguna.com', 'logistica@grupomrlaguna.com', 'facturacion@grupomrlaguna.com' ].includes(userEmail) && (
+        <>
       {/* Tabla de Documentos 1 */}
       <h3 className="text-xl font-semibold mt-4 mb-2">Documento 1</h3>
       {documents.length === 0 ? (
@@ -173,6 +178,10 @@ const orders = filteredFiles.filter(file => file.filename.toLowerCase().startsWi
           </table>
         </div>
       )}
+       </>
+      )}    
+      
+      
 
       {/* Tabla de Ordenes de Compra */}
       <h3 className="text-xl font-semibold mt-4 mb-2">Ordenes de Compra</h3>

@@ -27,7 +27,7 @@ export default function ClientList() {
   const [modalIsOpen, setModalIsOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
   const [error, setError] = useState('');
-  const [userRole, setUserRole] = useState('');
+  const [userEmail, setUserEmail] = useState('');
   const [newClient, setNewClient] = useState({
     fullName: '',
     companyName: '',
@@ -41,28 +41,45 @@ export default function ClientList() {
     producto: '',
   });
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      const decoded = jwt.decode(token);
-      setUserRole(decoded.role);
-    }
-    fetchClients(); // Carga inicial de clientes
-  }, []);
+        useEffect(() => {
+          const token = localStorage.getItem('token');
+          if (token) {
+            const decoded = jwt.decode(token);
+            setUserEmail(decoded.email); // Guardamos el correo del usuario
+          }
+        }, []);
 
-  const fetchClients = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('/api/clients', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      setClients(response.data);
-      setError('');
-    } catch (error) {
-      console.error('Error fetching clients:', error);
-      setError('Failed to load clients. Please try again later.');
-    }
-  };
+        useEffect(() => {
+          if (userEmail) {
+            fetchClients();
+          }
+        }, [userEmail]);
+
+        const fetchClients = async () => {
+          try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get('/api/clients', {
+              headers: { 'Authorization': `Bearer ${token}` },
+            });
+      
+            let fetchedClients = response.data;
+      
+            // Filtrar los clientes si el usuario es "tarimas@grupomrlaguna.com"
+            if (userEmail === 'tarimas@grupomrlaguna.com') {
+              fetchedClients = fetchedClients.filter(
+                (client) => client.planta && client.planta.toLowerCase() === 'tarimas'
+              );
+            }
+      
+            setClients(fetchedClients);
+          } catch (error) {
+            console.error('Error fetching clients:', error);
+            setError('Failed to load clients. Please try again later.');
+          }
+        };
+  
+  
+  
 
   const handleDelete = async (clientId) => {
     try {
