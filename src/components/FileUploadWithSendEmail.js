@@ -11,7 +11,6 @@ export default function FileUploadWithSendEmail() {
   const [clientEmails, setClientEmails] = useState([]); // Emails de clientes basados en la planta seleccionada
   const [emailMessage, setEmailMessage] = useState(''); // Mensaje personalizado para el email
 
-  // Cargar plantas y archivos al montar el componente
   useEffect(() => {
     fetchPlants();
     fetchFiles();
@@ -23,8 +22,6 @@ export default function FileUploadWithSendEmail() {
       const response = await axios.get('/api/clients', {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      // Obtener una lista única de plantas
       const uniquePlants = [...new Set(response.data.map((client) => client.planta))];
       setPlants(uniquePlants);
     } catch (error) {
@@ -35,7 +32,7 @@ export default function FileUploadWithSendEmail() {
   const fetchFiles = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('/api/files', {
+      const response = await axios.get('/api/mktfiles', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setFileList(response.data);
@@ -47,7 +44,7 @@ export default function FileUploadWithSendEmail() {
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
-    setFile(selectedFile || null); // Guardar el archivo si está seleccionado
+    setFile(selectedFile || null);
   };
 
   const handleUpload = async () => {
@@ -61,14 +58,14 @@ export default function FileUploadWithSendEmail() {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.post('/api/files', formData, {
+      await axios.post('/api/mktfiles', formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
         },
       });
-      fetchFiles(); // Recargar la lista de archivos
-      setFile(null); // Limpiar el archivo después de la subida
+      fetchFiles();
+      setFile(null);
       alert('Archivo subido exitosamente');
     } catch (error) {
       console.error('Error al subir archivo:', error);
@@ -79,10 +76,10 @@ export default function FileUploadWithSendEmail() {
   const handleDeleteFile = async (fileId) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`/api/files/${fileId}`, {
+      await axios.delete(`/api/mktfiles/${fileId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      fetchFiles(); // Recargar la lista de archivos
+      fetchFiles();
       alert('Archivo eliminado exitosamente');
     } catch (error) {
       console.error('Error al eliminar archivo:', error);
@@ -98,10 +95,10 @@ export default function FileUploadWithSendEmail() {
 
     try {
       await axios.post('/api/send-file-email', {
-        emails: clientEmails, // Enviar a todos los emails seleccionados
+        emails: clientEmails,
         fileUrl: file.filepath,
         fileName: file.filename,
-        message: emailMessage, // Agregar el mensaje personalizado al enviar
+        message: emailMessage,
       });
       alert('Archivo enviado exitosamente a todos los emails seleccionados');
     } catch (error) {
@@ -120,12 +117,11 @@ export default function FileUploadWithSendEmail() {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        // Filtrar emails de los clientes que tienen la planta seleccionada
         const emails = response.data
           .filter((client) => client.planta && client.planta.toLowerCase() === plant.toLowerCase())
           .map((client) => client.email);
 
-        setClientEmails(emails); // Seleccionar automáticamente todos los emails de la planta
+        setClientEmails(emails);
       } catch (error) {
         console.error('Error al obtener los emails de clientes:', error);
       }
@@ -138,14 +134,13 @@ export default function FileUploadWithSendEmail() {
     .filter((file) =>
       file.filename.toLowerCase().includes(searchTerm.toLowerCase())
     )
-    .sort((a, b) => a.filename.localeCompare(b.filename)); // Ordenar archivos por nombre
+    .sort((a, b) => a.filename.localeCompare(b.filename));
 
   return (
     <div className="container mx-auto p-4 bg-[#0e1624] text-white min-h-screen flex flex-col">
       <h2 className="text-2xl font-semibold mb-4 text-center">Gestión de Archivos PDF con Envío de Correo</h2>
 
       <div className="w-full sm:w-auto mx-0 max-w-xs sm:max-w-full">
-        {/* Formulario para subir archivos */}
         <div className="flex flex-col space-y-4 sm:flex-row sm:justify-between sm:space-y-0 sm:space-x-4 mb-4">
           <div className="flex flex-col space-y-2 sm:flex-row sm:space-x-2">
             <input
@@ -161,7 +156,6 @@ export default function FileUploadWithSendEmail() {
             </button>
           </div>
 
-          {/* Buscador */}
           <div className="flex flex-col w-full sm:w-auto">
             <input
               type="text"
@@ -176,7 +170,6 @@ export default function FileUploadWithSendEmail() {
 
       {error && <p className="text-red-500 text-center">{error}</p>}
 
-      {/* Tabla de archivos */}
       {filteredFiles.length === 0 ? (
         <p className="text-center mt-4">No hay archivos subidos.</p>
       ) : (
@@ -212,7 +205,6 @@ export default function FileUploadWithSendEmail() {
                       >
                         Eliminar
                       </button>
-                      {/* Selección de planta */}
                       <select
                         value={selectedPlant}
                         onChange={(e) => handlePlantSelection(e.target.value)}
@@ -225,12 +217,11 @@ export default function FileUploadWithSendEmail() {
                           </option>
                         ))}
                       </select>
-                      {/* Enviar por correo */}
                       <select
                         multiple
                         value={clientEmails}
                         className="rounded bg-[#1f2937] text-white sm:text-base text-xs sm:px-4 sm:py-2 px-2 py-1"
-                        disabled={!selectedPlant} // Deshabilitar si no se selecciona una planta
+                        disabled={!selectedPlant}
                       >
                         {clientEmails.map((email, index) => (
                           <option key={index} value={email}>
