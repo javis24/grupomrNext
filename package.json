@@ -26,6 +26,7 @@
     "mysql2": "^3.11.0",
     "next": "14.2.7",
     "next-auth": "^4.24.7",
+    "nodemailer": "^6.9.16",
     "react": "^18",
     "react-calendar": "^5.0.0",
     "react-chartjs-2": "^5.2.0",
