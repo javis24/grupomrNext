@@ -9,7 +9,6 @@ export default function FileUploadWithSendEmail() {
   const [plants, setPlants] = useState([]); // Estado para almacenar las plantas
   const [selectedPlant, setSelectedPlant] = useState(''); // Planta seleccionada
   const [clientEmails, setClientEmails] = useState([]); // Emails de clientes basados en la planta seleccionada
-  const [selectedEmail, setSelectedEmail] = useState(''); // Email seleccionado para enviar el archivo
   const [emailMessage, setEmailMessage] = useState(''); // Mensaje personalizado para el email
 
   // Cargar plantas y archivos al montar el componente
@@ -92,19 +91,19 @@ export default function FileUploadWithSendEmail() {
   };
 
   const handleSendEmail = async (file) => {
-    if (!selectedEmail) {
-      alert('Por favor selecciona un email para enviar el archivo');
+    if (clientEmails.length === 0) {
+      alert('No hay emails seleccionados para enviar el archivo');
       return;
     }
 
     try {
       await axios.post('/api/send-file-email', {
-        email: selectedEmail,
+        emails: clientEmails, // Enviar a todos los emails seleccionados
         fileUrl: file.filepath,
         fileName: file.filename,
         message: emailMessage, // Agregar el mensaje personalizado al enviar
       });
-      alert('Archivo enviado exitosamente a ' + selectedEmail);
+      alert('Archivo enviado exitosamente a todos los emails seleccionados');
     } catch (error) {
       console.error('Error al enviar archivo por correo:', error);
       alert('Hubo un error al enviar el archivo');
@@ -113,7 +112,6 @@ export default function FileUploadWithSendEmail() {
 
   const handlePlantSelection = async (plant) => {
     setSelectedPlant(plant);
-    setSelectedEmail(''); // Limpiar el email seleccionado cuando se cambia la planta
 
     if (plant) {
       try {
@@ -127,7 +125,7 @@ export default function FileUploadWithSendEmail() {
           .filter((client) => client.planta && client.planta.toLowerCase() === plant.toLowerCase())
           .map((client) => client.email);
 
-        setClientEmails(emails);
+        setClientEmails(emails); // Seleccionar automáticamente todos los emails de la planta
       } catch (error) {
         console.error('Error al obtener los emails de clientes:', error);
       }
@@ -229,12 +227,11 @@ export default function FileUploadWithSendEmail() {
                       </select>
                       {/* Enviar por correo */}
                       <select
-                        value={selectedEmail}
-                        onChange={(e) => setSelectedEmail(e.target.value)}
+                        multiple
+                        value={clientEmails}
                         className="rounded bg-[#1f2937] text-white sm:text-base text-xs sm:px-4 sm:py-2 px-2 py-1"
                         disabled={!selectedPlant} // Deshabilitar si no se selecciona una planta
                       >
-                        <option value="">Seleccionar Email</option>
                         {clientEmails.map((email, index) => (
                           <option key={index} value={email}>
                             {email}
