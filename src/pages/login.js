@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
+import jwt from 'jsonwebtoken';
 import '../app/globals.css';
 
 export default function Login() {
@@ -16,16 +17,21 @@ export default function Login() {
           
           // Guardar el token en localStorage
           localStorage.setItem('token', data.token);
+    
+          // Decodificar el token para obtener el nombre de usuario
+          const decodedToken = jwt.decode(data.token);
           
-          // Verificar si el token fue almacenado correctamente
-          console.log('Token stored in localStorage:', localStorage.getItem('token'));
-      
-          // Redirigir al dashboard
-          router.push('/clientes');
+          // Verificar si el nombre contiene "Logistica" y redirigir en consecuencia
+          if (decodedToken.name && decodedToken.name.includes('Logistica')) {
+            router.push('/servicios');  // Redirige a 'Servicios'
+          } else {
+            router.push('/clientes');  // Redirige a 'Clientes' para otros usuarios
+          }
         } catch (error) {
           setError('Failed to login. Please check your credentials.');
         }
       };
+    
       
     
 
