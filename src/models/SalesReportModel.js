@@ -28,13 +28,23 @@ const SalesReport = db.define('SalesReports', {
     status: {
         type: DataTypes.STRING,
         allowNull: false
-    }
+    },
+    extraText: { 
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      detalles: { 
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+
 }, {
     freezeTableName: true // Mantiene el nombre de la tabla tal cual
 });
 
 // Relaciones
 Users.hasMany(SalesReport, { foreignKey: 'userId' });
-SalesReport.belongsTo(Users, { foreignKey: 'userId', as: 'User' });
+SalesReport.belongsTo(Users, { as: 'User', foreignKey: 'userId' });
+
 
 export default SalesReport;

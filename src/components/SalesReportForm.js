@@ -98,7 +98,7 @@ export default function SalesReportList() {
         setError('No report selected for update');
         return;
       }
-      
+  
       await axios.put(`/api/sales/${selectedReport.id}`, {
         clienteProveedorProspecto,
         empresa,
@@ -112,7 +112,8 @@ export default function SalesReportList() {
       }, {
         headers: { Authorization: `Bearer ${token}` },
       });
-     
+      
+      // Actualiza el estado de salesReports
       const updatedReports = salesReports.map(report => 
         report.id === selectedReport.id 
           ? { ...report, clienteProveedorProspecto, empresa, unidadNegocio, productoServicio, comentarios, status, extraText, detalles } 
@@ -125,52 +126,33 @@ export default function SalesReportList() {
       setError('Failed to update sales report. Please try again.');
     }
   };
+  
 
-  const handleCreateAndContinue = async (e, index) => {
-    e.preventDefault();
-    const reportData = reportsList[index];
-    try {
-      const token = localStorage.getItem('token');
-      await axios.post(
-        '/api/sales/',
-        { ...reportData, userId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      fetchSalesReports();
-
-      // Agregar un nuevo formulario vacío para continuar creando reportes
-      setReportsList([
-        ...reportsList,
-        {
-          clienteProveedorProspecto: '',
-          empresa: '',
-          unidadNegocio: '',
-          productoServicio: '',
-          comentarios: '',
-          status: '',
-          extraText: '',
-          detalles: '',
-        },
-      ]);
-    } catch (error) {
-      console.error('Error creating sales report:', error);
-      setError('Failed to create sales report. Please try again.');
-    }
+  const handleAddService = () => {
+    setReportsList([...reportsList, {
+      clienteProveedorProspecto: '',
+      empresa: '',
+      unidadNegocio: '',
+      productoServicio: '',
+      comentarios: '',
+      status: '',
+      extraText: '',
+      detalles: '',
+    }]);
   };
 
   const handleInputChange = (index, field, value) => {
     const updatedReportsList = [...reportsList];
     updatedReportsList[index][field] = value;
     setReportsList(updatedReportsList);
-  };
+};
 
-  
-  
 
   const handleSaveReport = async () => {
     try {
       const token = localStorage.getItem('token');
       for (let report of reportsList) {
+        console.log('Guardando reporte:', report); // Asegúrate de que estos datos sean correctos
         await axios.post('/api/sales/', {
           ...report,
           userId,
@@ -181,14 +163,13 @@ export default function SalesReportList() {
       fetchSalesReports(); // Recargar la lista de reportes después de guardar
       closeModal(); // Cerrar el modal
     } catch (error) {
-      console.error('Error saving reports:', error);
+      console.error('Error saving reports:', error.response ? error.response.data : error.message);
       setError('Failed to save reports. Please try again.');
     }
   };
-  
 
   const openModal = (report = null) => {
-    setSelectedReport(report);
+    setSelectedReport(report); // Establece el reporte seleccionado
     if (report) {
       setClienteProveedorProspecto(report.clienteProveedorProspecto);
       setEmpresa(report.empresa);
@@ -198,12 +179,13 @@ export default function SalesReportList() {
       setStatus(report.status);
       setExtraText(report.extraText);
       setDetalles(report.detalles);
-      setUserId(report.userId);      
     } else {
-      clearForm();
+      clearForm(); // Limpiar el formulario si no hay reporte seleccionado
     }
     setModalIsOpen(true);
   };
+  
+  
 
   const clearForm = () => {
     setClienteProveedorProspecto('');
@@ -214,8 +196,9 @@ export default function SalesReportList() {
     setStatus('');
     setExtraText('');
     setDetalles('');
-    setUserId('');
+    setUserId(''); // Si aplica
   };
+  
 
   const closeModal = () => {
     setModalIsOpen(false);
@@ -419,24 +402,28 @@ export default function SalesReportList() {
           </table>
         </div>
 
-              <Modal
-        isOpen={modalIsOpen}
-        onRequestClose={closeModal}
-        style={customStyles}
-        contentLabel={selectedReport ? "Actualizar Reporte" : "Agregar Reporte"}
-      >
-        <h2 className="text-2xl font-bold mb-4 text-white">
-          {selectedReport ? "Actualizar Reporte" : "Agregar Nuevos Reportes"}
-        </h2>
+        <Modal
+          isOpen={modalIsOpen}
+          onRequestClose={closeModal}
+          style={customStyles}
+          contentLabel={selectedReport ? "Actualizar Reporte" : "Agregar Reporte"}
+        >
+          <h2 className="text-2xl font-bold mb-4 text-white">
+            {selectedReport ? "Actualizar Reporte" : "Agregar Nuevos Reportes"}
+          </h2>
 
-        <form onSubmit={selectedReport ? handleUpdate : (e) => handleCreateAndContinue(e, reportsList.length - 1)} className="mb-4 p-4 border rounded-lg bg-[#374151]">
+          {/* Mapea cada servicio en `reportsList` para que aparezca un formulario por cada uno */}
+          {reportsList.map((report, index) => (
+          <form 
+          key={index}
+          onSubmit={(e) => handleCreateAndContinue(e, index)} className="mb-4 p-4 border rounded-lg bg-[#374151]">
           <div className="grid grid-cols-2 gap-4">
-            <select
-              value={clienteProveedorProspecto}
-              onChange={(e) => setClienteProveedorProspecto(e.target.value)}
-              className="w-full p-2 rounded bg-[#1f2937] text-white"
-              required
-            >
+          <select
+                value={report.clienteProveedorProspecto}
+                onChange={(e) => handleInputChange(index, 'clienteProveedorProspecto', e.target.value)}
+                className="w-full p-2 rounded bg-[#1f2937] text-white"
+                required
+              >
               <option value="">Cliente / Proveedor / Prospecto</option>
               <option value="acopio">Acopio</option>
               <option value="cliente">Cliente</option>
@@ -446,14 +433,14 @@ export default function SalesReportList() {
             <input
               type="text"
               placeholder="Empresa"
-              value={empresa}
-              onChange={(e) => setEmpresa(e.target.value)}
+              value={reportsList[index].empresa} // Cambia aquí para usar el valor correcto
+              onChange={(e) => handleInputChange(index, 'empresa', e.target.value)} // Asegúrate de que esté usando handleInputChange
               className="w-full p-2 rounded bg-[#1f2937] text-white"
               required
-            />
+          />
             <select
-              value={unidadNegocio}
-              onChange={(e) => setUnidadNegocio(e.target.value)}
+              value={reportsList[index].unidadNegocio} // Vinculamos al estado correspondiente
+              onChange={(e) => handleInputChange(index, 'unidadNegocio', e.target.value)} // Usamos handleInputChange
               className="w-full p-2 rounded bg-[#1f2937] text-white"
               required
             >
@@ -468,8 +455,8 @@ export default function SalesReportList() {
               <option value="admon">Admon</option>
             </select>
             <select
-              value={productoServicio}
-              onChange={(e) => setProductoServicio(e.target.value)}
+              value={reportsList[index].productoServicio} // Vinculamos al estado correspondiente
+              onChange={(e) => handleInputChange(index, 'productoServicio', e.target.value)} // Usamos handleInputChange
               className="w-full p-2 rounded bg-[#1f2937] text-white"
               required
             >
@@ -477,41 +464,57 @@ export default function SalesReportList() {
               {/* Opciones de producto/servicio */}
               <option value="super_saco_usado">Super Saco Usado</option>
               <option value="recoleccion_basura_comun">Recolección de Basura Común</option>
-              {/* Agrega más opciones según sea necesario */}
+              <option value="super_saco_usado">Super Saco Usado</option>
+                  <option value="recoleccion_basura_comun">Recolección de Basura Común</option>
+                  <option value="recoleccion_madera">Recolección de Madera, Cartón o Plástico</option>
+                  <option value="recoleccion_evento">Recolección por Evento</option>
+                  <option value="contenedor_residuos">Contenedor para Residuos Sólidos Urbanos</option>
+                  <option value="manejo_basura_comun">Manejo Integral de Basura Común Ruta</option>
+                  <option value="manejo_rp">Manejo Integral de RP</option>
+                  <option value="manejo_rme">Manejo Integral de RME</option>
+                  <option value="asesoria_ambiental">Asesoría y Gestión Ambiental</option>
+                  <option value="tarima_estandar">Tarima Estándar 40x48</option>
+                  <option value="tarimas_varias">Tarimas de Madera Varias Medidas</option>
+                  <option value="tarima_tacon">Tarima de Tacón 40x48</option>
+                  <option value="tarima_personalizada">Tarima Personalizada</option>
+                  <option value="madera_dimensionada">Madera Dimensionada para Tarimas</option>
+                  <option value="huacal">Huacal</option>
+                  <option value="lena">Leña</option>
+                  <option value="otros_embalajes_tarimas">Otros Embalajes Tarimas</option>
+                  <option value="super_saco_nuevo">Super Saco Nuevo</option>
+                  <option value="super_saco_seminuevo">Super Saco Seminuevo</option>
+                  <option value="super_saco_nuevo_segunda">Super Saco Nuevo de Segunda</option>
+                  <option value="super_saco_segunda">Super Saco de Segunda</option>
+                  <option value="super_saco_impreso">Super Saco Impreso</option>
+                  <option value="saco_nuevo">Saco Nuevo</option>
+                
             </select>
             <textarea
               placeholder="Comentarios"
-              value={comentarios}
-              onChange={(e) => setComentarios(e.target.value)}
+              value={reportsList[index].comentarios} // Vinculamos al estado correspondiente
+              onChange={(e) => handleInputChange(index, 'comentarios', e.target.value)}
               className="w-full p-2 rounded bg-[#1f2937] text-white"
             />
             <input
               type="text"
               placeholder="Status"
-              value={status}
-              onChange={(e) => setStatus(e.target.value)}
+              value={reportsList[index].status} // Vinculamos al estado correspondiente
+              onChange={(e) => handleInputChange(index, 'status', e.target.value)}
               className="w-full p-2 rounded bg-[#1f2937] text-white"
             />
             <textarea
               placeholder="Texto Extra"
-              value={extraText}
-              onChange={(e) => setExtraText(e.target.value)}
+              value={reportsList[index].extraText} // Vinculamos al estado correspondiente
+              onChange={(e) => handleInputChange(index, 'extraText', e.target.value)} // Usamos handleInputChange
               className="w-full p-2 rounded bg-[#1f2937] text-white"
             />
             <textarea
               placeholder="Detalles"
-              value={detalles}
-              onChange={(e) => setDetalles(e.target.value)}
+              value={reportsList[index].detalles} // Vinculamos al estado correspondiente
+              onChange={(e) => handleInputChange(index, 'detalles', e.target.value)} // Usamos handleInputChange
               className="w-full p-2 rounded bg-[#1f2937] text-white"
             />
           </div>
-
-          <button
-            type="submit"
-            className="bg-green-500 text-white p-2 rounded hover:bg-green-600 mt-4"
-          >
-            {selectedReport ? "Actualizar Reporte" : "Agregar y Continuar"}
-          </button>
           {selectedReport && (
             <button
               type="button"
@@ -522,6 +525,21 @@ export default function SalesReportList() {
             </button>
           )}
         </form>
+        ))}
+          <button
+            type="button"
+            onClick={handleAddService}
+            className="bg-green-500 text-white p-2 rounded hover:bg-green-600 mt-4"
+          >
+            Añadir otro servicio
+          </button>
+
+          <button
+            onClick={handleSaveReport}
+            className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 mt-4 ml-2"
+          >
+            Guardar Reporte
+          </button>
 
         <button onClick={closeModal} className="mt-4 bg-gray-500 text-white p-2 rounded hover:bg-gray-600">
           Cerrar

@@ -20,7 +20,7 @@ export default async function handler(req, res) {
               include: [
                 {
                   model: Users,
-                  as: 'User', // Usa el alias correcto aquí
+                  as: 'User',
                   attributes: ['name'], // Solo traer el nombre del usuario
                 },
               ],
@@ -31,7 +31,7 @@ export default async function handler(req, res) {
               include: [
                 {
                   model: Users,
-                  as: 'User', // Usa el alias correcto aquí
+                  as: 'User',
                   attributes: ['name'], // Solo traer el nombre del usuario
                 },
               ],
@@ -47,9 +47,18 @@ export default async function handler(req, res) {
         }
 
         case 'POST': {
-          const { clienteProveedorProspecto, empresa, unidadNegocio, productoServicio, comentarios, status } = req.body;
+          const {
+            clienteProveedorProspecto,
+            empresa,
+            unidadNegocio,
+            productoServicio,
+            comentarios,
+            status,
+            extraText,
+            detalles,
+          } = req.body;
 
-          if (!clienteProveedorProspecto || !empresa || !unidadNegocio || !productoServicio || !status) {
+          if (!clienteProveedorProspecto || !empresa || !unidadNegocio || !productoServicio || !status || !extraText || !detalles) {
             return res.status(400).json({ message: 'Required fields are missing' });
           }
 
@@ -60,7 +69,9 @@ export default async function handler(req, res) {
             productoServicio,
             comentarios,
             status,
-            userId,  // Asociar el reporte con el usuario autenticado
+            extraText,   // Nuevo campo agregado
+            detalles,    // Nuevo campo agregado
+            userId,      // Asociar el reporte con el usuario autenticado
           });
 
           return res.status(201).json({ message: 'Sales report created successfully', report: newReport });
@@ -71,7 +82,7 @@ export default async function handler(req, res) {
       }
     } catch (error) {
       console.error('Error processing request:', error);
-      return res.status(500).json({ message: 'Server error' });
+      return res.status(500).json({ message: 'Server error', error: error.message });
     }
   });
 }

@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   if (req.method === 'PUT') {
     authenticateToken(req, res, async () => {
       const { role: userRole, id: userId } = req.user;
-      const { clienteProveedorProspecto, empresa, unidadNegocio, productoServicio, comentarios, status } = req.body;
+      const { clienteProveedorProspecto, empresa, unidadNegocio, productoServicio, comentarios, status, extraText, detalles } = req.body;
 
       try {
         const report = await SalesReport.findByPk(id, {
@@ -36,6 +36,8 @@ export default async function handler(req, res) {
         report.productoServicio = productoServicio || report.productoServicio;
         report.comentarios = comentarios || report.comentarios;
         report.status = status || report.status;
+        report.extraText = extraText || report.extraText;
+        report.detalles = detalles || report.detalles;
 
         await report.save();
 
