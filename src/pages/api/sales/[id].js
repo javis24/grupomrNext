@@ -1,5 +1,6 @@
 import SalesReport from '../../../models/SalesReportModel';
 import { authenticateToken } from '../../../lib/auth';
+import Users from '../../../models/UserModel';
 
 export default async function handler(req, res) {
   const { id } = req.query;
@@ -10,7 +11,15 @@ export default async function handler(req, res) {
       const { clienteProveedorProspecto, empresa, unidadNegocio, productoServicio, comentarios, status } = req.body;
 
       try {
-        const report = await SalesReport.findByPk(id);
+        const report = await SalesReport.findByPk(id, {
+          include: [
+            {
+              model: Users,
+              attributes: ['name'], // Incluye el nombre del usuario
+            },
+          ],
+        });
+        
         if (!report) {
           return res.status(404).json({ message: 'Sales report not found' });
         }

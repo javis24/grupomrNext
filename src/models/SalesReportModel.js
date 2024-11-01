@@ -34,7 +34,7 @@ const SalesReport = db.define('SalesReports', {
 });
 
 // Relaciones
-Users.hasMany(SalesReport);
-SalesReport.belongsTo(Users, { foreignKey: 'userId' });
+Users.hasMany(SalesReport, { foreignKey: 'userId' });
+SalesReport.belongsTo(Users, { foreignKey: 'userId', as: 'User' });
 
 export default SalesReport;

@@ -1,4 +1,3 @@
-// pages/api/send-file-email.js
 import nodemailer from 'nodemailer';
 
 export default async function handler(req, res) {
@@ -9,32 +8,30 @@ export default async function handler(req, res) {
   const { emails, fileUrl, fileName, message } = req.body;
 
   try {
-    // Configura el transporter de Nodemailer con los datos de Hostinger
+    // Configura el transporter de Nodemailer con Gmail
     const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_SERVICE,
-      port: process.env.EMAIL_PORT,
-      secure: true, // usa SSL
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
+        host: process.env.EMAIL_SERVICE,
+        port: process.env.EMAIL_PORT,
+        secure: true, // Usa SSL
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+      });
 
-    // Configuración del contenido del correo
     const mailOptions = {
       from: process.env.EMAIL_USER,
-      to: emails, // Lista de correos para envío múltiple
+      to: emails,
       subject: `Envío de archivo: ${fileName}`,
       text: message || `Aquí tienes el archivo adjunto: ${fileName}`,
       attachments: [
         {
           filename: fileName,
-          path: fileUrl,
+          path: `https://www.grupomrlaguna.com/uploads/${fileName}`,
         },
       ],
     };
 
-    // Enviar el correo
     await transporter.sendMail(mailOptions);
     res.status(200).json({ message: 'Correo enviado exitosamente' });
   } catch (error) {
