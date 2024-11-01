@@ -112,8 +112,8 @@ const SanoQuotationForm = () => {
         item.descripcion,
         item.cantidad,
         item.unidad,
-        `$${item.precioUnitario.toFixed(2)}`, // Formato con $ en precio unitario
-        `$${item.total.toFixed(2)}`, 
+        `$${parseFloat(item.precioUnitario || 0).toFixed(2)}`, // Convertimos a número antes de llamar a toFixed
+        `$${parseFloat(item.total || 0).toFixed(2)}`, // Convertimos a número antes de llamar a toFixed
         item.comentarios
       ]);
 
