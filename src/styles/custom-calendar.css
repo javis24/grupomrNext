@@ -1,21 +1,21 @@
 /* src/styles/custom-calendar.css */
 .react-calendar__tile {
-    color: #000 !important; /* Texto negro por defecto */
-    background-color: yellow !important; /* Fondo blanco por defecto */
+    color: #fff !important; /* Texto negro por defecto */
+    background-color: #1f2937 !important; /* Fondo blanco por defecto */
   }
   
   .react-calendar__tile--now {
     background-color: #006edc !important; /* Color de fondo para el día actual */
-    color: white !important; /* Texto blanco para el día actual */
+    color: #fff !important; /* Texto blanco para el día actual */
   }
   
   .react-calendar__tile--active {
     background-color: #1d4ed8 !important; /* Fondo azul para el día seleccionado */
-    color: white !important; /* Texto blanco para el día seleccionado */
+    color: black !important; /* Texto blanco para el día seleccionado */
   }
   
   .react-calendar__tile--hasActive {
-    background-color: #e5e7eb !important; /* Color gris claro para días con eventos */
+    background-color: #1f2937 !important; /* Color gris claro para días con eventos */
   }
   
   .react-calendar__month-view__days__day--weekend {

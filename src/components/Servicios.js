@@ -230,7 +230,7 @@ export default function ServiceList() {
       doc.rect(150, 40, 50, 15, 'F'); // Caja para "Fecha"
   
       doc.setFontSize(12);
-      doc.text("COTIZACIÓN", 175, 28, { align: 'center' });
+      doc.text("PRECIO SERVICIOS", 175, 28, { align: 'center' });
       doc.text(`Fecha: ${formattedDate}`, 175, 45, { align: 'center' });
   
       // Detalles del servicio
@@ -243,10 +243,10 @@ export default function ServiceList() {
         ["MANIFIESTO", service.manifiesto],
         ["RENTA 2024", `$ ${service.renta2024}`],
         ["RECOLECCIÓN", `$ ${service.recoleccion}`],
+        ["DISPOSICIÓN", `$ ${service.disposicion}`],
         ["CONTACTO", service.contacto],
         ["TELÉFONO", service.telefono],
         ["EMAIL", service.email],
-        ["DISPOSICIÓN", `$ ${service.disposicion}`],
         ["UBICACIÓN", service.ubicacion],
         ["RFC", service.rfc],
   
@@ -339,10 +339,10 @@ export default function ServiceList() {
           ["MANIFIESTO", service.manifiesto],
           ["RENTA 2024", `$ ${service.renta2024}`],
           ["RECOLECCIÓN", `$ ${service.recoleccion}`],
+          ["DISPOSICIÓN", `$ ${service.disposicion}`],
           ["CONTACTO", service.contacto],
           ["TELÉFONO", service.telefono],
           ["EMAIL", service.email],
-          ["DISPOSICIÓN", `$ ${service.disposicion}`],
           ["UBICACIÓN", service.ubicacion],
           ["RFC", service.rfc],
         ];
