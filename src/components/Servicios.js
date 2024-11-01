@@ -235,14 +235,17 @@ export default function ServiceList() {
   
       // Detalles del servicio
       const serviceDetails = [
-        ["NOMBRE DEL CONTACTO", service.contactName],
+        ["CLIENTE", service.contactName],
         ["PROGRAMACIÓN", service.programacion],
         ["EQUIPO", service.equipo],
-        ["NÚMERO ECONÓMICO", service.numeroEconomico],
+        ["NÚMERO DE EQUIPO", service.numeroEconomico],
         ["CONTENIDO", service.contenido],
         ["MANIFIESTO", service.manifiesto],
         ["RENTA 2024", `$ ${service.renta2024}`],
         ["RECOLECCIÓN", `$ ${service.recoleccion}`],
+        ["CONTACTO", service.contacto],
+        ["TELÉFONO", service.telefono],
+        ["EMAIL", service.email],
         ["DISPOSICIÓN", `$ ${service.disposicion}`],
         ["UBICACIÓN", service.ubicacion],
         ["RFC", service.rfc],
@@ -274,13 +277,7 @@ export default function ServiceList() {
       const detalles = service.detalles || "No hay detalles adicionales.";
       doc.text(detalles, 105, finalY + 35, { align: 'center' });
   
-      // Información de contacto
-      doc.setFontSize(8);
-      doc.text("Comercialización Materiales Reutilizables", 105, finalY + 85, null, 'center');
-      doc.setFontSize(10);
-      doc.text("Ing. Gustavo Salgado", 105, finalY + 90, null, 'center');
-      doc.text("Gerencia General", 105, finalY + 95, null, 'center');
-      doc.text("gerencia@sanolaguna.com", 105, finalY + 100, null, 'center');
+     
   
       // Guardar el archivo PDF
       doc.save(`${service.programacion}_cotizacion.pdf`);
@@ -334,14 +331,17 @@ export default function ServiceList() {
   
         // Detalles del servicio
         const serviceDetails = [
-          ["NOMBRE DEL CONTACTO", service.contactName],
+          ["CLIENTE", service.contactName],
           ["PROGRAMACIÓN", service.programacion],
           ["EQUIPO", service.equipo],
-          ["NÚMERO ECONÓMICO", service.numeroEconomico],
+          ["NÚMERO DE EQUIPO", service.numeroEconomico],
           ["CONTENIDO", service.contenido],
           ["MANIFIESTO", service.manifiesto],
           ["RENTA 2024", `$ ${service.renta2024}`],
           ["RECOLECCIÓN", `$ ${service.recoleccion}`],
+          ["CONTACTO", service.contacto],
+          ["TELÉFONO", service.telefono],
+          ["EMAIL", service.email],
           ["DISPOSICIÓN", `$ ${service.disposicion}`],
           ["UBICACIÓN", service.ubicacion],
           ["RFC", service.rfc],
@@ -373,13 +373,7 @@ export default function ServiceList() {
       doc.setFontSize(10);
       doc.text(detalles, 105, currentY + 15, { align: 'center' });
   
-      // Información de contacto
-      doc.setFontSize(8);
-      doc.text("Comercialización Materiales Reutilizables", 105, currentY + 45, null, 'center');
-      doc.setFontSize(10);
-      doc.text("Ing. Gustavo Salgado", 105, currentY + 50, null, 'center');
-      doc.text("Gerencia General", 105, currentY + 55, null, 'center');
-      doc.text("gerencia@sanolaguna.com", 105, currentY + 60, null, 'center');
+     
   
       // Guardar el archivo PDF
       doc.save('todos_los_servicios.pdf');
@@ -417,7 +411,7 @@ export default function ServiceList() {
           <table className="w-full table-auto bg-[#1f2937] text-left rounded-lg">
             <thead>
               <tr>
-                <th className="px-2 py-2">Nombre</th>
+                <th className="px-2 py-2">Cliente</th>
                 <th className="px-2 py-2">Programación</th>
                 <th className="px-2 py-2">Equipo</th>
                 <th className="px-2 py-2">Número Equipo</th>
@@ -473,7 +467,7 @@ export default function ServiceList() {
           <form onSubmit={selectedService ? handleUpdate : handleCreate}>
             <div className="grid grid-cols-3 gap-4 mb-4">
             <div>
-                <label className="block text-white">Nombre de Contacto</label>
+                <label className="block text-white">Cliente</label>
                 <input
                   type="text"
                   value={contactName}
