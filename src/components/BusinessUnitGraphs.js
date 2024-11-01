@@ -180,6 +180,19 @@ export default function BusinessUnitGraphs() {
     }
   };
 
+
+    const deleteFile = async (fileId) => {
+      try {
+        const token = localStorage.getItem('token');
+        await axios.delete(`/api/business-graficas/${fileId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        setImportedFiles(importedFiles.filter(file => file.id !== fileId));
+      } catch (error) {
+        console.error('Error al eliminar el archivo:', error);
+      }
+    };
+
   return (
     <div className="flex justify-center items-center min-h-screen bg-[#0e1624] text-white p-8">
       <div className="w-full max-w-lg">
@@ -272,6 +285,12 @@ export default function BusinessUnitGraphs() {
                         className="bg-blue-500 text-white p-1 rounded hover:bg-blue-600"
                       >
                         Descargar
+                      </button>
+                      <button
+                        onClick={() => deleteFile(file.id)}
+                        className="bg-red-500 text-white p-1 rounded hover:bg-red-600"
+                      >
+                        Eliminar
                       </button>
                     </td>
                   </tr>
