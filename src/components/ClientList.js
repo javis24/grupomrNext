@@ -210,40 +210,6 @@ const exportClientToPDF = (client) => {
         1: { halign: 'left', textColor: [0, 0, 0], cellWidth: 100 },  // Ajustar ancho de la segunda columna
       }
     });
-
-    // Sección de observaciones
-    doc.setFontSize(8);
-    doc.setTextColor(0, 0, 0);
-    doc.setFillColor(255, 204, 0);
-    doc.rect(14, doc.lastAutoTable.finalY + 10, 182, 10, 'F');
-    doc.text("OBSERVACIONES", 105, doc.lastAutoTable.finalY + 17, null, 'center');
-
-    const observations = [
-      "Precios más IVA",
-      "Condiciones de pago: Negociable",
-      "Nuestro personal cuenta con seguridad social, EPP y capacitación.",
-      "Autorización Ambiental vigente.",
-      "Teléfono de atención: 871-342 81 05"
-    ];
-
-    // Centrar las observaciones
-    observations.forEach((obs, index) => {
-      const obsTextWidth = doc.getTextWidth(obs);
-      doc.text(105 - (obsTextWidth / 2), doc.lastAutoTable.finalY + 25 + (index * 6), obs);
-    });
-
-      // Pie de página
-      doc.setFontSize(8);
-      doc.setTextColor(0, 0, 0);
-      const footer1 = "Comercialización Grupo MR";
-      const footer2 = "Visita nuestra página y conoce más sobre nosotros";
-      const footer3 = "www.materialesreutilizables.com";
-
-      doc.text(105, 250, footer1, null, 'center'); // Subimos la posición del pie de página
-      doc.text(105, 253, footer2, null, 'center');
-      doc.setTextColor(0, 0, 255);  // Color azul para el enlace
-      doc.textWithLink(footer3, 86, 256, { url: "http://www.materialesreutilizables.com" }); // Movemos el link más a la izquierda
-
         doc.save(`${client.fullName}_details.pdf`);
       };
     };
@@ -315,19 +281,8 @@ const exportAllClientsToPDF = () => {
       }
     });
 
-    // Pie de página
-    doc.setFontSize(8);
-    doc.setTextColor(0, 0, 0);
-    const footer1 = "Comercialización Grupo MR";
-    const footer2 = "Visita nuestra página y conoce más sobre nosotros";
-    const footer3 = "www.materialesreutilizables.com";
-
-    doc.text(105, 270, footer1, null, 'center'); // Subimos la posición del pie de página
-    doc.text(105, 273, footer2, null, 'center');
-    doc.setTextColor(0, 0, 255);  // Color azul para el enlace
-    doc.textWithLink(footer3, 86, 276, { url: "http://www.materialesreutilizables.com" });
-
-    doc.save('clietes.pdf');
+    
+    doc.save('clientes.pdf');
   };
 };
 

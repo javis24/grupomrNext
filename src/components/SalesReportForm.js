@@ -99,24 +99,19 @@ export default function SalesReportList() {
         return;
       }
   
+      const updatedReportData = reportsList[0]; // Utiliza los datos de reportsList
+  
       await axios.put(`/api/sales/${selectedReport.id}`, {
-        clienteProveedorProspecto,
-        empresa,
-        unidadNegocio,
-        productoServicio,
-        comentarios,
-        status,
-        extraText,
-        detalles,
+        ...updatedReportData,
         userId,
       }, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      
-      // Actualiza el estado de salesReports
-      const updatedReports = salesReports.map(report => 
-        report.id === selectedReport.id 
-          ? { ...report, clienteProveedorProspecto, empresa, unidadNegocio, productoServicio, comentarios, status, extraText, detalles } 
+  
+      // Actualiza el estado de `salesReports` para reflejar los cambios
+      const updatedReports = salesReports.map(report =>
+        report.id === selectedReport.id
+          ? { ...report, ...updatedReportData }
           : report
       );
       setSalesReports(updatedReports);
@@ -145,7 +140,8 @@ export default function SalesReportList() {
     const updatedReportsList = [...reportsList];
     updatedReportsList[index][field] = value;
     setReportsList(updatedReportsList);
-};
+  };
+  
 
 
   const handleSaveReport = async () => {
@@ -168,35 +164,38 @@ export default function SalesReportList() {
     }
   };
 
-  const openModal = (report = null) => {
-    setSelectedReport(report); // Establece el reporte seleccionado
+    const openModal = (report = null) => {
+    setSelectedReport(report);
     if (report) {
-      setClienteProveedorProspecto(report.clienteProveedorProspecto);
-      setEmpresa(report.empresa);
-      setUnidadNegocio(report.unidadNegocio);
-      setProductoServicio(report.productoServicio);
-      setComentarios(report.comentarios);
-      setStatus(report.status);
-      setExtraText(report.extraText);
-      setDetalles(report.detalles);
+      // Llenamos `reportsList` con los datos del reporte seleccionado para editar
+      setReportsList([{
+        clienteProveedorProspecto: report.clienteProveedorProspecto || '',
+        empresa: report.empresa || '',
+        unidadNegocio: report.unidadNegocio || '',
+        productoServicio: report.productoServicio || '',
+        comentarios: report.comentarios || '',
+        status: report.status || '',
+        extraText: report.extraText || '',
+        detalles: report.detalles || '',
+      }]);
     } else {
       clearForm(); // Limpiar el formulario si no hay reporte seleccionado
     }
     setModalIsOpen(true);
   };
-  
-  
 
   const clearForm = () => {
-    setClienteProveedorProspecto('');
-    setEmpresa('');
-    setUnidadNegocio('');
-    setProductoServicio('');
-    setComentarios('');
-    setStatus('');
-    setExtraText('');
-    setDetalles('');
-    setUserId(''); // Si aplica
+    setReportsList([{
+      clienteProveedorProspecto: '',
+      empresa: '',
+      unidadNegocio: '',
+      productoServicio: '',
+      comentarios: '',
+      status: '',
+      extraText: '',
+      detalles: '',
+    }]);
+    setSelectedReport(null);
   };
   
 

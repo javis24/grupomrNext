@@ -318,7 +318,7 @@ export default function ServiceList() {
       doc.rect(150, 40, 50, 15, 'F'); // Caja para "Fecha"
   
       doc.setFontSize(12);
-      doc.text("SERVICIOS", 175, 28, { align: 'center' });
+      doc.text("PRECIO SERVICIOS", 175, 28, { align: 'center' });
       doc.text(`Fecha: ${formattedDate}`, 175, 45, { align: 'center' });
   
       let currentY = 60; // Empezamos después del encabezado

@@ -7,32 +7,33 @@ export default async function handler(req, res) {
 
   // Autenticación del token y obtención de datos del usuario
   authenticateToken(req, res, async () => {
-    const { role: userRole, id: userId } = req.user;
+    const { email, id: userId } = req.user;
 
     try {
       switch (method) {
         case 'GET': {
           let reports;
-          if (userRole === 'vendedor') {
-            // Si el usuario es vendedor, solo puede ver los reportes que él creó
+          
+          if (email === 'coordinadora@grupomrlaguna.com') {
+            // Si el usuario es la coordinadora, puede ver todos los reportes
+            reports = await SalesReport.findAll({
+              include: [
+                {
+                  model: Users,
+                  as: 'User',
+                  attributes: ['name'],
+                },
+              ],
+            });
+          } else {
+            // Si el usuario no es la coordinadora, solo puede ver sus propios reportes
             reports = await SalesReport.findAll({
               where: { userId },
               include: [
                 {
                   model: Users,
                   as: 'User',
-                  attributes: ['name'], // Solo traer el nombre del usuario
-                },
-              ],
-            });
-          } else {
-            // Si el usuario es admin o gerencia, puede ver todos los reportes
-            reports = await SalesReport.findAll({
-              include: [
-                {
-                  model: Users,
-                  as: 'User',
-                  attributes: ['name'], // Solo traer el nombre del usuario
+                  attributes: ['name'],
                 },
               ],
             });
@@ -69,9 +70,9 @@ export default async function handler(req, res) {
             productoServicio,
             comentarios,
             status,
-            extraText,   // Nuevo campo agregado
-            detalles,    // Nuevo campo agregado
-            userId,      // Asociar el reporte con el usuario autenticado
+            extraText,
+            detalles,
+            userId,
           });
 
           return res.status(201).json({ message: 'Sales report created successfully', report: newReport });
