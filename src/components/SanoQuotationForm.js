@@ -1,4 +1,5 @@
-import React, { useState } from 'react'; 
+
+import React, { useState, useEffect } from 'react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
@@ -18,6 +19,16 @@ const SanoQuotationForm = () => {
       { descripcion: '', cantidad: 1, unidad: '', precioUnitario: 0, total: 0, comentarios: '' }
     ],
   });
+
+  const [cotizacionNo, setCotizacionNo] = useState(1);
+
+  useEffect(() => {
+    // Obtener el número de cotización del localStorage o inicializar en 1
+    const savedCotizacionNo = localStorage.getItem('cotizacionNo');
+    if (savedCotizacionNo) {
+      setCotizacionNo(parseInt(savedCotizacionNo, 10));
+    }
+  }, []);
 
   const handleChange = (e, index = null) => {
     const { name, value } = e.target;
@@ -42,23 +53,21 @@ const SanoQuotationForm = () => {
     setFormData({ ...formData, items: updatedItems });
   };
 
-
   const exportToPDF = () => {
     const doc = new jsPDF();
 
     // Obtener la fecha actual
-      const today = new Date();
-      const formattedDate = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
-
+    const today = new Date();
+    const formattedDate = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
 
     // Logo del encabezado
-    const imgUrl = '/logo_sano.png';  // Ruta de tu logo
+    const imgUrl = '/logo_sano.png';
     const image = new Image();
     image.src = imgUrl;
 
-      image.onload = () => {
+    image.onload = () => {
       doc.addImage(image, 'PNG', 10, 5, 50, 50);
-      
+
       // Información de la empresa y cotización en el encabezado
       doc.setFontSize(10);
       doc.text("Soluciones Ambientales Normativas SA de CV", 100, 20, { align: 'center' });
@@ -66,22 +75,20 @@ const SanoQuotationForm = () => {
       doc.text("Cd. Lerdo, Dgo. C.P. 35168", 100, 34, { align: 'center' });
 
       // Título de Cotización y Fecha
-      doc.setFillColor(255, 178, 107); // Color naranja
+      doc.setFillColor(255, 178, 107);
 
-      // Ajustar las coordenadas 'y' para mover las cajas más arriba
-      doc.rect(150, 20, 50, 15, 'F'); // Caja para "Cotización", movida más arriba
-      doc.rect(150, 40, 50, 15, 'F'); // Caja para "Fecha", movida más arriba
+      doc.rect(150, 20, 50, 15, 'F');
+      doc.rect(150, 40, 50, 15, 'F');
 
-      // Ajustar el texto para que esté dentro de las cajas movidas
       doc.setFontSize(12);
-      doc.text("COTIZACIÓN", 175, 28, { align: 'center' }); // Texto ajustado para "Cotización"
-      doc.text("Nº 01", 175, 33, { align: 'center' }); // Texto ajustado para "Nº"
-      doc.text(`Fecha: ${formattedDate}`, 175, 45, { align: 'center' });// Centrado ajustado
+      doc.text("COTIZACIÓN", 175, 28, { align: 'center' });
+      doc.text(`Nº ${cotizacionNo}`, 175, 33, { align: 'center' });
+      doc.text(`Fecha: ${formattedDate}`, 175, 45, { align: 'center' });
 
       // Información del cliente
       doc.setFontSize(10);
-      doc.setFillColor(255, 178, 107); 
-      doc.rect(10, 70, 190, 10, 'F'); // Barra de título "Datos del Cliente"
+      doc.setFillColor(255, 178, 107);
+      doc.rect(10, 70, 190, 10, 'F');
       doc.text("DATOS DEL CLIENTE O SOLICITANTE", 105, 77, null, 'center');
 
       const clientDetails = [
@@ -94,7 +101,6 @@ const SanoQuotationForm = () => {
       doc.autoTable({
         body: clientDetails,
         startY: 85,
-        theme: 'plain',
         theme: 'grid',
         styles: { cellPadding: 2, fontSize: 8, halign: 'left'},
         columnStyles: { 0: { cellWidth: 38 }, 1: { cellWidth: 50 }, 2: { cellWidth: 50 }, 3: { cellWidth: 50 } },
@@ -105,15 +111,15 @@ const SanoQuotationForm = () => {
       doc.setFontSize(8);
       doc.setFillColor(255, 178, 107);
       doc.rect(10, doc.lastAutoTable.finalY + 10, 190, 10, 'F');
-      doc.text("Estimado, con la presente nos permitimos realizarle la siguiente propuesta con respecto a el servicio de manejo integral de residuos peligrosos", 105, doc.lastAutoTable.finalY + 17, null, 'center');
+      doc.text("Estimado, con la presente nos permitimos realizarle la siguiente propuesta...", 105, doc.lastAutoTable.finalY + 17, null, 'center');
 
       const itemDetails = formData.items.map((item, index) => [
         index + 1,
         item.descripcion,
         item.cantidad,
         item.unidad,
-        `$${parseFloat(item.precioUnitario || 0).toFixed(2)}`, // Convertimos a número antes de llamar a toFixed
-        `$${parseFloat(item.total || 0).toFixed(2)}`, // Convertimos a número antes de llamar a toFixed
+        `$${parseFloat(item.precioUnitario || 0).toFixed(2)}`,
+        `$${parseFloat(item.total || 0).toFixed(2)}`,
         item.comentarios
       ]);
 
@@ -128,27 +134,31 @@ const SanoQuotationForm = () => {
         columnStyles: { 0: { cellWidth: 10 }, 1: { cellWidth: 50 }, 2: { cellWidth: 20 }, 3: { cellWidth: 20 }, 4: { cellWidth: 20 }, 5: { cellWidth: 20 }, 6: { cellWidth: 50 } }
       });
 
-       // Sección de Observaciones
-          doc.setFontSize(12);
-          doc.setFillColor(255, 178, 107); 
-          doc.rect(10, doc.lastAutoTable.finalY + 20, 190, 10, 'F');
-          doc.text("DETALLES ADICIONALES", 105, doc.lastAutoTable.finalY + 27, null, 'center');
+      // Sección de Observaciones
+      doc.setFontSize(12);
+      doc.setFillColor(255, 178, 107);
+      doc.rect(10, doc.lastAutoTable.finalY + 20, 190, 10, 'F');
+      doc.text("DETALLES ADICIONALES", 105, doc.lastAutoTable.finalY + 27, null, 'center');
 
-           // Insertar los detalles que el usuario ingresó en el campo de detalles
-          const detalles = formData.detalles || "No hay detalles adicionales.";
-          doc.text(detalles, 105, doc.lastAutoTable.finalY + 35, { align: 'center' });
+      const detalles = formData.detalles || "No hay detalles adicionales.";
+      doc.text(detalles, 105, doc.lastAutoTable.finalY + 35, { align: 'center' });
 
-          // Información de contacto
-          doc.setFontSize(8);
-          doc.text("COMERCIALIZACIÓN SANO", 105, doc.lastAutoTable.finalY + 85, null, 'center');
-      
-
-
+      // Información de contacto
+      doc.setFontSize(8);
+      doc.text("COMERCIALIZACIÓN SANO", 105, doc.lastAutoTable.finalY + 85, null, 'center');
 
       // Guardar el archivo PDF
       doc.save('cotizacion_sano.pdf');
+
+      // Actualizar el número de cotización
+      setCotizacionNo((prevNo) => {
+        const newNo = prevNo + 1;
+        localStorage.setItem('cotizacionNo', newNo);
+        return newNo;
+      });
     };
   };
+
 
   return (
     <div className="container mx-auto p-6">

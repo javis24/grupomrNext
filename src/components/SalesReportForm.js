@@ -49,9 +49,14 @@ export default function SalesReportList() {
       comentarios: '',
       status: '',
       extraText: '',
-      detalles: '',
     },
   ]);
+  const [image, setImage] = useState(null);
+  const [imageUrl, setImageUrl] = useState('');
+
+    const handleImageChange = (e) => {
+      setImage(e.target.files[0]);
+  };
 
     useEffect(() => {
       const token = localStorage.getItem('token');
@@ -99,19 +104,36 @@ export default function SalesReportList() {
         return;
       }
   
-      const updatedReportData = reportsList[0]; // Utiliza los datos de reportsList
+      const updatedReportData = reportsList[0];
   
-      await axios.put(`/api/sales/${selectedReport.id}`, {
-        ...updatedReportData,
-        userId,
-      }, {
-        headers: { Authorization: `Bearer ${token}` },
+      // Crear `FormData` para enviar datos y archivos
+      const formData = new FormData();
+      formData.append('clienteProveedorProspecto', String(updatedReportData.clienteProveedorProspecto));
+      formData.append('empresa', String(updatedReportData.empresa));
+      formData.append('unidadNegocio', String(updatedReportData.unidadNegocio));
+      formData.append('productoServicio', String(updatedReportData.productoServicio));
+      formData.append('comentarios', String(updatedReportData.comentarios || ''));
+      formData.append('status', String(updatedReportData.status));
+      formData.append('extraText', String(updatedReportData.extraText || ''));
+  
+      // Agrega la imagen seleccionada o la URL de la imagen existente
+      if (image) {
+        formData.append('image', image);
+      } else {
+        formData.append('imageUrl', imageUrl);
+      }
+  
+      await axios.put(`/api/sales/${selectedReport.id}`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
       });
   
       // Actualiza el estado de `salesReports` para reflejar los cambios
       const updatedReports = salesReports.map(report =>
         report.id === selectedReport.id
-          ? { ...report, ...updatedReportData }
+          ? { ...report, ...updatedReportData, imageUrl } // Incluye `imageUrl` actualizado
           : report
       );
       setSalesReports(updatedReports);
@@ -121,6 +143,7 @@ export default function SalesReportList() {
       setError('Failed to update sales report. Please try again.');
     }
   };
+  
   
 
   const handleAddService = () => {
@@ -132,7 +155,6 @@ export default function SalesReportList() {
       comentarios: '',
       status: '',
       extraText: '',
-      detalles: '',
     }]);
   };
 
@@ -148,14 +170,25 @@ export default function SalesReportList() {
     try {
       const token = localStorage.getItem('token');
       for (let report of reportsList) {
-        console.log('Guardando reporte:', report); // Asegúrate de que estos datos sean correctos
-        await axios.post('/api/sales/', {
-          ...report,
-          userId,
-        }, {
-          headers: { Authorization: `Bearer ${token}` },
+        // Crear una instancia de FormData para enviar datos de formulario y la imagen
+        const formData = new FormData();
+        formData.append('clienteProveedorProspecto', String(report.clienteProveedorProspecto));
+        formData.append('empresa', String(report.empresa));
+        formData.append('unidadNegocio', String(report.unidadNegocio));
+        formData.append('productoServicio', String(report.productoServicio));
+        formData.append('comentarios', String(report.comentarios || ''));
+        formData.append('status', String(report.status));
+        formData.append('extraText', String(report.extraText || ''));
+        if (image) formData.append('image', image);
+  
+        await axios.post('/api/sales/', formData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
         });
       }
+  
       fetchSalesReports(); // Recargar la lista de reportes después de guardar
       closeModal(); // Cerrar el modal
     } catch (error) {
@@ -163,7 +196,7 @@ export default function SalesReportList() {
       setError('Failed to save reports. Please try again.');
     }
   };
-
+  
     const openModal = (report = null) => {
     setSelectedReport(report);
     if (report) {
@@ -176,8 +209,8 @@ export default function SalesReportList() {
         comentarios: report.comentarios || '',
         status: report.status || '',
         extraText: report.extraText || '',
-        detalles: report.detalles || '',
       }]);
+      setImageUrl(report.imageUrl ? `${process.env.NEXT_PUBLIC_BASE_URL || ''}${report.imageUrl}` : '');
     } else {
       clearForm(); // Limpiar el formulario si no hay reporte seleccionado
     }
@@ -193,7 +226,9 @@ export default function SalesReportList() {
       comentarios: '',
       status: '',
       extraText: '',
-      detalles: '',
+      setImageUrl:'', // Limpia la URL de la imagen al cerrar el modal
+      setImage: (null),
+      
     }]);
     setSelectedReport(null);
   };
@@ -210,7 +245,8 @@ export default function SalesReportList() {
         comentarios: '',
         status: '',
         extraText: '',
-        detalles: '',
+        Image: '',
+    
       },
     ]);
   };
@@ -507,12 +543,13 @@ export default function SalesReportList() {
               onChange={(e) => handleInputChange(index, 'extraText', e.target.value)} // Usamos handleInputChange
               className="w-full p-2 rounded bg-[#1f2937] text-white"
             />
-            <textarea
-              placeholder="Detalles"
-              value={reportsList[index].detalles} // Vinculamos al estado correspondiente
-              onChange={(e) => handleInputChange(index, 'detalles', e.target.value)} // Usamos handleInputChange
-              className="w-full p-2 rounded bg-[#1f2937] text-white"
-            />
+          {imageUrl && (
+            <div className="mb-4">
+              <p>Imagen actual:</p>
+              <img src={imageUrl} alt="Imagen del reporte" className="w-32 h-32 object-cover rounded" />
+            </div>
+          )}
+
           </div>
           {selectedReport && (
             <button

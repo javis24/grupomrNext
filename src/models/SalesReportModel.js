@@ -33,10 +33,10 @@ const SalesReport = db.define('SalesReports', {
         type: DataTypes.TEXT,
         allowNull: true,
       },
-      detalles: { 
-        type: DataTypes.TEXT,
+      imageUrl: { // Nuevo campo para almacenar la URL de la imagen
+        type: DataTypes.STRING,
         allowNull: true,
-      },
+    },
 
 }, {
     freezeTableName: true // Mantiene el nombre de la tabla tal cual
