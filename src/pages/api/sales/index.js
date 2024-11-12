@@ -1,12 +1,14 @@
 import SalesReport from '../../../models/SalesReportModel';
 import { authenticateToken } from '../../../lib/auth';
 import Users from '../../../models/UserModel';
-import formidable from 'formidable';
 import fs from 'fs';
+import path from 'path';
+
+const formidable = require('formidable'); // Asegúrate de usar require en lugar de import
 
 export const config = {
   api: {
-    bodyParser: false, // Desactivamos el bodyParser para manejar la carga de archivos
+    bodyParser: false, // Necesario para manejar archivos
   },
 };
 
@@ -19,8 +21,12 @@ const handler = async (req, res) => {
 
     try {
       if (method === 'POST') {
-        // Manejar la carga de archivos y los datos del formulario
-        const form = formidable({ multiples: true, uploadDir: './public/uploads', keepExtensions: true });
+        // Configuración de formidable
+        const form = new formidable.IncomingForm({
+          uploadDir: path.join(process.cwd(), '/public/uploads'),
+          keepExtensions: true,
+          maxFileSize: 2 * 1024 * 1024, // Tamaño máximo de archivo
+        });
 
         form.parse(req, async (err, fields, files) => {
           if (err) {
@@ -28,7 +34,14 @@ const handler = async (req, res) => {
             return res.status(500).json({ message: 'Error processing form data' });
           }
 
-          // Aseguramos que todos los campos sean cadenas
+          // Procesar la imagen
+          let imageUrl = '';
+          if (files.image && Array.isArray(files.image) && files.image.length > 0) {
+            imageUrl = `/uploads/${files.image[0].newFilename}`;
+          } else {
+            console.warn('No image provided in the request.');
+          }
+
           const clienteProveedorProspecto = String(fields.clienteProveedorProspecto || '');
           const empresa = String(fields.empresa || '');
           const unidadNegocio = String(fields.unidadNegocio || '');
@@ -37,14 +50,8 @@ const handler = async (req, res) => {
           const status = String(fields.status || '');
           const extraText = String(fields.extraText || '');
 
-          if (!clienteProveedorProspecto || !empresa || !unidadNegocio || !productoServicio || !status || !extraText) {
+          if (!clienteProveedorProspecto || !empresa || !unidadNegocio || !productoServicio || !status) {
             return res.status(400).json({ message: 'Required fields are missing' });
-          }
-
-          // Procesar la imagen
-          let imageUrl = '';
-          if (files.image) {
-            imageUrl = `/uploads/${files.image.newFilename}`; // Almacena la URL de la imagen
           }
 
           try {
@@ -70,7 +77,6 @@ const handler = async (req, res) => {
         let reports;
 
         if (email === 'coordinadora@grupomrlaguna.com') {
-          // Si el usuario es la coordinadora, puede ver todos los reportes
           reports = await SalesReport.findAll({
             include: [
               {
@@ -81,7 +87,6 @@ const handler = async (req, res) => {
             ],
           });
         } else {
-          // Si el usuario no es la coordinadora, solo puede ver sus propios reportes
           reports = await SalesReport.findAll({
             where: { userId },
             include: [

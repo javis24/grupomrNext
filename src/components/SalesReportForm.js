@@ -197,7 +197,7 @@ export default function SalesReportList() {
     }
   };
   
-    const openModal = (report = null) => {
+  const openModal = (report = null) => {
     setSelectedReport(report);
     if (report) {
       // Llenamos `reportsList` con los datos del reporte seleccionado para editar
@@ -210,12 +210,27 @@ export default function SalesReportList() {
         status: report.status || '',
         extraText: report.extraText || '',
       }]);
+      
+      // Aseguramos que `imageUrl` se establezca correctamente para edición
       setImageUrl(report.imageUrl ? `${process.env.NEXT_PUBLIC_BASE_URL || ''}${report.imageUrl}` : '');
     } else {
-      clearForm(); // Limpiar el formulario si no hay reporte seleccionado
+      // Limpiamos `imageUrl` y `reportsList` para un nuevo reporte
+      setImageUrl('');
+      setReportsList([{
+        clienteProveedorProspecto: '',
+        empresa: '',
+        unidadNegocio: '',
+        productoServicio: '',
+        comentarios: '',
+        status: '',
+        extraText: '',
+      }]);
     }
     setModalIsOpen(true);
   };
+  
+  
+  
 
   const clearForm = () => {
     setReportsList([{
@@ -543,13 +558,31 @@ export default function SalesReportList() {
               onChange={(e) => handleInputChange(index, 'extraText', e.target.value)} // Usamos handleInputChange
               className="w-full p-2 rounded bg-[#1f2937] text-white"
             />
-          {imageUrl && (
-            <div className="mb-4">
-              <p>Imagen actual:</p>
-              <img src={imageUrl} alt="Imagen del reporte" className="w-32 h-32 object-cover rounded" />
-            </div>
-          )}
+          {imageUrl && !image && (
+              <div className="mb-4">
+                <p>Imagen actual:</p>
+                <img src={imageUrl} alt="Imagen del reporte" className="w-32 h-32 object-cover rounded" />
+              </div>
+            )}
 
+            {/* Permitir seleccionar una nueva imagen y mostrar la vista previa de la imagen seleccionada */}
+            <div className="mb-4">
+              <label htmlFor="imageUpload" className="block text-white">Subir una nueva imagen</label>
+              <input
+                type="file"
+                id="imageUpload"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="block w-full text-white"
+              />
+            </div>
+
+            {image && (
+              <div className="mb-4">
+                <p>Vista previa de la nueva imagen:</p>
+                <img src={URL.createObjectURL(image)} alt="Nueva imagen seleccionada" className="w-32 h-32 object-cover rounded" />
+              </div>
+            )}
           </div>
           {selectedReport && (
             <button
