@@ -1,41 +1,32 @@
-import nodemailer from 'nodemailer';
+// pages/api/email/send-file-email.js
+import transporter from '../../../lib/emailTransporter';
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método no permitido' });
-  }
+  if (req.method === 'POST') {
+    const { emails, fileUrl, fileName, message } = req.body;
 
-  const { emails, fileUrl, fileName, message } = req.body;
-
-  try {
-    // Configura el transporter de Nodemailer con Gmail
-    const transporter = nodemailer.createTransport({
-        host: process.env.EMAIL_SERVICE,
-        port: process.env.EMAIL_PORT,
-        secure: true, // Usa SSL
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS,
-        },
-      });
-
+    // Configura el correo
     const mailOptions = {
       from: process.env.EMAIL_USER,
-      to: emails,
-      subject: `Envío de archivo: ${fileName}`,
-      text: message || `Aquí tienes el archivo adjunto: ${fileName}`,
+      to: emails, // lista de destinatarios
+      subject: 'Envío de archivo',
+      text: message,
       attachments: [
         {
           filename: fileName,
-          path: `https://www.grupomrlaguna.com/uploads/${fileName}`,
+          path: `${process.env.NEXT_PUBLIC_BASE_URL}${fileUrl}`,
         },
       ],
     };
 
-    await transporter.sendMail(mailOptions);
-    res.status(200).json({ message: 'Correo enviado exitosamente' });
-  } catch (error) {
-    console.error('Error al enviar el correo:', error);
-    res.status(500).json({ error: 'Hubo un problema al enviar el correo' });
+    try {
+      await transporter.sendMail(mailOptions);
+      res.status(200).json({ message: 'Correo enviado exitosamente' });
+    } catch (error) {
+      console.error('Error al enviar el correo:', error);
+      res.status(500).json({ message: 'Hubo un error al enviar el correo' });
+    }
+  } else {
+    res.status(405).json({ message: 'Método no permitido' });
   }
 }
