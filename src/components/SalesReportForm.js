@@ -49,13 +49,19 @@ export default function SalesReportList() {
       comentarios: '',
       status: '',
       extraText: '',
+      image: null,
+      imageUrl: '',
     },
   ]);
   const [image, setImage] = useState(null);
   const [imageUrl, setImageUrl] = useState('');
 
-    const handleImageChange = (e) => {
-      setImage(e.target.files[0]);
+  const handleImageChange = (index, e) => {
+    const updatedReportsList = [...reportsList];
+    const selectedImage = e.target.files[0];
+    updatedReportsList[index].image = selectedImage;
+    updatedReportsList[index].imageUrl = selectedImage ? URL.createObjectURL(selectedImage) : ''; // Actualizar la vista previa específica
+    setReportsList(updatedReportsList);
   };
 
     useEffect(() => {
@@ -155,6 +161,8 @@ export default function SalesReportList() {
       comentarios: '',
       status: '',
       extraText: '',
+      image: null,
+        imageUrl: '',
     }]);
   };
 
@@ -170,7 +178,6 @@ export default function SalesReportList() {
     try {
       const token = localStorage.getItem('token');
       for (let report of reportsList) {
-        // Crear una instancia de FormData para enviar datos de formulario y la imagen
         const formData = new FormData();
         formData.append('clienteProveedorProspecto', String(report.clienteProveedorProspecto));
         formData.append('empresa', String(report.empresa));
@@ -179,7 +186,11 @@ export default function SalesReportList() {
         formData.append('comentarios', String(report.comentarios || ''));
         formData.append('status', String(report.status));
         formData.append('extraText', String(report.extraText || ''));
-        if (image) formData.append('image', image);
+        
+        // Adjuntar la imagen solo si existe
+        if (report.image) {
+          formData.append('image', report.image);
+        }
   
         await axios.post('/api/sales/', formData, {
           headers: {
@@ -197,6 +208,7 @@ export default function SalesReportList() {
     }
   };
   
+  
   const openModal = (report = null) => {
     setSelectedReport(report);
     if (report) {
@@ -209,6 +221,9 @@ export default function SalesReportList() {
         comentarios: report.comentarios || '',
         status: report.status || '',
         extraText: report.extraText || '',
+        image: null,
+          imageUrl: report.imageUrl || '',
+        
       }]);
       
       // Aseguramos que `imageUrl` se establezca correctamente para edición
@@ -224,6 +239,8 @@ export default function SalesReportList() {
         comentarios: '',
         status: '',
         extraText: '',
+        image: null,
+        imageUrl: '',
       }]);
     }
     setModalIsOpen(true);
@@ -260,11 +277,19 @@ export default function SalesReportList() {
         comentarios: '',
         status: '',
         extraText: '',
-        Image: '',
+        image: null,
+        imageUrl: '',
     
       },
     ]);
   };
+
+
+  const handleRemoveService = (index) => {
+    const updatedReportsList = reportsList.filter((_, i) => i !== index);
+    setReportsList(updatedReportsList);
+  };
+  
   
 
   const filteredReports = salesReports.filter((report) => {
@@ -459,14 +484,26 @@ export default function SalesReportList() {
           contentLabel={selectedReport ? "Actualizar Reporte" : "Agregar Reporte"}
         >
           <h2 className="text-2xl font-bold mb-4 text-white">
-            {selectedReport ? "Actualizar Reporte" : "Agregar Nuevos Reportes"}
+            {selectedReport ? "Actualizar Reporte" : "Agregar Nuevos Reportess"}
           </h2>
 
           {/* Mapea cada servicio en `reportsList` para que aparezca un formulario por cada uno */}
           {reportsList.map((report, index) => (
           <form 
           key={index}
-          onSubmit={(e) => handleCreateAndContinue(e, index)} className="mb-4 p-4 border rounded-lg bg-[#374151]">
+          onSubmit={(e) => handleCreateAndContinue(e, index)} className="mb-4 p-4 border rounded-lg bg-[#374151] relative">
+             {/* Botón de eliminación para el reporte adicional */}
+              {index > 0 && (
+                <button
+                  type="button"
+                  onClick={() => handleRemoveService(index)}
+                  className="absolute top-2 right-2 text-red-500 font-bold text-2xl bg-transparent hover:text-red-700"
+                  title="Eliminar este reporte"
+                  style={{ lineHeight: '1', padding: '0', margin: '0' }}
+                >
+                  &times;
+                </button>
+              )}
           <div className="grid grid-cols-2 gap-4">
           <select
                 value={report.clienteProveedorProspecto}
@@ -474,7 +511,7 @@ export default function SalesReportList() {
                 className="w-full p-2 rounded bg-[#1f2937] text-white"
                 required
               >
-              <option value="">Cliente / Proveedor / Prospecto</option>
+              <option value="">Clientess / Proveedor / Prospecto</option>
               <option value="acopio">Acopio</option>
               <option value="cliente">Cliente</option>
               <option value="proveedor">Proveedor</option>
@@ -504,41 +541,14 @@ export default function SalesReportList() {
               <option value="composta">Composta</option>
               <option value="admon">Admon</option>
             </select>
-            <select
-              value={reportsList[index].productoServicio} // Vinculamos al estado correspondiente
-              onChange={(e) => handleInputChange(index, 'productoServicio', e.target.value)} // Usamos handleInputChange
+            <input
+              type="text"
+              placeholder="Producto / Servicio"
+              value={reportsList[index].productoServicio}
+              onChange={(e) => handleInputChange(index, 'productoServicio', e.target.value)}
               className="w-full p-2 rounded bg-[#1f2937] text-white"
               required
-            >
-              <option value="">Producto / Servicio</option>
-              {/* Opciones de producto/servicio */}
-              <option value="super_saco_usado">Super Saco Usado</option>
-              <option value="recoleccion_basura_comun">Recolección de Basura Común</option>
-              <option value="super_saco_usado">Super Saco Usado</option>
-                  <option value="recoleccion_basura_comun">Recolección de Basura Común</option>
-                  <option value="recoleccion_madera">Recolección de Madera, Cartón o Plástico</option>
-                  <option value="recoleccion_evento">Recolección por Evento</option>
-                  <option value="contenedor_residuos">Contenedor para Residuos Sólidos Urbanos</option>
-                  <option value="manejo_basura_comun">Manejo Integral de Basura Común Ruta</option>
-                  <option value="manejo_rp">Manejo Integral de RP</option>
-                  <option value="manejo_rme">Manejo Integral de RME</option>
-                  <option value="asesoria_ambiental">Asesoría y Gestión Ambiental</option>
-                  <option value="tarima_estandar">Tarima Estándar 40x48</option>
-                  <option value="tarimas_varias">Tarimas de Madera Varias Medidas</option>
-                  <option value="tarima_tacon">Tarima de Tacón 40x48</option>
-                  <option value="tarima_personalizada">Tarima Personalizada</option>
-                  <option value="madera_dimensionada">Madera Dimensionada para Tarimas</option>
-                  <option value="huacal">Huacal</option>
-                  <option value="lena">Leña</option>
-                  <option value="otros_embalajes_tarimas">Otros Embalajes Tarimas</option>
-                  <option value="super_saco_nuevo">Super Saco Nuevo</option>
-                  <option value="super_saco_seminuevo">Super Saco Seminuevo</option>
-                  <option value="super_saco_nuevo_segunda">Super Saco Nuevo de Segunda</option>
-                  <option value="super_saco_segunda">Super Saco de Segunda</option>
-                  <option value="super_saco_impreso">Super Saco Impreso</option>
-                  <option value="saco_nuevo">Saco Nuevo</option>
-                
-            </select>
+            />
             <textarea
               placeholder="Comentarios"
               value={reportsList[index].comentarios} // Vinculamos al estado correspondiente
@@ -565,24 +575,24 @@ export default function SalesReportList() {
               </div>
             )}
 
-            {/* Permitir seleccionar una nueva imagen y mostrar la vista previa de la imagen seleccionada */}
+            {/* Permitir seleccionar una nueva imagen y mostrar la vista previa específica */}
             <div className="mb-4">
-              <label htmlFor="imageUpload" className="block text-white">Subir una nueva imagen</label>
-              <input
-                type="file"
-                id="imageUpload"
-                accept="image/*"
-                onChange={handleImageChange}
-                className="block w-full text-white"
-              />
-            </div>
+                  <label htmlFor={`imageUpload-${index}`} className="block text-white">Subir una nueva imagen</label>
+                  <input
+                    type="file"
+                    id={`imageUpload-${index}`}
+                    accept="image/*"
+                    onChange={(e) => handleImageChange(index, e)} // Pasar el índice para actualizar el reporte específico
+                    className="block w-full text-white"
+                  />
+                </div>
 
-            {image && (
-              <div className="mb-4">
-                <p>Vista previa de la nueva imagen:</p>
-                <img src={URL.createObjectURL(image)} alt="Nueva imagen seleccionada" className="w-32 h-32 object-cover rounded" />
-              </div>
-            )}
+                {report.imageUrl && (
+                  <div className="mb-4">
+                    <p>Vista previa de la nueva imagen:</p>
+                    <img src={report.imageUrl} alt="Imagen seleccionada" className="w-32 h-32 object-cover rounded" />
+                  </div>
+                )}
           </div>
           {selectedReport && (
             <button
