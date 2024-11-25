@@ -31,30 +31,35 @@ export default async function handler(req, res) {
         form.parse(req, async (err, fields, files) => {
           if (err) {
             console.error('Error al procesar el archivo:', err);
-            return res.status(500).json({ message: 'Error al procesar el archivo' });
+            return res.status(500).json({ message: 'Error al procesar el archivo', details: err.message });
           }
+        
+          console.log('Archivos subidos:', files);
         
           const file = Array.isArray(files.file) ? files.file[0] : files.file;
           if (!file) {
+            console.error('No se encontró ningún archivo en la solicitud');
             return res.status(400).json({ message: 'No se ha subido ningún archivo' });
           }
         
           const filename = file.originalFilename || file.newFilename;
           const filepath = path.join('/uploads', file.newFilename);
-
+        
           try {
             const newFile = await File.create({
               filename,
               filepath,
               userId,
             });
-
+        
+            console.log('Archivo guardado en la base de datos:', newFile);
             return res.status(201).json({ message: 'Archivo subido correctamente', file: newFile });
           } catch (error) {
-            console.error('Error saving file:', error);
-            return res.status(500).json({ message: 'Error al guardar el archivo' });
+            console.error('Error al guardar el archivo en la base de datos:', error);
+            return res.status(500).json({ message: 'Error al guardar el archivo', details: error.message });
           }
         });
+        
         break;
       }
 
