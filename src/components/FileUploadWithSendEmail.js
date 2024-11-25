@@ -33,7 +33,7 @@ export default function FileUploadWithSendEmail() {
   const fetchFiles = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('/api/mktfiles', {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_BASE_URL}/api/mktfiles`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setFileList(response.data);
