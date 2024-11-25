@@ -16,6 +16,10 @@ export default async function handler(req, res) {
 
   authenticateToken(req, res, async () => {
     const { role: userRole, id: userId } = req.user;
+    if (!userId) {
+      return res.status(403).json({ message: 'Token inválido o no proporcionado' });
+    }
+
 
     switch (method) {
       case 'POST': {
@@ -26,16 +30,15 @@ export default async function handler(req, res) {
 
         form.parse(req, async (err, fields, files) => {
           if (err) {
-            console.error('Error parsing file:', err);
+            console.error('Error al procesar el archivo:', err);
             return res.status(500).json({ message: 'Error al procesar el archivo' });
           }
-
-          // Accede al archivo dentro del array
+        
           const file = Array.isArray(files.file) ? files.file[0] : files.file;
           if (!file) {
             return res.status(400).json({ message: 'No se ha subido ningún archivo' });
           }
-
+        
           const filename = file.originalFilename || file.newFilename;
           const filepath = path.join('/uploads', file.newFilename);
 
