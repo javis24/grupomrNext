@@ -1,28 +1,29 @@
 import formidable from 'formidable';
-import fs from 'fs';
-import path from 'path';
+import { v2 as cloudinary } from 'cloudinary';
 import File from '../../../models/MktFileModel';
 import { authenticateToken } from '../../../lib/auth';
 
-export default async function handler(req, res) {
-  const uploadDir = path.resolve('./public/uploads');
-  
-  // Verifica que el directorio de subida exista
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
+export const config = {
+  api: {
+    bodyParser: false, // Desactiva bodyParser para manejar archivos
+  },
+};
+
+export default async function handler(req, res) {
   const { method } = req;
 
   authenticateToken(req, res, async () => {
-    const { role: userRole, id: userId } = req.user;
+    const { id: userId } = req.user;
 
     switch (method) {
       case 'POST': {
-        const form = formidable({
-          uploadDir, // Usa la ruta absoluta para el directorio de subida
-          keepExtensions: true,
-        });
+        const form = formidable({ keepExtensions: true });
 
         form.parse(req, async (err, fields, files) => {
           if (err) {
@@ -30,25 +31,27 @@ export default async function handler(req, res) {
             return res.status(500).json({ message: 'Error al procesar el archivo' });
           }
 
-          // Accede al archivo dentro del array
           const file = Array.isArray(files.file) ? files.file[0] : files.file;
           if (!file) {
             return res.status(400).json({ message: 'No se ha subido ningún archivo' });
           }
 
-          const filename = file.originalFilename || file.newFilename;
-          const filepath = path.join('/uploads', file.newFilename);
-
           try {
+            // Sube la imagen a Cloudinary
+            const uploadResult = await cloudinary.uploader.upload(file.filepath, {
+              folder: 'mktfiles',
+            });
+
+            // Guarda los datos del archivo en la base de datos
             const newFile = await File.create({
-              filename,
-              filepath,
+              filename: uploadResult.original_filename,
+              filepath: uploadResult.secure_url,
               userId,
             });
 
             return res.status(201).json({ message: 'Archivo subido correctamente', file: newFile });
           } catch (error) {
-            console.error('Error saving file:', error);
+            console.error('Error uploading file:', error);
             return res.status(500).json({ message: 'Error al guardar el archivo' });
           }
         });
@@ -57,11 +60,7 @@ export default async function handler(req, res) {
 
       case 'GET': {
         try {
-          // Si el usuario es vendedor, mostrar solo sus archivos
-          const files = userRole === 'vendedor'
-            ? await File.findAll({ where: { userId } })
-            : await File.findAll();
-
+          const files = await File.findAll({ where: { userId } });
           return res.status(200).json(files);
         } catch (error) {
           console.error('Error fetching files:', error);
@@ -70,15 +69,8 @@ export default async function handler(req, res) {
       }
 
       default:
-        res.setHeader('Allow', ['GET', 'POST']);
+        res.setHeader('Allow', ['POST', 'GET']);
         return res.status(405).json({ message: `Método ${method} no permitido` });
     }
   });
 }
-
-// Config para el manejo de archivos sin bodyParser
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};

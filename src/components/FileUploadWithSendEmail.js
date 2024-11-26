@@ -53,13 +53,13 @@ export default function FileUploadWithSendEmail() {
       alert('Por favor selecciona un archivo');
       return;
     }
-
+  
     const formData = new FormData();
     formData.append('file', file);
-
+  
     try {
       const token = localStorage.getItem('token');
-      await axios.post('/api/mktfiles', formData, {
+      const response = await axios.post('/api/mktfiles', formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
@@ -73,6 +73,7 @@ export default function FileUploadWithSendEmail() {
       alert('Hubo un error al subir el archivo');
     }
   };
+  
 
   const handleDeleteFile = async (fileId) => {
     try {
