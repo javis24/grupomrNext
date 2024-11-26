@@ -115,6 +115,22 @@ export default function IncidentForm() {
     doc.save(`incidencia_${incident.createdAt}.pdf`);
   };
 
+  const handleDelete = async (id) => {
+    const token = localStorage.getItem('token');
+    try {
+      await axios.delete(`/api/incidents?id=${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setMessage('Incidencia eliminada correctamente.');
+      fetchIncidents(); // Actualiza la lista después de eliminar
+    } catch (error) {
+      console.error('Error al eliminar la incidencia:', error);
+      setMessage('Error al eliminar la incidencia.');
+    }
+  };
+  
   return (
     <div className="flex justify-center items-center min-h-screen bg-[#0e1624] text-white p-8">
       <div className="w-full max-w-lg">
@@ -171,9 +187,17 @@ export default function IncidentForm() {
                     <td className="py-2">
                       <button
                         onClick={() => generateIncidentPDF(incident)}
-                        className="bg-green-500 text-white p-2 rounded hover:bg-green-600"
+                        className="bg-green-500 text-white p-1 rounded hover:bg-green-600"
                       >
                         Exportar PDF
+                      </button>
+                      </td>
+                      <td className="py-2">
+                      <button
+                        onClick={() => handleDelete(incident.id)}
+                        className="bg-red-500 text-white p-2 rounded hover:bg-red-600"
+                      >
+                        Eliminar
                       </button>
                     </td>
                   </tr>
