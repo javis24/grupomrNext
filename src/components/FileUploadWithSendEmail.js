@@ -36,12 +36,14 @@ export default function FileUploadWithSendEmail() {
       const response = await axios.get('/api/mktfiles', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setFileList(response.data);
+      console.log('Files from API:', response.data); // Verifica los datos recibidos
+      setFileList(response.data); // Actualiza el estado
     } catch (error) {
-      console.error('Error al obtener archivos:', error);
+      console.error('Error fetching files:', error);
       setError('Hubo un problema al cargar los archivos.');
     }
   };
+  
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
