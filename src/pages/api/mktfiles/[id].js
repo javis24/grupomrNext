@@ -1,14 +1,11 @@
-// pages/api/mktfiles/[id].js
 import File from '../../../models/MktFileModel';
 import { authenticateToken } from '../../../lib/auth';
-import cloudinary from '../../../lib/cloudinary';
-import url from 'url';
 
 export default async function handler(req, res) {
   const { id } = req.query;
-  const { method } = req;
 
-  await authenticateToken(req, res, async () => {
+  authenticateToken(req, res, async () => {
+    const { method } = req;
     const { role: userRole, id: userId } = req.user;
 
     switch (method) {
@@ -26,10 +23,12 @@ export default async function handler(req, res) {
             return res.status(404).json({ message: 'Archivo no encontrado' });
           }
 
+          // Verificar permisos: los vendedores solo pueden actualizar archivos que ellos subieron
           if (userRole === 'vendedor' && file.userId !== userId) {
             return res.status(403).json({ message: 'No tienes permiso para actualizar este archivo' });
           }
 
+          // Actualizar nombre del archivo
           file.filename = filename || file.filename;
           await file.save();
 
@@ -48,33 +47,24 @@ export default async function handler(req, res) {
             return res.status(404).json({ message: 'Archivo no encontrado' });
           }
 
+          // Verificar permisos: los vendedores solo pueden eliminar archivos que ellos subieron
           if (userRole === 'vendedor' && file.userId !== userId) {
             return res.status(403).json({ message: 'No tienes permiso para eliminar este archivo' });
           }
 
-          // Extraer la Public ID de Cloudinary desde la URL
-          const parsedUrl = url.parse(file.filepath);
-          const pathname = parsedUrl.pathname; // /<folder>/<public_id>.<extension>
-          const parts = pathname.split('/');
-          const fileWithExt = parts[parts.length - 1]; // <public_id>.<extension>
-          const publicId = `uploads/${fileWithExt.split('.').slice(0, -1).join('.')}`; // uploads/<public_id>
-
-          // Eliminar de Cloudinary
-          await cloudinary.uploader.destroy(publicId, { resource_type: 'auto' });
-
-          // Eliminar de la base de datos
+          // Eliminar archivo
           await file.destroy();
 
           return res.status(200).json({ message: 'Archivo eliminado con éxito' });
         } catch (error) {
           console.error('Error eliminando archivo:', error);
-          return res.status(500).json({ message: 'Error eliminando el archivo', details: error.message });
+          return res.status(500).json({ message: 'Error eliminando el archivo' });
         }
       }
 
       default:
         res.setHeader('Allow', ['PUT', 'DELETE']);
-        return res.status(405).json({ message: `Método ${method} no permitido` });
+        return res.status(405).json({ message: `Method ${method} Not Allowed` });
     }
   });
 }

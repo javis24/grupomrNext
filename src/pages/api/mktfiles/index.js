@@ -1,86 +1,84 @@
 import formidable from 'formidable';
-import path from 'path';
 import fs from 'fs';
-import MktFileModel from '../../../models/MktFileModel';
+import path from 'path';
+import File from '../../../models/MktFileModel';
 import { authenticateToken } from '../../../lib/auth';
 
-// Configuración para deshabilitar bodyParser
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+export default async function handler(req, res) {
+  const uploadDir = path.resolve('./public/uploads');
+  
+  // Verifica que el directorio de subida exista
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
 
-const handler = async (req, res) => {
   const { method } = req;
 
-  // Autenticación del token
-  await authenticateToken(req, res, async () => {
-    const { id: userId } = req.user;
+  authenticateToken(req, res, async () => {
+    const { role: userRole, id: userId } = req.user;
 
     switch (method) {
       case 'POST': {
-        const uploadDir = path.join(process.cwd(), '/public/uploads');
-        if (!fs.existsSync(uploadDir)) {
-          fs.mkdirSync(uploadDir, { recursive: true });
-        }
-
         const form = formidable({
-          uploadDir, // Directorio de carga
-          keepExtensions: true, // Mantener extensión del archivo
-          maxFileSize: 8 * 1024 * 1024, // Tamaño máximo: 8 MB
-          allowEmptyFiles: false, // No permitir archivos vacíos
-          filter: ({ mimetype }) => mimetype && mimetype.startsWith('image/'), // Solo permitir imágenes
+          uploadDir, // Usa la ruta absoluta para el directorio de subida
+          keepExtensions: true,
         });
 
         form.parse(req, async (err, fields, files) => {
           if (err) {
-            console.error('Error al procesar el formulario:', err);
-            return res.status(500).json({ message: 'Error processing form data' });
+            console.error('Error parsing file:', err);
+            return res.status(500).json({ message: 'Error al procesar el archivo' });
           }
-          console.log('Archivos recibidos en producción:', files);
-        
-          // Asegúrate de que `files.image` existe y tiene `filepath`
-          if (!files.image || !files.image[0]?.filepath) {
-            console.error('Archivo no encontrado o filepath no definido.');
-            return res.status(400).json({ message: 'Archivo no encontrado o filepath no definido.' });
+
+          // Accede al archivo dentro del array
+          const file = Array.isArray(files.file) ? files.file[0] : files.file;
+          if (!file) {
+            return res.status(400).json({ message: 'No se ha subido ningún archivo' });
           }
-        
-          const imageUrl = `/uploads/${files.image[0].newFilename}`;
-          console.log('URL del archivo:', imageUrl);
-        
-          // Inserción en la base de datos
+
+          const filename = file.originalFilename || file.newFilename;
+          const filepath = path.join('/uploads', file.newFilename);
+
           try {
-            const newFile = await MktFileModel.create({
-              filename: files.image[0].originalFilename,
-              filepath: imageUrl,
+            const newFile = await File.create({
+              filename,
+              filepath,
               userId,
             });
-            console.log('Archivo guardado en la base de datos:', newFile);
-            return res.status(201).json({ message: 'Archivo subido exitosamente', file: newFile });
-          } catch (dbError) {
-            console.error('Error al guardar el archivo en la base de datos:', dbError);
-            return res.status(500).json({ message: 'Error al guardar el archivo', error: dbError.message });
+
+            return res.status(201).json({ message: 'Archivo subido correctamente', file: newFile });
+          } catch (error) {
+            console.error('Error saving file:', error);
+            return res.status(500).json({ message: 'Error al guardar el archivo' });
           }
-        });        
+        });
         break;
       }
 
       case 'GET': {
         try {
-          const files = await MktFileModel.findAll();
+          // Si el usuario es vendedor, mostrar solo sus archivos
+          const files = userRole === 'vendedor'
+            ? await File.findAll({ where: { userId } })
+            : await File.findAll();
+
           return res.status(200).json(files);
         } catch (error) {
-          console.error('Error al obtener los archivos:', error);
-          return res.status(500).json({ message: 'Error al obtener los archivos' });
+          console.error('Error fetching files:', error);
+          return res.status(500).json({ message: 'Error fetching files' });
         }
       }
 
       default:
-        res.setHeader('Allow', ['POST', 'GET']);
+        res.setHeader('Allow', ['GET', 'POST']);
         return res.status(405).json({ message: `Método ${method} no permitido` });
     }
   });
-};
+}
 
-export default handler;
+// Config para el manejo de archivos sin bodyParser
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
