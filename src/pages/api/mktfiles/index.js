@@ -1,22 +1,23 @@
-import formidable from 'formidable';
-import fs from 'fs';
-import path from 'path';
-import File from '../../../models/MktFileModel';
+// pages/api/mktfiles/index.js
+import { IncomingForm } from 'formidable'; // Importación nombrada
 import { authenticateToken } from '../../../lib/auth';
+import File from '../../../models/MktFileModel';
+import cloudinary from '../../../lib/cloudinary';
+import { v4 as uuidv4 } from 'uuid'; // Asegúrate de tener instalada la librería 'uuid'
+
+// Configuración para deshabilitar el bodyParser y permitir la subida de archivos
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
 export default async function handler(req, res) {
-  const uploadDir = path.resolve('./public/uploads');
-
-  // Verifica que el directorio de subida exista
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
-
   const { method } = req;
 
-  // Autenticación del token
   await authenticateToken(req, res, async () => {
     const { role: userRole, id: userId } = req.user;
+
     if (!userId) {
       console.error('Token inválido o no proporcionado');
       return res.status(403).json({ message: 'Token inválido o no proporcionado' });
@@ -24,19 +25,14 @@ export default async function handler(req, res) {
 
     switch (method) {
       case 'POST': {
-        const form = formidable({
-          uploadDir, // Ruta absoluta para el directorio de subida
-          keepExtensions: true,
-        });
+        const form = new IncomingForm(); // Uso correcto de IncomingForm
+        form.keepExtensions = true;
 
-        // Manejo de subida de archivos
         form.parse(req, async (err, fields, files) => {
           if (err) {
             console.error('Error al procesar el archivo:', err);
             return res.status(500).json({ message: 'Error al procesar el archivo', details: err.message });
           }
-
-          console.log('Archivos subidos:', files);
 
           const file = Array.isArray(files.file) ? files.file[0] : files.file;
           if (!file) {
@@ -44,38 +40,39 @@ export default async function handler(req, res) {
             return res.status(400).json({ message: 'No se ha subido ningún archivo' });
           }
 
-          const filename = file.originalFilename || file.newFilename;
-          const filepath = path.join('/uploads', file.newFilename);
-
           try {
-            // Guardar el archivo en la base de datos
+            // Subir el archivo a Cloudinary
+            const uploadResult = await cloudinary.uploader.upload(file.filepath, {
+              folder: 'uploads', // Opcional: carpeta en Cloudinary
+              resource_type: 'auto', // Detecta automáticamente el tipo de archivo
+            });
+
+            // Guardar en la base de datos
             const newFile = await File.create({
-              filename,
-              filepath,
+              filename: file.originalFilename,
+              filepath: uploadResult.secure_url, // URL de Cloudinary
               userId,
             });
 
-            console.log('Archivo guardado en la base de datos:', newFile);
+            console.log('Archivo subido y guardado en la base de datos:', newFile);
             return res.status(201).json({ message: 'Archivo subido correctamente', file: newFile });
           } catch (error) {
-            console.error('Error al guardar el archivo en la base de datos:', error);
-            return res.status(500).json({ message: 'Error al guardar el archivo', details: error.message });
+            console.error('Error al subir a Cloudinary o guardar en la base de datos:', error);
+            return res.status(500).json({ message: 'Error al subir el archivo', details: error.message });
           }
         });
 
-        // Se añade un return explícito para cerrar el ciclo del handler
         return;
       }
 
       case 'GET': {
         try {
-          // Si el usuario es vendedor, mostrar solo sus archivos
           const files = userRole === 'vendedor'
             ? await File.findAll({ where: { userId } })
             : await File.findAll();
 
           console.log('Archivos obtenidos:', files);
-          return res.status(200).json(files); // Respuesta explícita
+          return res.status(200).json(files);
         } catch (error) {
           console.error('Error al obtener archivos:', error);
           return res.status(500).json({ message: 'Error al obtener archivos', details: error.message });
@@ -89,10 +86,3 @@ export default async function handler(req, res) {
     }
   });
 }
-
-// Config para el manejo de archivos sin bodyParser
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
