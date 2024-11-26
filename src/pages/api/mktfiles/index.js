@@ -21,8 +21,6 @@ const handler = async (req, res) => {
     switch (method) {
       case 'POST': {
         const uploadDir = path.join(process.cwd(), '/public/uploads');
-
-        // Asegúrate de que el directorio de carga exista
         if (!fs.existsSync(uploadDir)) {
           fs.mkdirSync(uploadDir, { recursive: true });
         }
@@ -38,35 +36,33 @@ const handler = async (req, res) => {
         form.parse(req, async (err, fields, files) => {
           if (err) {
             console.error('Error al procesar el formulario:', err);
-            return res.status(500).json({ message: 'Error procesando los datos del formulario' });
+            return res.status(500).json({ message: 'Error processing form data' });
           }
+          console.log('Archivos recibidos en producción:', files);
         
-          console.log('Archivos recibidos:', files); // Verificar archivos recibidos
-        
-          const file = Array.isArray(files.image) ? files.image[0] : files.image; // Ajuste para manejar el arreglo
-          if (!file || !file.filepath) {
+          // Asegúrate de que `files.image` existe y tiene `filepath`
+          if (!files.image || !files.image[0]?.filepath) {
             console.error('Archivo no encontrado o filepath no definido.');
-            return res.status(400).json({ message: 'No se proporcionó un archivo válido.' });
+            return res.status(400).json({ message: 'Archivo no encontrado o filepath no definido.' });
           }
         
-          const imageUrl = `/uploads/${path.basename(file.filepath)}`;
-          const { originalFilename } = file;
+          const imageUrl = `/uploads/${files.image[0].newFilename}`;
+          console.log('URL del archivo:', imageUrl);
         
+          // Inserción en la base de datos
           try {
             const newFile = await MktFileModel.create({
-              filename: originalFilename || 'archivo_desconocido',
+              filename: files.image[0].originalFilename,
               filepath: imageUrl,
               userId,
             });
-        
+            console.log('Archivo guardado en la base de datos:', newFile);
             return res.status(201).json({ message: 'Archivo subido exitosamente', file: newFile });
           } catch (dbError) {
             console.error('Error al guardar el archivo en la base de datos:', dbError);
             return res.status(500).json({ message: 'Error al guardar el archivo', error: dbError.message });
           }
-        });
-        
-        
+        });        
         break;
       }
 
