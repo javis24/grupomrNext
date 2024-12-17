@@ -4,38 +4,43 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 export default function Chat() {
-  const [clients, setClients] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedClient, setSelectedClient] = useState(null);
-  const [message, setMessage] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [response, setResponse] = useState(null);
+  const [clients, setClients] = useState([]); // Lista de clientes
+  const [selectedClient, setSelectedClient] = useState(null); // Cliente seleccionado
+  const [message, setMessage] = useState(''); // Mensaje a enviar
+  const [loading, setLoading] = useState(false); // Estado de carga
+  const [response, setResponse] = useState(null); // Respuesta de la API
 
-  // Obtener la lista de clientes al cargar el componente
+  // Obtener la lista de clientes desde la API
   useEffect(() => {
     const fetchClients = async () => {
       try {
-        const res = await axios.get('/api/clients');
+        const token = localStorage.getItem('token'); // Obtener el token del almacenamiento local
+        const res = await axios.get('/api/clients/namesPhones', {
+          headers: {
+            Authorization: `Bearer ${token}`, // Agregar el token en el encabezado
+          },
+        });
         setClients(res.data);
       } catch (error) {
-        console.error('Error fetching clients:', error);
+        console.error('Error al obtener nombres y teléfonos de clientes:', error);
       }
     };
     fetchClients();
   }, []);
+  
+  
 
-  const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
-  };
-
-  const handleClientSelect = (client) => {
+  const handleClientSelect = (e) => {
+    const selectedId = e.target.value; // Obtener el ID del cliente seleccionado
+    const client = clients.find((client) => client.id.toString() === selectedId);
     setSelectedClient(client);
+    setResponse(null); // Limpiar cualquier respuesta previa
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedClient) {
-      alert('Por favor selecciona un cliente.');
+      alert('Por favor selecciona un cliente antes de enviar un mensaje.');
       return;
     }
     setLoading(true);
@@ -47,7 +52,7 @@ export default function Chat() {
       setResponse(res.data);
     } catch (error) {
       console.error('Error enviando mensaje:', error);
-      setResponse({ success: false, message: 'Error enviando mensaje.' });
+      setResponse({ success: false, message: 'Error al enviar el mensaje.' });
     } finally {
       setLoading(false);
     }
@@ -56,51 +61,41 @@ export default function Chat() {
   return (
     <div className="flex min-h-screen bg-[#0e1624] text-white">
       <Sidebar />
-
       <main className="flex-1 p-6">
         <h1 className="text-2xl font-bold mb-4">Enviar Mensaje por WhatsApp</h1>
 
-        {/* Buscador */}
+        {/* Select para Todos los Clientes */}
         <div className="mb-4">
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={handleSearch}
-            placeholder="Buscar cliente por nombre"
-            className="w-full p-2 rounded-md border border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
-          />
-          <div className="mt-2 max-h-40 overflow-y-auto bg-gray-700 p-2 rounded-md">
-            {clients
-              .filter((client) =>
-                client.fullName.toLowerCase().includes(searchTerm.toLowerCase())
-              )
-              .map((client) => (
-                <div
-                  key={client.id}
-                  className={`p-2 cursor-pointer ${
-                    selectedClient?.id === client.id ? 'bg-indigo-500' : ''
-                  } hover:bg-indigo-400`}
-                  onClick={() => handleClientSelect(client)}
-                >
-                  {client.fullName}
-                </div>
-              ))}
-          </div>
+          <label htmlFor="clients" className="block text-sm font-medium mb-2">
+            Seleccionar Cliente:
+          </label>
+          <select
+            id="clients"
+            onChange={handleClientSelect}
+            className="w-full p-2 rounded-md border border-gray-700 bg-[#1c2534] text-white focus:ring-2 focus:ring-indigo-500"
+          >
+            <option value="">-- Selecciona un Cliente --</option>
+            {clients.map((client) => (
+              <option key={client.id} value={client.id}>
+                {client.fullName}
+              </option>
+            ))}
+          </select>
         </div>
 
-        {/* Detalles del cliente seleccionado */}
+        {/* Detalles del Cliente Seleccionado */}
         {selectedClient && (
-          <div className="mb-4">
+          <div className="mb-4 p-4 bg-[#1c2534] rounded-md">
             <p>
-              <strong>Cliente seleccionado:</strong> {selectedClient.fullName}
+              <strong>Cliente:</strong> {selectedClient.fullName}
             </p>
             <p>
-              <strong>Teléfono:</strong> {selectedClient.contactPhone}
+              <strong>Teléfono:</strong> {selectedClient.contactPhone || 'Sin número'}
             </p>
           </div>
         )}
 
-        {/* Formulario de mensaje */}
+        {/* Formulario para Enviar Mensaje */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="message" className="block text-sm font-medium">
@@ -111,7 +106,7 @@ export default function Chat() {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Escribe tu mensaje aquí"
-              className="w-full p-2 rounded-md border border-gray-300 focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full p-2 rounded-md border border-gray-700 bg-[#1c2534] text-white focus:ring-2 focus:ring-indigo-500"
               rows="4"
               required
             ></textarea>
@@ -119,21 +114,29 @@ export default function Chat() {
           <div>
             <button
               type="submit"
-              className="py-2 px-4 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+              className={`py-2 px-4 rounded-md text-white ${
+                loading
+                  ? 'bg-gray-500 cursor-not-allowed'
+                  : 'bg-indigo-600 hover:bg-indigo-700'
+              }`}
               disabled={loading}
             >
-              {loading ? 'Enviando...' : 'Enviar'}
+              {loading ? 'Enviando...' : 'Enviar Mensaje'}
             </button>
           </div>
         </form>
 
-        {/* Feedback */}
+        {/* Respuesta de la API */}
         {response && (
-          <div className="mt-4">
+          <div
+            className={`mt-4 p-3 rounded-md ${
+              response.success ? 'bg-green-600' : 'bg-red-600'
+            }`}
+          >
             {response.success ? (
-              <p className="text-green-500">Mensaje enviado con éxito.</p>
+              <p>✅ Mensaje enviado con éxito.</p>
             ) : (
-              <p className="text-red-500">Error: {response.message}</p>
+              <p>❌ Error: {response.message}</p>
             )}
           </div>
         )}
