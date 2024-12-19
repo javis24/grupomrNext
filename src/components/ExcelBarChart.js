@@ -108,27 +108,29 @@ export function ExcelBarChart() {
                     <h2 className="text-xl font-bold mb-4">Tabla Dinámica</h2>
                     <table {...getTableProps()} className="table-auto w-full border-collapse border border-gray-300">
                         <thead>
-                            {headerGroups.map((headerGroup) => (
-                                <tr {...headerGroup.getHeaderGroupProps()}>
-                                    {headerGroup.headers.map((column) => (
-                                        <th
-                                            {...column.getHeaderProps()}
-                                            className="border border-gray-300 px-4 py-2 text-left"
-                                        >
-                                            {column.render('Header')}
-                                        </th>
-                                    ))}
-                                </tr>
-                            ))}
+                        {headerGroups.map((headerGroup, index) => (
+                            <tr {...headerGroup.getHeaderGroupProps()} key={`headerGroup-${index}`}>
+                                {headerGroup.headers.map((column) => (
+                                    <th
+                                        {...column.getHeaderProps()}
+                                        key={`column-${column.id}`}
+                                        className="border border-gray-300 px-4 py-2 bg-gray-200 text-left"
+                                    >
+                                        {column.render('Header')}
+                                    </th>
+                                ))}
+                            </tr>
+                        ))}
                         </thead>
                         <tbody {...getTableBodyProps()}>
-                            {rows.map((row) => {
+                        {rows.map((row) => {
                                 prepareRow(row);
                                 return (
-                                    <tr {...row.getRowProps()} className="">
-                                        {row.cells.map((cell) => (
+                                    <tr {...row.getRowProps()} key={`row-${row.id}`} className="hover:bg-gray-100">
+                                        {row.cells.map((cell, index) => (
                                             <td
                                                 {...cell.getCellProps()}
+                                                key={`cell-${row.id}-${index}`}
                                                 className="border border-gray-300 px-4 py-2"
                                             >
                                                 {cell.render('Cell')}
