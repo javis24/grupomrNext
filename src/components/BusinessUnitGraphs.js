@@ -192,7 +192,29 @@ export default function BusinessUnitGraphs() {
       console.error('Error al eliminar el archivo:', error);
     }
   };
-  
+
+  // Nueva función para manejar la carga de archivos Excel y graficar
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    setSelectedFile(file);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const data = new Uint8Array(event.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+      const processedData = jsonData.map((row) => ({
+        name: row['Unidad'] || 'Sin Nombre',
+        total: row['Total Vendido'] || 0,
+      }));
+
+      setUnitReports(processedData);
+    };
+    reader.readAsArrayBuffer(file);
+  };
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-[#0e1624] text-white p-8">
@@ -204,7 +226,10 @@ export default function BusinessUnitGraphs() {
           <input 
             type="file" 
             accept=".xlsx, .xls" 
-            onChange={(e) => setSelectedFile(e.target.files[0])} 
+            onChange={(e) => {
+              setSelectedFile(e.target.files[0]);
+              handleFileUpload(e);
+            }} 
             className="bg-gray-700 text-white p-2 rounded" 
           />
           <button onClick={() => exportToPDF()} className="bg-red-500 text-white p-2 rounded hover:bg-red-600">
@@ -303,5 +328,5 @@ export default function BusinessUnitGraphs() {
 
       </div>
     </div>
-      );
-      }
+  );
+}
