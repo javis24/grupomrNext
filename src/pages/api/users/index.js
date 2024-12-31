@@ -12,7 +12,6 @@ export default async function handler(req, res) {
     if (!userRole) {
       return res.status(401).json({ message: 'No autorizado' });
     }
-
     try {
       switch (method) {
         case 'GET':
@@ -70,5 +69,7 @@ export default async function handler(req, res) {
       console.error('Error en el servidor:', error);
       return res.status(500).json({ message: 'Error del servidor', error });
     }
+
+    
   });
 }

@@ -1,0 +1,12 @@
+POST http://localhost:3000/api/prospects
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NSwibmFtZSI6Imx1aXMiLCJyb2xlIjoiYWRtaW4iLCJlbWFpbCI6Imx1aXNAZ21haWwuY29tIiwiaWF0IjoxNzM1NTgyNDcyLCJleHAiOjE3MzU2Njg4NzJ9.0-fXDD_NaYe8oQG9MsX5nyvzoBlTN6zDDEl6OOuZxhI
+
+{
+  "saleProcess": "Contactado",
+  "contactName": "Nuevo Nombre",
+  "company": "GrupoMrLaguna",
+  "phone": "1234567890",
+  "email": "nuevoemail@example.com"
+}
+

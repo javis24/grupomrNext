@@ -51,6 +51,13 @@ const Clients = db.define('clients', {
             len: [0, 100]
         }
     },
+    companyPhone: { 
+        type: DataTypes.STRING,
+        allowNull: true,
+        validate: {
+            len: [0, 20] 
+        }
+    },
     contactPhone: {
         type: DataTypes.STRING,
         allowNull: true,
@@ -83,6 +90,13 @@ const Clients = db.define('clients', {
     producto: { 
         type: DataTypes.STRING,
         allowNull: true,
+        },
+        assignedUser: { 
+            type: DataTypes.STRING,
+            allowNull: true, 
+            validate: {
+              isEmail: true, 
+            },
         },
     userId: {
         type: DataTypes.INTEGER,

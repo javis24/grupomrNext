@@ -44,6 +44,9 @@ export default function ServiceList() {
   const [error, setError] = useState('');
   const [userRole, setUserRole] = useState('');
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5);
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     
@@ -284,12 +287,49 @@ export default function ServiceList() {
     };
   };
   
-  
-
-
   const filteredServices = services.filter((service) =>
     service.programacion?.toLowerCase().includes(search.toLowerCase())
   );
+// Paginación
+const indexOfLastItem = currentPage * itemsPerPage;
+const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+const currentServices = filteredServices.slice(indexOfFirstItem, indexOfLastItem);
+const totalPages = Math.ceil(filteredServices.length / itemsPerPage);
+
+const handlePageChange = (page) => {
+  setCurrentPage(page);
+};
+
+const renderPagination = () => {
+  const pageNumbers = [];
+  if (totalPages > 1) {
+    if (currentPage > 1) {
+      pageNumbers.push(currentPage - 1); // Página anterior
+    }
+    pageNumbers.push(currentPage); // Página actual
+    if (currentPage < totalPages) {
+      pageNumbers.push(currentPage + 1); // Página siguiente
+    }
+  }
+
+  return (
+    <div className="flex justify-center mt-4">
+      {pageNumbers.map((page) => (
+        <button
+          key={page}
+          onClick={() => handlePageChange(page)}
+          className={`px-4 py-2 mx-1 rounded ${
+            page === currentPage ? 'bg-blue-500 text-white' : 'bg-gray-300 text-black'
+          }`}
+        >
+          {page}
+        </button>
+      ))}
+    </div>
+  );
+};
+
+
 
   const exportAllServicesToPDF = () => {
     const doc = new jsPDF();
@@ -379,10 +419,8 @@ export default function ServiceList() {
       doc.save('todos_los_servicios.pdf');
     };
   };
-  
-  
 
-  return (
+ return (
     <div className="p-4 bg-[#0e1624] text-white min-h-screen flex justify-center">
       <div className="max-w-7xl w-full">
         <div className="flex justify-between items-center mb-4">
@@ -427,7 +465,7 @@ export default function ServiceList() {
               </tr>
             </thead>
             <tbody>
-              {filteredServices.map((service) => (
+            {currentServices.map((service) => (
                 <tr key={service.id} className="hover:bg-[#374151]">
                     <td className="px-4 py-2">{service.contactName}</td>
                   <td className="px-4 py-2">{service.programacion}</td>
@@ -455,6 +493,7 @@ export default function ServiceList() {
             </tbody>
           </table>
         </div>
+        {renderPagination()}
 
         {/* Modal para actualizar o crear servicio */}
         <Modal
@@ -630,6 +669,8 @@ export default function ServiceList() {
             Cerrar
           </button>
         </Modal>
+
+      
       </div>
     </div>
   );

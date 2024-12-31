@@ -28,9 +28,11 @@ export default function ClientList() {
   const [selectedClient, setSelectedClient] = useState(null);
   const [error, setError] = useState('');
   const [userEmail, setUserEmail] = useState('');
+  const [activeUsers, setActiveUsers] = useState([]);
   const [newClient, setNewClient] = useState({
     fullName: '',
     companyName: '',
+    companyPhone: '',
     businessTurn: '',
     address: '',
     contactName: '',
@@ -39,6 +41,7 @@ export default function ClientList() {
     position: '',
     planta: '',
     producto: '',
+    assignedUser: '',
   });
 
         useEffect(() => {
@@ -77,10 +80,19 @@ export default function ClientList() {
             setError('Failed to load clients. Please try again later.');
           }
         };
-  
-  
-  
 
+        const fetchUsers = async () => {
+          try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get('/api/users', {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            setActiveUsers(response.data); // Almacena todos los usuarios en `activeUsers`
+          } catch (error) {
+            console.error('Error fetching users:', error.response?.data || error.message);
+          }
+        };
+    
   const handleDelete = async (clientId) => {
     try {
       const token = localStorage.getItem('token');
@@ -102,6 +114,7 @@ export default function ClientList() {
       setNewClient({
         fullName: '',
         companyName: '',
+        companyPhone: '',
         businessTurn: '',
         address: '',
         contactName: '',
@@ -110,9 +123,11 @@ export default function ClientList() {
         position: '',
         planta: '',
         producto: '',
+        assignedUser: '',
       });
     }
     setModalIsOpen(true);
+    fetchUsers();
   };
 
   const closeModal = () => {
@@ -185,6 +200,7 @@ const exportClientToPDF = (client) => {
     const clientDetails = [
       ["NOMBRE", client.fullName],
       ["EMPRESA", client.companyName],
+      ["TELÉFONO EMPRESA", client.companyPhone],
       ["GIRO COMERCIAL", client.businessTurn],
       ["DIRECCIÓN", client.address],
       ["NOMBRE DE CONTACTO", client.contactName],
@@ -193,6 +209,7 @@ const exportClientToPDF = (client) => {
       ["CARGO", client.position],
       ["PLANTA", client.planta],
       ["PRODUCTO", client.producto],
+      ["USUARIO ASIGNADO", client.assignedUser],
     ];
 
     // Ajustar la tabla para que sea más compacta
@@ -249,10 +266,12 @@ const exportAllClientsToPDF = () => {
       const clientData = [
         client.fullName,
         client.companyName,
+        client.companyPhone,
         client.businessTurn,
         client.address,
         client.contactName,
         client.contactPhone,
+        client.assignedUser,
       ];
       tableRows.push(clientData);
     });
@@ -390,7 +409,15 @@ const exportAllClientsToPDF = () => {
                   required
                 />
               </div>
-
+              <div className="mb-4">
+                <label className="block text-white mb-2">Teléfono de Empresa</label>
+                <input
+                  type="text"
+                  value={newClient.companyPhone}
+                  onChange={(e) => setNewClient({ ...newClient, companyPhone: e.target.value })}
+                  className="w-full p-2 rounded bg-[#1f2937] text-white"
+                />
+              </div>
               <div className="mb-4">
                 <label className="block text-white mb-2">Giro de Negocios</label>
                 <input
@@ -473,17 +500,26 @@ const exportAllClientsToPDF = () => {
                 required
               />
             </div>
-          
+            <div className="mb-4">
+              <select
+                value={newClient.assignedUser}
+                onChange={(e) => setNewClient({ ...newClient, assignedUser: e.target.value })}
+                className="w-full p-2 rounded bg-[#1f2937] text-white"
+              >
+                <option value="">Seleccione un usuario</option>
+                {activeUsers.map((user) => (
+                  <option key={user.id} value={user.email}>
+                    {user.name} ({user.email})
+                  </option>
+                ))}
+              </select>
             </div>
-
-            <button type="submit" className="bg-blue-500 text-white p-2 rounded mt-4">
+          </div>
+           <button type="submit" className="bg-blue-500 text-white p-2 rounded mt-4">
               {selectedClient ? 'Guardar Cliente' : 'Añadir Cliente'}
             </button>
           </form>
-        </Modal>
-
-
-      
+        </Modal>      
     </div>
   );
 }

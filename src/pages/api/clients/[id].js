@@ -10,7 +10,7 @@ export default async function handler(req, res) {
 
     switch (method) {
       case 'PUT': {
-        const { fullName, companyName, businessTurn, address, contactName, contactPhone, email, position, planta, producto } = req.body;
+        const { fullName, companyName, companyPhone, businessTurn, address, contactName, contactPhone, email, position, planta, producto, assignedUser  } = req.body;
 
         // Validar los campos requeridos
         if (!fullName || !companyName || !businessTurn || !address || !planta) {
@@ -32,6 +32,7 @@ export default async function handler(req, res) {
           // Actualizar cliente con los nuevos valores (solo si se proporcionaron)
           client.fullName = fullName || client.fullName;
           client.companyName = companyName || client.companyName;
+          client.companyPhone = companyPhone|| client.companyPhone;   
           client.businessTurn = businessTurn || client.businessTurn;
           client.address = address || client.address;
           client.contactName = contactName || client.contactName;
@@ -40,7 +41,7 @@ export default async function handler(req, res) {
           client.position = position || client.position;
           client.planta = planta || client.planta;
           client.producto = producto || client.producto;
-
+          client.assignedUser = assignedUser || client.assignedUser;
           await client.save();
 
           return res.status(200).json({ message: "Cliente actualizado con éxito", client });
