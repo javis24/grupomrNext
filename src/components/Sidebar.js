@@ -110,6 +110,13 @@ export default function Sidebar() {
               </Link>
             </li>
           )}
+             {(hasTotalAccess) && (
+            <li className="mb-4">
+              <Link href="/prospectos" className="flex items-center p-2 rounded hover:bg-[#374151]">
+                {!isCollapsed && 'Prospectos'}
+              </Link>
+            </li>
+          )}
           {(canViewServicios || hasTotalAccess) && (
             <li className="mb-4">
               <Link href="/servicios" className="flex items-center p-2 rounded hover:bg-[#374151]">
