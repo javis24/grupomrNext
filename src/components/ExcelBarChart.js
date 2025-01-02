@@ -237,27 +237,28 @@ export function ExcelBarChart() {
             ))}
           </thead>
           <tbody {...getTableBodyProps()}>
-            {rows.length === 0 ? (
-              <tr>
-                <td colSpan={columns.length} className="text-center py-4">
-                  No hay datos para mostrar.
-                </td>
-              </tr>
-            ) : (
-              rows.map((row) => {
-                prepareRow(row);
-                return (
-                  <tr {...row.getRowProps()}>
-                    {row.cells.map((cell) => (
-                      <td {...cell.getCellProps()} className="border px-4 py-2 text-left">
-                        {cell.render("Cell")}
-                      </td>
-                    ))}
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
+              {rows.length === 0 ? (
+                <tr>
+                  <td colSpan={columns.length} className="text-center py-4">
+                    No hay datos para mostrar.
+                  </td>
+                </tr>
+              ) : (
+                rows.map((row, rowIndex) => {
+                  prepareRow(row);
+                  return (
+                    <tr {...row.getRowProps()} key={rowIndex}>
+                      {row.cells.map((cell, cellIndex) => (
+                        <td {...cell.getCellProps()} key={cellIndex} className="border px-4 py-2 text-left">
+                          {cell.render("Cell")}
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+
 
         </table>
       </div>
