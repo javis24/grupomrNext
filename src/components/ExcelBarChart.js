@@ -179,13 +179,10 @@ export function ExcelBarChart() {
       {/* Filtros por rango de meses */}
       <div className="mb-4 flex gap-2 text-black">
       <select
-            value={mesInicio}
-            onChange={(e) => {
-              console.log("Mes inicio seleccionado:", e.target.value);
-              setMesInicio(e.target.value);
-            }}
-            className="border border-gray-300 p-1 text-sm rounded"
-          >
+          value={mesInicio}
+          onChange={(e) => setMesInicio(e.target.value)}
+          className="border border-gray-300 p-1 text-sm rounded"
+        >
           <option value="">Mes Inicio</option>
           {meses.map((mes) => (
             <option key={mes.value} value={mes.value}>
@@ -193,6 +190,7 @@ export function ExcelBarChart() {
             </option>
           ))}
         </select>
+
         <select
           value={mesFin}
           onChange={(e) => setMesFin(e.target.value)}
@@ -205,6 +203,7 @@ export function ExcelBarChart() {
             </option>
           ))}
         </select>
+
         <button
           onClick={aplicarFiltros}
           disabled={!mesInicio || !mesFin}
