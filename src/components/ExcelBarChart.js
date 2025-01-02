@@ -190,7 +190,6 @@ export function ExcelBarChart() {
             </option>
           ))}
         </select>
-
         <select
           value={mesFin}
           onChange={(e) => setMesFin(e.target.value)}
@@ -223,9 +222,10 @@ export function ExcelBarChart() {
         >
           <thead>
             {headerGroups.map((headerGroup) => (
-              <tr {...headerGroup.getHeaderGroupProps()}>
+              <tr key={headerGroup.id} {...headerGroup.getHeaderGroupProps()}>
                 {headerGroup.headers.map((column) => (
                   <th
+                    key={column.id}
                     {...column.getHeaderProps()}
                     className="border px-4 py-2 text-left"
                   >
@@ -243,12 +243,12 @@ export function ExcelBarChart() {
                   </td>
                 </tr>
               ) : (
-                rows.map((row, rowIndex) => {
+                rows.map((row) => {
                   prepareRow(row);
                   return (
-                    <tr {...row.getRowProps()} key={rowIndex}>
-                      {row.cells.map((cell, cellIndex) => (
-                        <td {...cell.getCellProps()} key={cellIndex} className="border px-4 py-2 text-left">
+                    <tr key={row.id} {...row.getRowProps()}>
+                      {row.cells.map((cell) => (
+                        <td key={cell.column.id} {...cell.getCellProps()} className="border px-4 py-2 text-left">
                           {cell.render("Cell")}
                         </td>
                       ))}
@@ -257,8 +257,6 @@ export function ExcelBarChart() {
                 })
               )}
             </tbody>
-
-
         </table>
       </div>
     </div>
