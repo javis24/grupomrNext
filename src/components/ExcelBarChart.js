@@ -5,8 +5,7 @@ export function ExcelBarChart() {
   const [tableData, setTableData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [newRow, setNewRow] = useState({ Año: "", Mes: "", Venta: "" });
-  const [mesInicio, setMesInicio] = useState("");
-  const [mesFin, setMesFin] = useState("");
+  const [mesesSeleccionados, setMesesSeleccionados] = useState([]);
 
   const meses = [
     { value: "ENERO", label: "Enero" },
@@ -83,30 +82,26 @@ export function ExcelBarChart() {
   };
 
   const aplicarFiltros = () => {
-    if (!mesInicio || !mesFin) {
-      alert("Por favor, selecciona ambos meses para aplicar el filtro.");
+    if (mesesSeleccionados.length === 0) {
+      alert("Por favor, selecciona al menos un mes.");
       return;
     }
   
-    const indexInicio = meses.findIndex((m) => m.value === mesInicio);
-    const indexFin = meses.findIndex((m) => m.value === mesFin);
-  
-    if (indexInicio === -1 || indexFin === -1 || indexInicio > indexFin) {
-      alert("Selecciona un rango válido de meses (el mes final debe ser posterior al inicial).");
-      return;
-    }
-  
-    const datosFiltrados = tableData.filter((row) => {
-      const indexMes = meses.findIndex((m) => m.value === row.month.toUpperCase());
-      return indexMes >= indexInicio && indexMes <= indexFin;
-    });
-    
+    const datosFiltrados = tableData.filter((row) =>
+      mesesSeleccionados.includes(row.month.toUpperCase())
+    );
   
     if (datosFiltrados.length === 0) {
-      alert("No hay datos que coincidan con el rango de meses seleccionado.");
+      alert("No hay datos que coincidan con los meses seleccionados.");
     }
   
     setFilteredData(datosFiltrados);
+  };
+  
+
+  const handleMesesSeleccionados = (e) => {
+    const seleccionados = Array.from(e.target.selectedOptions, (option) => option.value);
+    setMesesSeleccionados(seleccionados);
   };
   
 
@@ -156,7 +151,7 @@ export function ExcelBarChart() {
           name="Mes"
           value={newRow.Mes}
           onChange={handleInputChange}
-          placeholder="Mes (ENE, FEB, etc.)"
+          placeholder="Mes (ENERO, FEBRERO, etc.)"
           className="border border-gray-300 p-1 text-sm rounded w-24"
         />
         <input
@@ -176,43 +171,47 @@ export function ExcelBarChart() {
         </button>
       </div>
 
-      {/* Filtros por rango de meses */}
-      <div className="mb-4 flex gap-2 text-black">
-      <select
-          value={mesInicio}
-          onChange={(e) => setMesInicio(e.target.value)}
-          className="border border-gray-300 p-1 text-sm rounded"
-        >
-          <option value="">Mes Inicio</option>
-          {meses.map((mes) => (
-            <option key={mes.value} value={mes.value}>
-              {mes.label}
-            </option>
-          ))}
-        </select>
-        <select
-          value={mesFin}
-          onChange={(e) => setMesFin(e.target.value)}
-          className="border border-gray-300 p-1 text-sm rounded"
-        >
-          <option value="">Mes Fin</option>
-          {meses.map((mes) => (
-            <option key={mes.value} value={mes.value}>
-              {mes.label}
-            </option>
-          ))}
-        </select>
+      {/* Filtros por selección múltiple */}
+      <div className="mb-4">
+  {/* Etiquetas para los meses seleccionados */}
+  <div className="mb-2 flex flex-wrap gap-2">
+    {mesesSeleccionados.map((mes) => (
+      <span key={mes} className="bg-yellow-500 text-white px-2 py-1 rounded text-sm">
+        {meses.find((m) => m.value === mes)?.label}
+      </span>
+    ))}
+  </div>
 
-        <button
-          onClick={aplicarFiltros}
-          disabled={!mesInicio || !mesFin}
-          className={`px-3 py-1 rounded text-sm ${
-            !mesInicio || !mesFin ? "bg-gray-300 text-gray-600 cursor-not-allowed" : "bg-green-500 text-white"
-          }`}
-        >
-          Filtrar
-        </button>
-      </div>
+  {/* Select Múltiple */}
+  <select
+    multiple
+    onChange={handleMesesSeleccionados}
+    className="border border-gray-300 p-1 text-sm rounded w-40 text-black"
+  >
+    {meses.map((mes) => (
+      <option key={mes.value} value={mes.value}>
+        {mes.label}
+      </option>
+    ))}
+  </select>
+
+  {/* Botones */}
+  <div className="mt-2 flex gap-2">
+    <button
+      onClick={aplicarFiltros}
+      className="bg-green-500 text-white px-3 py-1 rounded text-sm"
+    >
+      Filtrar
+    </button>
+    <button
+      onClick={() => setMesesSeleccionados([])}
+      className="bg-red-500 text-white px-3 py-1 rounded text-sm"
+    >
+      Limpiar Selección
+    </button>
+  </div>
+</div>
+
 
       {/* Tabla con los datos filtrados */}
       <div className="mb-4 w-full max-w-4xl">
@@ -236,27 +235,31 @@ export function ExcelBarChart() {
             ))}
           </thead>
           <tbody {...getTableBodyProps()}>
-              {rows.length === 0 ? (
-                <tr>
-                  <td colSpan={columns.length} className="text-center py-4">
-                    No hay datos para mostrar.
-                  </td>
-                </tr>
-              ) : (
-                rows.map((row) => {
-                  prepareRow(row);
-                  return (
-                    <tr key={row.id} {...row.getRowProps()}>
-                      {row.cells.map((cell) => (
-                        <td key={cell.column.id} {...cell.getCellProps()} className="border px-4 py-2 text-left">
-                          {cell.render("Cell")}
-                        </td>
-                      ))}
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
+            {rows.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length} className="text-center py-4">
+                  No hay datos para mostrar.
+                </td>
+              </tr>
+            ) : (
+              rows.map((row) => {
+                prepareRow(row);
+                return (
+                  <tr key={row.id} {...row.getRowProps()}>
+                    {row.cells.map((cell) => (
+                      <td
+                        key={cell.column.id}
+                        {...cell.getCellProps()}
+                        className="border px-4 py-2 text-left"
+                      >
+                        {cell.render("Cell")}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
         </table>
       </div>
     </div>
