@@ -1,155 +1,266 @@
-import React, { useState } from 'react';
-import { Bar } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
-import Papa from 'papaparse';
-import Select from 'react-select';
-
-// Registra los componentes de Chart.js
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+import React, { useState, useEffect, useMemo } from "react";
+import { useTable } from "react-table";
 
 export function ExcelBarChart() {
-    const [chartData, setChartData] = useState(null);
-    const [fileName, setFileName] = useState("");
-    const [tableData, setTableData] = useState([]);
-    const [filteredYear, setFilteredYear] = useState("2023");
+  const [tableData, setTableData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
+  const [newRow, setNewRow] = useState({ Año: "", Mes: "", Venta: "" });
+  const [mesInicio, setMesInicio] = useState("");
+  const [mesFin, setMesFin] = useState("");
 
-    const handleFileUpload = (event) => {
-        const file = event.target.files[0];
-        if (!file) return;
+  const meses = [
+    { value: "ENERO", label: "Enero" },
+    { value: "FEBRERO", label: "Febrero" },
+    { value: "MARZO", label: "Marzo" },
+    { value: "ABRIL", label: "Abril" },
+    { value: "MAYO", label: "Mayo" },
+    { value: "JUNIO", label: "Junio" },
+    { value: "JULIO", label: "Julio" },
+    { value: "AGOSTO", label: "Agosto" },
+    { value: "SEPTIEMBRE", label: "Septiembre" },
+    { value: "OCTUBRE", label: "Octubre" },
+    { value: "NOVIEMBRE", label: "Noviembre" },
+    { value: "DICIEMBRE", label: "Diciembre" },
+  ];
 
-        setFileName(file.name);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch("/api/sales/salestabla");
+        const data = await response.json();
 
-        Papa.parse(file, {
-            header: true,
-            skipEmptyLines: true,
-            complete: (results) => {
-                const jsonData = results.data;
-                setTableData(jsonData);
-
-                // Procesar los datos del archivo
-                const labels = jsonData.map((row) => row['Mes'] || 'Sin Mes');
-                const values = jsonData.map((row) => parseFloat(row['Venta']) || 0);
-
-                // Configurar los datos para la gráfica
-                setChartData({
-                    labels,
-                    datasets: [
-                        {
-                            label: 'Venta',
-                            data: values,
-                            backgroundColor: 'rgba(54, 162, 235, 0.5)',
-                            borderColor: 'rgba(54, 162, 235, 1)',
-                            borderWidth: 1,
-                        },
-                    ],
-                });
-            },
-        });
+        if (Array.isArray(data)) {
+          setTableData(data);
+          setFilteredData(data); // Inicializa los datos filtrados
+        } else {
+          console.error("La API no devolvió un array válido.");
+          setTableData([]);
+        }
+      } catch (error) {
+        console.error("Error al cargar los datos:", error);
+        setTableData([]);
+      }
     };
 
-    const handleYearFilterChange = (selectedOption) => {
-        setFilteredYear(selectedOption.value);
+    fetchData();
+  }, []);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewRow({ ...newRow, [name]: value });
+  };
+
+  const addRow = async () => {
+    if (!newRow.Año || !newRow.Mes || !newRow.Venta) {
+      alert("Por favor, completa todos los campos antes de agregar.");
+      return;
+    }
+
+    const newData = {
+      year: parseInt(newRow.Año, 10),
+      month: newRow.Mes.toUpperCase(),
+      sale: parseFloat(newRow.Venta),
     };
 
-    // Opciones de filtro de años
-    const yearOptions = [
-        { value: '2023', label: '2023' },
-        { value: '2024', label: '2024' },
-    ];
+    try {
+      const response = await fetch("/api/sales/salestabla", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newData),
+      });
 
-    // Filtrar los datos de la tabla
-    const filteredData = tableData.filter(
-        (row) => row['Año'] === filteredYear
-    );
+      if (!response.ok) {
+        throw new Error("Error al guardar los datos");
+      }
 
-    const calculateTotal = (column) => {
-        return filteredData.reduce((total, row) => total + parseFloat(row[column] || 0), 0).toFixed(2);
-    };
+      const savedData = await response.json();
+      setTableData([...tableData, savedData]);
+      setFilteredData([...tableData, savedData]);
+      setNewRow({ Año: "", Mes: "", Venta: "" });
+    } catch (error) {
+      console.error("Error al guardar el dato:", error);
+    }
+  };
 
-    return (
-        <div className="flex flex-col items-center justify-center min-h-screen p-6">
-            <h1 className="text-2xl font-bold mb-4">Gráfica y Tabla Dinámica con Filtros</h1>
+  const aplicarFiltros = () => {
+    if (!mesInicio || !mesFin) {
+      alert("Por favor, selecciona ambos meses para aplicar el filtro.");
+      return;
+    }
+  
+    const indexInicio = meses.findIndex((m) => m.value === mesInicio);
+    const indexFin = meses.findIndex((m) => m.value === mesFin);
+  
+    if (indexInicio === -1 || indexFin === -1 || indexInicio > indexFin) {
+      alert("Selecciona un rango válido de meses (el mes final debe ser posterior al inicial).");
+      return;
+    }
+  
+    const datosFiltrados = tableData.filter((row) => {
+      const indexMes = meses.findIndex((m) => m.value === row.month.toUpperCase());
+      return indexMes >= indexInicio && indexMes <= indexFin;
+    });
+    
+  
+    if (datosFiltrados.length === 0) {
+      alert("No hay datos que coincidan con el rango de meses seleccionado.");
+    }
+  
+    setFilteredData(datosFiltrados);
+  };
+  
 
-            {/* Cargar archivo CSV */}
-            <input
-                type="file"
-                accept=".csv"
-                onChange={handleFileUpload}
-                className="mb-4 border border-gray-300 p-2 rounded bg-white"
-            />
+  const columns = useMemo(
+    () => [
+      {
+        Header: "Mes",
+        accessor: "month",
+      },
+      {
+        Header: "Año",
+        accessor: "year",
+      },
+      {
+        Header: "Venta",
+        accessor: "sale",
+        Cell: ({ value }) => `$ ${value ? value.toFixed(2) : "0.00"}`,
+      },
+    ],
+    []
+  );
 
-            {fileName && <p className="mb-4 text-gray-600">Archivo cargado: {fileName}</p>}
+  const tableInstance = useTable({
+    columns,
+    data: filteredData,
+  });
 
-            {/* Filtro por año */}
-            <div className="mb-4 w-full max-w-md">
-                <Select
-                    options={yearOptions}
-                    defaultValue={yearOptions[0]}
-                    onChange={handleYearFilterChange}
-                    className="text-black"
-                />
-            </div>
+  const { getTableProps, getTableBodyProps, headerGroups, rows, prepareRow } =
+    tableInstance;
 
-            {/* Mostrar gráfica si hay datos */}
-            {chartData ? (
-                <div className="w-full max-w-4xl bg-white p-4 rounded shadow mb-8">
-                    <Bar
-                        data={chartData}
-                        options={{
-                            responsive: true,
-                            plugins: {
-                                legend: {
-                                    position: 'top',
-                                },
-                                title: {
-                                    display: true,
-                                    text: 'Datos Importados desde CSV',
-                                },
-                            },
-                        }}
-                    />
-                </div>
+  return (
+    <div className="flex flex-col items-center justify-center p-2">
+      <h1 className="text-2xl font-bold mb-4">Tabla de Ventas con Filtros</h1>
+
+      {/* Formulario para agregar filas */}
+      <div className="mb-4 flex gap-2 text-black">
+        <input
+          type="number"
+          name="Año"
+          value={newRow.Año}
+          onChange={handleInputChange}
+          placeholder="Año"
+          className="border border-gray-300 p-1 text-sm rounded w-20"
+        />
+        <input
+          type="text"
+          name="Mes"
+          value={newRow.Mes}
+          onChange={handleInputChange}
+          placeholder="Mes (ENE, FEB, etc.)"
+          className="border border-gray-300 p-1 text-sm rounded w-24"
+        />
+        <input
+          type="number"
+          step="0.01"
+          name="Venta"
+          value={newRow.Venta}
+          onChange={handleInputChange}
+          placeholder="Venta"
+          className="border border-gray-300 p-1 text-sm rounded w-28"
+        />
+        <button
+          onClick={addRow}
+          className="bg-blue-500 text-white px-3 py-1 rounded text-sm"
+        >
+          Agregar
+        </button>
+      </div>
+
+      {/* Filtros por rango de meses */}
+      <div className="mb-4 flex gap-2 text-black">
+      <select
+            value={mesInicio}
+            onChange={(e) => {
+              console.log("Mes inicio seleccionado:", e.target.value);
+              setMesInicio(e.target.value);
+            }}
+            className="border border-gray-300 p-1 text-sm rounded"
+          >
+          <option value="">Mes Inicio</option>
+          {meses.map((mes) => (
+            <option key={mes.value} value={mes.value}>
+              {mes.label}
+            </option>
+          ))}
+        </select>
+        <select
+          value={mesFin}
+          onChange={(e) => setMesFin(e.target.value)}
+          className="border border-gray-300 p-1 text-sm rounded"
+        >
+          <option value="">Mes Fin</option>
+          {meses.map((mes) => (
+            <option key={mes.value} value={mes.value}>
+              {mes.label}
+            </option>
+          ))}
+        </select>
+        <button
+          onClick={aplicarFiltros}
+          disabled={!mesInicio || !mesFin}
+          className={`px-3 py-1 rounded text-sm ${
+            !mesInicio || !mesFin ? "bg-gray-300 text-gray-600 cursor-not-allowed" : "bg-green-500 text-white"
+          }`}
+        >
+          Filtrar
+        </button>
+      </div>
+
+      {/* Tabla con los datos filtrados */}
+      <div className="mb-4 w-full max-w-4xl">
+        <table
+          {...getTableProps()}
+          className="table-auto w-full border border-collapse"
+        >
+          <thead>
+            {headerGroups.map((headerGroup) => (
+              <tr {...headerGroup.getHeaderGroupProps()}>
+                {headerGroup.headers.map((column) => (
+                  <th
+                    {...column.getHeaderProps()}
+                    className="border px-4 py-2 text-left"
+                  >
+                    {column.render("Header")}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody {...getTableBodyProps()}>
+            {rows.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length} className="text-center py-4">
+                  No hay datos para mostrar.
+                </td>
+              </tr>
             ) : (
-                <p className="text-gray-500">Sube un archivo CSV para generar la gráfica.</p>
+              rows.map((row) => {
+                prepareRow(row);
+                return (
+                  <tr {...row.getRowProps()}>
+                    {row.cells.map((cell) => (
+                      <td {...cell.getCellProps()} className="border px-4 py-2 text-left">
+                        {cell.render("Cell")}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })
             )}
+          </tbody>
 
-            {/* Mostrar tabla dinámica */}
-            {filteredData.length > 0 && (
-                <div className="w-full max-w-4xl bg-white p-4 rounded shadow">
-                    <h2 className="text-xl font-bold mb-4">Ventas por Año</h2>
-                    <table className="table-auto w-full border-collapse border border-gray-300 text-center">
-                        <thead>
-                            <tr className="bg-pink-200">
-                                <th className="border border-gray-300 px-4 py-2">MES</th>
-                                <th className="border border-gray-300 px-4 py-2">2023</th>
-                                <th className="border border-gray-300 px-4 py-2">2024</th>
-                                <th className="border border-gray-300 px-4 py-2">PROYECCIÓN</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredData.map((row, index) => (
-                                <tr key={index} className="hover:bg-gray-100">
-                                    <td className="border border-gray-300 px-4 py-2">{row['Mes']}</td>
-                                    <td className="border border-gray-300 px-4 py-2">{row['Año'] === '2023' ? row['Venta'] : ''}</td>
-                                    <td className="border border-gray-300 px-4 py-2">{row['Año'] === '2024' ? row['Venta'] : ''}</td>
-                                    <td className="border border-gray-300 px-4 py-2">{(parseFloat(row['Venta']) * 1.1).toFixed(2)}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                        <tfoot>
-                            <tr className="bg-pink-300 font-bold">
-                                <td className="border border-gray-300 px-4 py-2">Total general</td>
-                                <td className="border border-gray-300 px-4 py-2">{calculateTotal('Venta')}</td>
-                                <td className="border border-gray-300 px-4 py-2">{calculateTotal('Venta')}</td>
-                                <td className="border border-gray-300 px-4 py-2">{(calculateTotal('Venta') * 1.1).toFixed(2)}</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                    <div className="mt-4 bg-pink-200 p-4 rounded text-center font-bold">
-                        OBJETIVO NOVIEMBRE 2024: ${calculateTotal('Venta')}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
+        </table>
+      </div>
+    </div>
+  );
 }
