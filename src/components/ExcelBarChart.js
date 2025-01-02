@@ -86,24 +86,34 @@ export function ExcelBarChart() {
       alert("Por favor, selecciona al menos un mes.");
       return;
     }
-  
+
     const datosFiltrados = tableData.filter((row) =>
       mesesSeleccionados.includes(row.month.toUpperCase())
     );
-  
+
     if (datosFiltrados.length === 0) {
       alert("No hay datos que coincidan con los meses seleccionados.");
     }
-  
+
     setFilteredData(datosFiltrados);
   };
-  
 
   const handleMesesSeleccionados = (e) => {
-    const seleccionados = Array.from(e.target.selectedOptions, (option) => option.value);
+    const seleccionados = Array.from(
+      e.target.selectedOptions,
+      (option) => option.value
+    );
     setMesesSeleccionados(seleccionados);
   };
-  
+
+  const calcularProyeccion = (valor) => {
+    return valor * 0.15 + valor; // 15% adicional
+  };
+
+  const datosConProyeccion = filteredData.map((row) => ({
+    ...row,
+    proyeccion: calcularProyeccion(row.sale),
+  }));
 
   const columns = useMemo(
     () => [
@@ -120,13 +130,18 @@ export function ExcelBarChart() {
         accessor: "sale",
         Cell: ({ value }) => `$ ${value ? value.toFixed(2) : "0.00"}`,
       },
+      {
+        Header: "Proyección (15%)",
+        accessor: "proyeccion",
+        Cell: ({ value }) => `$ ${value ? value.toFixed(2) : "0.00"}`,
+      },
     ],
     []
   );
 
   const tableInstance = useTable({
     columns,
-    data: filteredData,
+    data: datosConProyeccion,
   });
 
   const { getTableProps, getTableBodyProps, headerGroups, rows, prepareRow } =
@@ -173,45 +188,44 @@ export function ExcelBarChart() {
 
       {/* Filtros por selección múltiple */}
       <div className="mb-4">
-  {/* Etiquetas para los meses seleccionados */}
-  <div className="mb-2 flex flex-wrap gap-2">
-    {mesesSeleccionados.map((mes) => (
-      <span key={mes} className="bg-yellow-500 text-white px-2 py-1 rounded text-sm">
-        {meses.find((m) => m.value === mes)?.label}
-      </span>
-    ))}
-  </div>
+        <div className="mb-2 flex flex-wrap gap-2">
+          {mesesSeleccionados.map((mes) => (
+            <span
+              key={mes}
+              className="bg-yellow-500 text-white px-2 py-1 rounded text-sm"
+            >
+              {meses.find((m) => m.value === mes)?.label}
+            </span>
+          ))}
+        </div>
 
-  {/* Select Múltiple */}
-  <select
-    multiple
-    onChange={handleMesesSeleccionados}
-    className="border border-gray-300 p-1 text-sm rounded w-40 text-black"
-  >
-    {meses.map((mes) => (
-      <option key={mes.value} value={mes.value}>
-        {mes.label}
-      </option>
-    ))}
-  </select>
+        <select
+          multiple
+          onChange={handleMesesSeleccionados}
+          className="border border-gray-300 p-1 text-sm rounded w-40 text-black"
+        >
+          {meses.map((mes) => (
+            <option key={mes.value} value={mes.value}>
+              {mes.label}
+            </option>
+          ))}
+        </select>
 
-  {/* Botones */}
-  <div className="mt-2 flex gap-2">
-    <button
-      onClick={aplicarFiltros}
-      className="bg-green-500 text-white px-3 py-1 rounded text-sm"
-    >
-      Filtrar
-    </button>
-    <button
-      onClick={() => setMesesSeleccionados([])}
-      className="bg-red-500 text-white px-3 py-1 rounded text-sm"
-    >
-      Limpiar Selección
-    </button>
-  </div>
-</div>
-
+        <div className="mt-2 flex gap-2">
+          <button
+            onClick={aplicarFiltros}
+            className="bg-green-500 text-white px-3 py-1 rounded text-sm"
+          >
+            Filtrar
+          </button>
+          <button
+            onClick={() => setMesesSeleccionados([])}
+            className="bg-red-500 text-white px-3 py-1 rounded text-sm"
+          >
+            Limpiar Selección
+          </button>
+        </div>
+      </div>
 
       {/* Tabla con los datos filtrados */}
       <div className="mb-4 w-full max-w-4xl">
