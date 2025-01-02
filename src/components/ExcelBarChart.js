@@ -1,5 +1,18 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useTable } from "react-table";
+import { Bar } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+
+// Registrar componentes de Chart.js
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 export function ExcelBarChart() {
   const [tableData, setTableData] = useState([]);
@@ -115,6 +128,44 @@ export function ExcelBarChart() {
     proyeccion: calcularProyeccion(row.sale),
   }));
 
+  // Datos para la gráfica
+  const chartData = useMemo(() => {
+    const labels = datosConProyeccion.map((row) => row.month);
+    const ventas2023 = datosConProyeccion.map((row) => row.sale);
+    const proyecciones = datosConProyeccion.map((row) =>
+      calcularProyeccion(row.sale)
+    );
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: "2023",
+          data: ventas2023,
+          backgroundColor: "rgba(255, 99, 132, 0.5)",
+        },
+        {
+          label: "Proyección",
+          data: proyecciones,
+          backgroundColor: "rgba(54, 162, 235, 0.5)",
+        },
+      ],
+    };
+  }, [datosConProyeccion]);
+
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: "top",
+      },
+      title: {
+        display: true,
+        text: "Proyección de Ventas por Mes",
+      },
+    },
+  };
+
   const columns = useMemo(
     () => [
       {
@@ -225,6 +276,11 @@ export function ExcelBarChart() {
             Limpiar Selección
           </button>
         </div>
+      </div>
+
+      {/* Gráfica */}
+      <div className="mb-8 w-full max-w-4xl">
+        <Bar data={chartData} options={chartOptions} />
       </div>
 
       {/* Tabla con los datos filtrados */}
