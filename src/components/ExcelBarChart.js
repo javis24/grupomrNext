@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react"; // Asegúrate de importar useCallback
 import { useTable } from "react-table";
 import { Bar } from "react-chartjs-2";
 import {
@@ -18,9 +18,10 @@ export function ExcelBarChart() {
   const [tableData, setTableData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [newRow, setNewRow] = useState({ Año: "", Mes: "", Venta: "" });
+  const [editRow, setEditRow] = useState(null); // Para manejar la edición
   const [mesesSeleccionados, setMesesSeleccionados] = useState([]);
 
-  const meses = [
+  const meses = useMemo(() => [
     { value: "ENERO", label: "Enero" },
     { value: "FEBRERO", label: "Febrero" },
     { value: "MARZO", label: "Marzo" },
@@ -33,7 +34,7 @@ export function ExcelBarChart() {
     { value: "OCTUBRE", label: "Octubre" },
     { value: "NOVIEMBRE", label: "Noviembre" },
     { value: "DICIEMBRE", label: "Diciembre" },
-  ];
+  ], []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -43,7 +44,7 @@ export function ExcelBarChart() {
 
         if (Array.isArray(data)) {
           setTableData(data);
-          setFilteredData(data); // Inicializa los datos filtrados
+          setFilteredData(data);
         } else {
           console.error("La API no devolvió un array válido.");
           setTableData([]);
@@ -59,7 +60,11 @@ export function ExcelBarChart() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewRow({ ...newRow, [name]: value });
+    if (editRow) {
+      setEditRow((prev) => ({ ...prev, [name]: value }));
+    } else {
+      setNewRow((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const addRow = async () => {
@@ -86,13 +91,74 @@ export function ExcelBarChart() {
       }
 
       const savedData = await response.json();
-      setTableData([...tableData, savedData]);
-      setFilteredData([...tableData, savedData]);
+      setTableData((prev) => [...prev, savedData]);
+      setFilteredData((prev) => [...prev, savedData]);
       setNewRow({ Año: "", Mes: "", Venta: "" });
     } catch (error) {
       console.error("Error al guardar el dato:", error);
     }
   };
+
+  const deleteRow = useCallback(async (id) => {
+    try {
+      const response = await fetch("/api/sales/salestabla", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Error al eliminar el registro");
+      }
+
+      setTableData((prev) => prev.filter((item) => item.id !== id));
+      setFilteredData((prev) => prev.filter((item) => item.id !== id));
+    } catch (error) {
+      console.error("Error al eliminar el registro:", error);
+    }
+  }, []);
+
+  const editRowData = async () => {
+    if (!editRow.id || !editRow.Año || !editRow.Mes || !editRow.Venta) {
+      alert("Completa todos los campos antes de guardar.");
+      return;
+    }
+  
+    const updatedData = {
+      id: editRow.id,
+      year: parseInt(editRow.Año, 10),
+      month: editRow.Mes.toUpperCase(),
+      sale: parseFloat(editRow.Venta),
+    };
+  
+    try {
+      const response = await fetch("/api/sales/salestabla", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedData),
+      });
+  
+      if (!response.ok) {
+        throw new Error("Error al actualizar el registro");
+      }
+  
+      const updatedRecord = await response.json();
+  
+      // Actualiza los datos en el estado
+      setTableData((prev) =>
+        prev.map((item) => (item.id === updatedRecord.id ? updatedRecord : item))
+      );
+      setFilteredData((prev) =>
+        prev.map((item) => (item.id === updatedRecord.id ? updatedRecord : item))
+      );
+  
+      // Resetea la fila en edición
+      setEditRow(null);
+    } catch (error) {
+      console.error("Error al actualizar el registro:", error);
+    }
+  };
+  
 
   const aplicarFiltros = () => {
     if (mesesSeleccionados.length === 0) {
@@ -186,6 +252,32 @@ export function ExcelBarChart() {
         accessor: "proyeccion",
         Cell: ({ value }) => `$ ${value ? value.toFixed(2) : "0.00"}`,
       },
+      {
+        Header: "Acciones",
+        Cell: ({ row }) => (
+          <div className="flex gap-2">
+            <button
+              className="bg-yellow-500 px-2 py-1 rounded text-white"
+              onClick={() =>
+                setEditRow({
+                  id: row.original.id,
+                  Año: row.original.year,
+                  Mes: row.original.month,
+                  Venta: row.original.sale,
+                })
+              }
+            >
+              Editar
+            </button>
+            <button
+              className="bg-red-500 px-2 py-1 rounded text-white"
+              onClick={() => deleteRow(row.original.id)}
+            >
+              Eliminar
+            </button>
+          </div>
+        ),
+      },
     ],
     []
   );
@@ -207,7 +299,7 @@ export function ExcelBarChart() {
         <input
           type="number"
           name="Año"
-          value={newRow.Año}
+          value={editRow ? editRow.Año : newRow.Año}
           onChange={handleInputChange}
           placeholder="Año"
           className="border border-gray-300 p-1 text-sm rounded w-20"
@@ -215,7 +307,7 @@ export function ExcelBarChart() {
         <input
           type="text"
           name="Mes"
-          value={newRow.Mes}
+          value={editRow ? editRow.Mes : newRow.Mes}
           onChange={handleInputChange}
           placeholder="Mes (ENERO, FEBRERO, etc.)"
           className="border border-gray-300 p-1 text-sm rounded w-24"
@@ -224,17 +316,34 @@ export function ExcelBarChart() {
           type="number"
           step="0.01"
           name="Venta"
-          value={newRow.Venta}
+          value={editRow ? editRow.Venta : newRow.Venta}
           onChange={handleInputChange}
           placeholder="Venta"
           className="border border-gray-300 p-1 text-sm rounded w-28"
         />
-        <button
-          onClick={addRow}
-          className="bg-blue-500 text-white px-3 py-1 rounded text-sm"
-        >
-          Agregar
-        </button>
+        {editRow ? (
+          <button
+            className="bg-green-500 text-white px-3 py-1"
+            onClick={editRowData}
+          >
+            Guardar
+          </button>
+        ) : (
+          <button
+            className="bg-blue-500 text-white px-3 py-1"
+            onClick={addRow}
+          >
+            Agregar
+          </button>
+        )}
+        {editRow && (
+          <button
+            className="bg-red-500 text-white px-3 py-1"
+            onClick={() => setEditRow(null)}
+          >
+            Cancelar
+          </button>
+        )}
       </div>
 
       {/* Filtros por selección múltiple */}
