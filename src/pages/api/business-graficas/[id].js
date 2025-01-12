@@ -39,13 +39,10 @@ export default async function handler(req, res) {
         return res.status(404).json({ message: "Archivo no encontrado" });
       }
 
-      // Construir la ruta completa del archivo
-      const filePath = path.join(process.cwd(), "public", report.fileData);
-      console.log("Intentando descargar archivo desde:", filePath);
+      const filePath = path.join("/tmp", report.fileData);
 
       if (!fs.existsSync(filePath)) {
-        console.error("El archivo no existe en el servidor:", filePath);
-        return res.status(404).json({ message: "El archivo no existe en el servidor" });
+        return res.status(404).json({ message: "Archivo no existe en el servidor" });
       }
 
       // Configurar headers para la descarga del archivo
@@ -56,11 +53,11 @@ export default async function handler(req, res) {
       const fileStream = fs.createReadStream(filePath);
       fileStream.pipe(res);
     } catch (error) {
-      console.error("Error al descargar el archivo:", error.message);
-      return res.status(500).json({ message: "Error al descargar el archivo", error: error.message });
+      console.error("Error al procesar el archivo:", error);
+      res.status(500).json({ message: "Error al procesar el archivo", error: error.message });
     }
   } else {
-    res.setHeader("Allow", ["DELETE", "GET"]);
-    return res.status(405).json({ message: `Método ${req.method} no permitido` });
+    res.setHeader("Allow", ["GET"]);
+    res.status(405).json({ message: `Método ${req.method} no permitido` });
   }
 }

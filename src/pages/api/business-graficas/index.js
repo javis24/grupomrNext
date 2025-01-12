@@ -6,10 +6,7 @@ import BusinessUnitReport from "../../../models/BusinessUnitReport";
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadPath = path.join(process.cwd(), "public", "uploads");
-    if (!fs.existsSync(uploadPath)) {
-      fs.mkdirSync(uploadPath, { recursive: true });
-    }
+    const uploadPath = "/tmp"; // Directorio temporal de Vercel
     cb(null, uploadPath);
   },
   filename: function (req, file, cb) {
@@ -47,7 +44,8 @@ export default async function handler(req, res) {
       }
   
       // Ruta relativa del archivo
-      const filePath = `/uploads/${file.filename}`;
+      const filePath = `tmp/${file.filename}`; 
+
   
       // Leer el archivo Excel
       const workbook = XLSX.readFile(path.join(process.cwd(), "public", filePath));
