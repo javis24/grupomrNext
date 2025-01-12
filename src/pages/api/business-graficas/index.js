@@ -1,55 +1,98 @@
-import BusinessUnitReport from '../../../models/BusinessUnitReport';
-import jwt from 'jsonwebtoken';
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import * as XLSX from "xlsx";
+import BusinessUnitReport from "../../../models/BusinessUnitReport";
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadPath = path.join(process.cwd(), "public", "uploads");
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    cb(null, uploadPath);
+  },
+  filename: function (req, file, cb) {
+    const uniqueName = `${Date.now()}_${file.originalname}`;
+    cb(null, uniqueName);
+  },
+});
+
+const upload = multer({ storage });
+
+export const config = {
+  api: {
+    bodyParser: false, // Deshabilitar bodyParser para usar Multer
+  },
+};
+
+// Middleware para manejar Multer
+const runMiddleware = (req, res, fn) => {
+  return new Promise((resolve, reject) => {
+    fn(req, res, (err) => {
+      if (err) return reject(err);
+      resolve();
+    });
+  });
+};
 
 export default async function handler(req, res) {
-  if (req.method === 'POST') {
-    const { reports } = req.body;
-
+  if (req.method === "POST") {
     try {
-      // Obtener el token del encabezado de autorización
-      const token = req.headers.authorization?.split(' ')[1];
-
-      if (!token) {
-        return res.status(401).json({ message: 'Token no proporcionado' });
+      await runMiddleware(req, res, upload.single("file"));
+  
+      const file = req.file;
+      if (!file) {
+        return res.status(400).json({ message: "No se proporcionó un archivo" });
       }
-
-      // Decodificar el token para obtener el userId
-      const decoded = jwt.decode(token);
-      const userId = decoded.id;
-
-      // Verificar que el userId no sea null
-      if (!userId) {
-        return res.status(400).json({ message: 'No se pudo obtener el userId del token' });
-      }
-
-      // Iterar sobre los reportes e insertar en la base de datos con el userId
-      for (const report of reports) {
-        await BusinessUnitReport.create({
-          name: report.name,
-          total: report.total,
-          createdAt: report.createdAt,
-          userId: userId // Aquí se incluye el userId
-        });
-      }
-
-      res.status(200).json({ message: 'Datos guardados exitosamente' });
+  
+      // Ruta relativa del archivo
+      const filePath = `/uploads/${file.filename}`;
+  
+      // Leer el archivo Excel
+      const workbook = XLSX.readFile(path.join(process.cwd(), "public", filePath));
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+  
+      // Calcular el total
+      const total = jsonData.reduce((acc, item) => acc + (item["Total Vendido"] || 0), 0);
+  
+      // Guardar en la base de datos
+      const savedFile = await BusinessUnitReport.create({
+        name: file.originalname,
+        total,
+        fileData: filePath, // Guardar ruta relativa
+        userId: 1,
+      });
+  
+      return res.status(200).json({
+        message: "Archivo procesado correctamente",
+        data: jsonData,
+        report: savedFile,
+      });
     } catch (error) {
-      console.error('Error guardando los reportes:', error);
-      res.status(500).json({ message: 'Error al guardar los reportes' });
+      console.error("Error al procesar el archivo:", error);
+      return res.status(500).json({ message: "Error al procesar el archivo", error: error.message });
     }
-        } else if (req.method === 'GET') {
-            try {
-            const reports = await BusinessUnitReport.findAll({
-                attributes: ['name', 'createdAt'],  // Solo devuelve los campos que necesitas
-                order: [['createdAt', 'DESC']]  // Ordenar por la fecha de creación
-            });
-            res.status(200).json(reports);
-            } catch (error) {
-            console.error('Error obteniendo los reportes:', error);
-            res.status(500).json({ message: 'Error al obtener los reportes' });
-            }
-        } else {
-            res.setHeader('Allow', ['POST', 'GET']);
-            res.status(405).end(`Method ${req.method} Not Allowed`);
-        }
-        }
+  }
+   else if (req.method === "GET") {
+    try {
+      // Obtener la lista de archivos
+      const reports = await BusinessUnitReport.findAll({
+        attributes: ["id", "name", "createdAt"],
+        order: [["createdAt", "DESC"]],
+      });
+
+      return res.status(200).json(reports);
+    } catch (error) {
+      console.error("Error al obtener los reportes:", error);
+      return res
+        .status(500)
+        .json({ message: "Error al obtener los reportes", error: error.message });
+    }
+  } else {
+    res.setHeader("Allow", ["POST", "GET"]);
+    return res.status(405).json({ message: `Method ${req.method} Not Allowed` });
+  }
+}

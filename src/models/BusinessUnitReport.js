@@ -9,38 +9,27 @@ const BusinessUnitReport = db.define('BusinessUnitReports', {
   id: {
     type: DataTypes.INTEGER,
     autoIncrement: true,
-    primaryKey: true
+    primaryKey: true,
   },
   name: {
     type: DataTypes.STRING,
     allowNull: false,
-    validate: {
-      notEmpty: true,
-      len: [3, 255]  // El nombre debe tener al menos 3 caracteres
-    }
   },
   total: {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: false,
-    validate: {
-      notEmpty: true,
-      isDecimal: true  // Asegurarse de que sea un número decimal
-    }
   },
-  createdAt: {
-    type: DataTypes.DATE,
-    defaultValue: Sequelize.NOW  // Establecer la fecha de creación automáticamente
+  fileData: {
+    type: DataTypes.STRING,
+    allowNull: false, // Asegúrate de que esta configuración está presente
   },
   userId: {
     type: DataTypes.INTEGER,
     allowNull: false,
-    validate: {
-      notEmpty: true
-    }
-  }
+  },
 }, {
-  timestamps: false,  // Desactiva las columnas createdAt y updatedAt
-  freezeTableName: true  // Evitar que Sequelize pluralice el nombre de la tabla
+  freezeTableName: true,
+  timestamps: true,
 });
 
 // Establecer relaciones

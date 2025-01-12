@@ -10,3 +10,8 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NSwibmFtZSI6I
   "email": "nuevoemail@example.com"
 }
 
+
+###
+DELETE http://localhost:3000/api/business-graficas/17
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6OCwibmFtZSI6IkFkcmlhbmEgQ3J1eiAiLCJyb2xlIjoiYWRtaW4iLCJlbWFpbCI6ImNvb3JkaW5hZG9yYUBncnVwb21ybGFndW5hLmNvbSIsImlhdCI6MTczNTg2OTg5NiwiZXhwIjoxNzM1OTU2Mjk2fQ._UqNYUAjo5cCu34vYKJ0B8sRP5tND8PxBYeB-cO3_yU
