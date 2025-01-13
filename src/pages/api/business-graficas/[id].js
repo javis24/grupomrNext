@@ -31,7 +31,7 @@ export default async function handler(req, res) {
       console.error("Error al eliminar el archivo:", error.message);
       return res.status(500).json({ message: "Error al eliminar el archivo", error: error.message });
     }
-  } else if (req.method === "GET") {
+  }  if (req.method === "GET") {
     try {
       // Buscar el registro en la base de datos
       const report = await BusinessUnitReport.findOne({ where: { id } });
@@ -39,10 +39,14 @@ export default async function handler(req, res) {
         return res.status(404).json({ message: "Archivo no encontrado" });
       }
 
+      // Ruta completa del archivo en /tmp
       const filePath = path.join("/tmp", report.fileData);
+      console.log("Intentando descargar archivo desde:", filePath);
 
+      // Verificar si el archivo existe
       if (!fs.existsSync(filePath)) {
-        return res.status(404).json({ message: "Archivo no existe en el servidor" });
+        console.error("El archivo no existe en el servidor:", filePath);
+        return res.status(404).json({ message: "El archivo no existe en el servidor" });
       }
 
       // Configurar headers para la descarga del archivo
@@ -53,11 +57,11 @@ export default async function handler(req, res) {
       const fileStream = fs.createReadStream(filePath);
       fileStream.pipe(res);
     } catch (error) {
-      console.error("Error al procesar el archivo:", error);
-      res.status(500).json({ message: "Error al procesar el archivo", error: error.message });
+      console.error("Error al descargar el archivo:", error.message);
+      res.status(500).json({ message: "Error al descargar el archivo", error: error.message });
     }
   } else {
     res.setHeader("Allow", ["GET"]);
-    res.status(405).json({ message: `Método ${req.method} no permitido` });
+    return res.status(405).json({ message: `Método ${req.method} no permitido` });
   }
 }
