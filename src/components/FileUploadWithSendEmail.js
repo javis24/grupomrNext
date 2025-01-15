@@ -36,8 +36,7 @@ export default function FileUploadWithSendEmail() {
       const response = await axios.get('/api/mktfiles', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      console.log('Files from API:', response.data); // Verifica los datos recibidos
-      setFileList(response.data); // Actualiza el estado
+      setFileList(response.data);
     } catch (error) {
       console.error('Error fetching files:', error);
       setError('Hubo un problema al cargar los archivos.');
@@ -92,24 +91,40 @@ export default function FileUploadWithSendEmail() {
   };
 
   const handleSendEmail = async (file) => {
-    if (selectedEmails.length === 0) {
-      alert('No hay emails seleccionados para enviar el archivo');
+    if (!file || !file.filepath || !selectedEmails.length) {
+      alert('Faltan datos para enviar el correo.');
       return;
     }
-
+  
     try {
-      await axios.post('/api/email/send-file-email', {
-        emails: selectedEmails,
-        fileUrl: file.filepath,
-        fileName: file.filename,
-        message: emailMessage,
-      });
-      alert('Archivo enviado exitosamente a todos los emails seleccionados');
+      const token = localStorage.getItem('token');
+      const response = await axios.post(
+        '/api/email/send-file-email',
+        {
+          emails: selectedEmails, // Arreglo de correos
+          fileUrl: file.filepath, // Ruta del archivo
+          fileName: file.filename, // Nombre del archivo
+          message: emailMessage, // Mensaje opcional
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+  
+      if (response.status === 200) {
+        alert('Correo enviado exitosamente.');
+      } else {
+        alert('Hubo un problema al enviar el correo.');
+      }
     } catch (error) {
       console.error('Error al enviar archivo por correo:', error);
-      alert('Hubo un error al enviar el archivo');
+      alert('Hubo un error al enviar el correo.');
     }
   };
+  
+  
+  
+  
 
   const handlePlantSelection = async (plant) => {
     setSelectedPlant(plant);
