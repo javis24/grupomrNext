@@ -1,45 +1,43 @@
-// pages/api/email/send-file-email.js
 import transporter from '../../../lib/emailTransporter';
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
-    const { emails, fileUrl, fileName, message } = req.body;
+    const { emails, filePath, fileName, message } = req.body;
 
-    // Validar los datos de entrada
-    if (!emails || !Array.isArray(emails) || emails.length === 0) {
-      return res.status(400).json({ message: 'Se requiere al menos un destinatario.' });
+    // Validar los datos requeridos
+    if (!emails || !emails.length) {
+      return res.status(400).json({ message: 'No se han proporcionado correos electrónicos.' });
     }
-    if (!fileUrl || !fileName) {
-      return res.status(400).json({ message: 'El archivo y su nombre son requeridos.' });
+    if (!filePath || !fileName) {
+      return res.status(400).json({ message: 'No se ha proporcionado un archivo válido.' });
+    }
+    if (!message) {
+      return res.status(400).json({ message: 'El mensaje del correo no puede estar vacío.' });
     }
 
     // Configura el correo
     const mailOptions = {
       from: process.env.EMAIL_USER,
-      to: emails.join(', '), // Convertir array en una lista separada por comas
+      to: emails, // lista de destinatarios
       subject: 'Envío de archivo',
-      text: message || 'Adjunto encontrarás el archivo solicitado.',
+      text: message,
       attachments: [
         {
           filename: fileName,
-          path: fileUrl, // Ruta absoluta o relativa al archivo
+          path: `${process.env.NEXT_PUBLIC_BASE_URL || ''}${filePath}`, // URL del archivo
         },
       ],
     };
 
     try {
-      // Enviar el correo
       await transporter.sendMail(mailOptions);
-      return res.status(200).json({ message: 'Correo enviado exitosamente' });
+      res.status(200).json({ message: 'Correo enviado exitosamente.' });
     } catch (error) {
       console.error('Error al enviar el correo:', error);
-      return res.status(500).json({
-        message: 'Hubo un error al enviar el correo.',
-        error: error.message, // Incluye detalles del error para depuración
-      });
+      res.status(500).json({ message: 'Hubo un error al enviar el correo.' });
     }
   } else {
     res.setHeader('Allow', ['POST']);
-    return res.status(405).json({ message: 'Método no permitido' });
+    res.status(405).json({ message: `Método ${req.method} no permitido.` });
   }
 }

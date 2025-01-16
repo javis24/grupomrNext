@@ -36,12 +36,20 @@ export default function FileUploadWithSendEmail() {
       const response = await axios.get('/api/mktfiles', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setFileList(response.data);
+  
+      console.log('Archivos obtenidos:', response.data);
+  
+      // Asegúrate de que los archivos tienen todas las propiedades necesarias
+      setFileList(response.data.map((file) => ({
+        ...file,
+        filepath: file.filepath || `/uploads/${file.filename}`, // Genera la ruta pública si no está definida
+      })));
     } catch (error) {
       console.error('Error fetching files:', error);
       setError('Hubo un problema al cargar los archivos.');
     }
   };
+  
   
 
   const handleFileChange = (e) => {
@@ -91,20 +99,22 @@ export default function FileUploadWithSendEmail() {
   };
 
   const handleSendEmail = async (file) => {
-    if (!file || !file.filepath || !selectedEmails.length) {
-      alert('Faltan datos para enviar el correo.');
+    if (!file || !file.filepath) {
+      alert('No se ha seleccionado un archivo válido.');
       return;
     }
+  
+    const fileUrl = encodeURI(file.filepath); // Codifica la URL para evitar errores
   
     try {
       const token = localStorage.getItem('token');
       const response = await axios.post(
         '/api/email/send-file-email',
         {
-          emails: selectedEmails, // Arreglo de correos
-          fileUrl: file.filepath, // Ruta del archivo
-          fileName: file.filename, // Nombre del archivo
-          message: emailMessage, // Mensaje opcional
+          emails: selectedEmails,
+          filePath: fileUrl, // Utiliza la URL codificada
+          fileName: file.filename,
+          message: emailMessage,
         },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -117,13 +127,11 @@ export default function FileUploadWithSendEmail() {
         alert('Hubo un problema al enviar el correo.');
       }
     } catch (error) {
-      console.error('Error al enviar archivo por correo:', error);
+      console.error('Error al enviar el correo:', error);
       alert('Hubo un error al enviar el correo.');
     }
   };
-  
-  
-  
+    
   
 
   const handlePlantSelection = async (plant) => {

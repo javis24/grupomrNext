@@ -18,10 +18,17 @@ export default async function handler(req, res) {
 
     switch (method) {
       case 'POST': {
+        const uploadDir = path.join(process.cwd(), 'public/uploads'); // Carpeta donde se guardarán los archivos
+
         const form = formidable({
           keepExtensions: true,
-          uploadDir: '/tmp', // Directorio temporal en Vercel
-          maxFileSize: 10 * 1024 * 1024, // Tamaño máximo de archivo: 10 MB
+          uploadDir,
+          maxFileSize: 10 * 1024 * 1024, // Tamaño máximo del archivo: 10 MB
+          filename: (name, ext, part) => {
+            // Generar un nombre único para evitar colisiones
+            const uniqueName = `${Date.now()}-${part.originalFilename.replace(/\s+/g, '_')}`;
+            return uniqueName;
+          },
         });
 
         form.parse(req, async (err, fields, files) => {
@@ -32,21 +39,19 @@ export default async function handler(req, res) {
 
           const file = Array.isArray(files.file) ? files.file[0] : files.file;
 
-          if (!file) {
-            return res.status(400).json({ message: 'No se ha subido ningún archivo' });
+          if (!file || !file.filepath) {
+            return res.status(400).json({ message: 'No se ha subido ningún archivo válido.' });
           }
 
           try {
-            // Verifica si el archivo existe antes de guardarlo en la base de datos
-            const fileExists = await fs.stat(file.filepath).catch(() => null);
-            if (!fileExists) {
-              return res.status(400).json({ message: 'Archivo no válido o eliminado.' });
-            }
+            const uniqueFilename = path.basename(file.filepath); // Nombre único del archivo
+            const publicUrl = `/uploads/${uniqueFilename}`; // Genera la URL pública
 
-            // Guarda los datos del archivo en la base de datos
+            // Guarda el archivo en la base de datos
             const newFile = await File.create({
-              filename: file.originalFilename,
-              filepath: file.filepath,
+              filename: uniqueFilename, // Guardamos el nombre único generado
+              originalFilename: file.originalFilename, // Guardamos el nombre original para referencia
+              filepath: publicUrl, // Guarda la URL pública
               userId,
             });
 
@@ -72,7 +77,13 @@ export default async function handler(req, res) {
             return res.status(404).json({ message: 'No se encontraron archivos.' });
           }
 
-          return res.status(200).json(files);
+          // Devuelve la lista de archivos con la URL completa
+          return res.status(200).json(files.map((file) => ({
+            id: file.id,
+            filename: file.filename,
+            url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}${file.filepath}`, // Genera URL completa
+            createdAt: file.createdAt,
+          })));
         } catch (error) {
           console.error('Error fetching files:', error);
           return res.status(500).json({ message: 'Error fetching files' });

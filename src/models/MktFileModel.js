@@ -18,6 +18,10 @@ const MktFile = db.define('mktfiles', {
       notEmpty: true,
     },
   },
+  originalFilename: {
+    type: DataTypes.STRING, 
+    allowNull: true,
+  },
   filepath: {
     type: DataTypes.STRING,
     allowNull: false,
