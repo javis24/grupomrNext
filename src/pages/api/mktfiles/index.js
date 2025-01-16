@@ -19,7 +19,7 @@ export default async function handler(req, res) {
     switch (method) {
       case 'POST': {
         const uploadDir = path.join(process.cwd(), 'public/uploads'); // Carpeta donde se guardarán los archivos
-
+        
         const form = formidable({
           keepExtensions: true,
           uploadDir,
@@ -81,7 +81,7 @@ export default async function handler(req, res) {
           return res.status(200).json(files.map((file) => ({
             id: file.id,
             filename: file.filename,
-            url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}${file.filepath}`, // Genera URL completa
+            url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.grupomrlaguna.com/'}${file.filepath}`, // Genera URL completa
             createdAt: file.createdAt,
           })));
         } catch (error) {
