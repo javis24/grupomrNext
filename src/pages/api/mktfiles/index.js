@@ -1,3 +1,10 @@
+import formidable from 'formidable';
+import fs from 'fs/promises';
+import path from 'path';
+import File from '../../../models/MktFileModel';
+import { authenticateToken } from '../../../lib/auth'; // Importa correctamente aquí
+
+
 export default async function handler(req, res) {
   try {
     authenticateToken(req, res, async () => {
