@@ -1,8 +1,3 @@
-import fs from 'fs/promises';
-import path from 'path';
-import File from '../../../models/MktFileModel';
-import { authenticateToken } from '../../../lib/auth';
-
 export default async function handler(req, res) {
   const { id } = req.query;
 
@@ -20,49 +15,43 @@ export default async function handler(req, res) {
 
         try {
           const file = await File.findByPk(id);
-
           if (!file) {
             return res.status(404).json({ message: 'Archivo no encontrado' });
           }
 
-          // Verificar permisos
           if (userRole === 'vendedor' && file.userId !== userId) {
             return res.status(403).json({ message: 'No tienes permiso para actualizar este archivo' });
           }
 
-          // Actualizar nombre del archivo
-          file.filename = filename || file.filename;
+          file.filename = filename;
           await file.save();
 
           return res.status(200).json({ message: 'Archivo actualizado con éxito', file });
         } catch (error) {
-          console.error('Error updating file:', error);
-          return res.status(500).json({ message: 'Error actualizando el archivo' });
+          console.error('Error actualizando archivo:', error);
+          return res.status(500).json({ message: 'Error actualizando archivo' });
         }
       }
 
       case 'DELETE': {
         try {
           const file = await File.findByPk(id);
-
           if (!file) {
             return res.status(404).json({ message: 'Archivo no encontrado' });
           }
 
-          // Eliminar el archivo del sistema de archivos local
+          const filePath = path.join(process.cwd(), 'public', file.filepath);
           try {
-            await fs.unlink(file.filepath); // Elimina el archivo físico
+            await fs.unlink(filePath);
           } catch (err) {
             console.error('Error eliminando archivo físico:', err);
           }
 
-          // Eliminar el registro de la base de datos
           await file.destroy();
-
           return res.status(200).json({ message: 'Archivo eliminado con éxito' });
         } catch (error) {
           console.error('Error eliminando archivo:', error);
-          return res.status(500).json({ message: 'Error eliminando el archivo' });
+          return res.status(500).json({ message: 'Error eliminando archivo' });
         }
       }
 
