@@ -24,10 +24,10 @@ export default async function handler(req, res) {
       attachments: [
         {
           filename: fileName,
-          path: `${process.env.NEXT_PUBLIC_BASE_URL || ''}${filePath}`, // URL del archivo
+          path: filePath.startsWith('http') ? filePath : `${process.env.NEXT_PUBLIC_BASE_URL}${filePath}`,
         },
       ],
-    };
+    };    
 
     try {
       await transporter.sendMail(mailOptions);

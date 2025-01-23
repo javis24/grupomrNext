@@ -1,10 +1,7 @@
-import formidable from 'formidable';
 import fs from 'fs/promises';
 import path from 'path';
 import File from '../../../models/MktFileModel';
-import { authenticateToken } from '../../../lib/auth'; // Importa correctamente aquí
-
-
+import { authenticateToken } from '../../../lib/auth';
 
 export default async function handler(req, res) {
   const { id } = req.query;
@@ -14,57 +11,37 @@ export default async function handler(req, res) {
     const { role: userRole, id: userId } = req.user;
 
     switch (method) {
-      case 'PUT': {
-        const { filename } = req.body;
-
-        if (!filename) {
-          return res.status(400).json({ message: 'El nombre del archivo es requerido' });
-        }
-
-        try {
-          const file = await File.findByPk(id);
-          if (!file) {
-            return res.status(404).json({ message: 'Archivo no encontrado' });
-          }
-
-          if (userRole === 'vendedor' && file.userId !== userId) {
-            return res.status(403).json({ message: 'No tienes permiso para actualizar este archivo' });
-          }
-
-          file.filename = filename;
-          await file.save();
-
-          return res.status(200).json({ message: 'Archivo actualizado con éxito', file });
-        } catch (error) {
-          console.error('Error actualizando archivo:', error);
-          return res.status(500).json({ message: 'Error actualizando archivo' });
-        }
-      }
-
       case 'DELETE': {
         try {
           const file = await File.findByPk(id);
+
           if (!file) {
             return res.status(404).json({ message: 'Archivo no encontrado' });
           }
 
-          const filePath = path.join(process.cwd(), 'public', file.filepath);
+          // Construir la ruta absoluta del archivo físico
+          const absoluteFilePath = path.join(process.cwd(), 'public', 'uploads', file.filename);
+
+          // Eliminar el archivo del sistema de archivos
           try {
-            await fs.unlink(filePath);
+            await fs.unlink(absoluteFilePath);
+            console.log(`Archivo eliminado: ${absoluteFilePath}`);
           } catch (err) {
             console.error('Error eliminando archivo físico:', err);
           }
 
+          // Eliminar el registro de la base de datos
           await file.destroy();
+
           return res.status(200).json({ message: 'Archivo eliminado con éxito' });
         } catch (error) {
           console.error('Error eliminando archivo:', error);
-          return res.status(500).json({ message: 'Error eliminando archivo' });
+          return res.status(500).json({ message: 'Error eliminando el archivo' });
         }
       }
 
       default:
-        res.setHeader('Allow', ['PUT', 'DELETE']);
+        res.setHeader('Allow', ['DELETE']);
         return res.status(405).json({ message: `Método ${method} no permitido` });
     }
   });
