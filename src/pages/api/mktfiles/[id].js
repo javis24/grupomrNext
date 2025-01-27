@@ -1,36 +1,43 @@
-import fs from 'fs/promises';
-import path from 'path';
+// /api/mktfiles/[id].js
+import { v2 as cloudinary } from 'cloudinary';
 import File from '../../../models/MktFileModel';
 import { authenticateToken } from '../../../lib/auth';
+
+// Configura Cloudinary (debes tener tus variables de entorno configuradas)
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export default async function handler(req, res) {
   const { id } = req.query;
 
   authenticateToken(req, res, async () => {
     const { method } = req;
-    const { role: userRole, id: userId } = req.user;
 
     switch (method) {
       case 'DELETE': {
         try {
+          // 1. Buscar el archivo en la base de datos
           const file = await File.findByPk(id);
 
           if (!file) {
             return res.status(404).json({ message: 'Archivo no encontrado' });
           }
 
-          // Construir la ruta absoluta del archivo físico
-          const absoluteFilePath = path.join(process.cwd(), 'public', 'uploads', file.filename);
-
-          // Eliminar el archivo del sistema de archivos
-          try {
-            await fs.unlink(absoluteFilePath);
-            console.log(`Archivo eliminado: ${absoluteFilePath}`);
-          } catch (err) {
-            console.error('Error eliminando archivo físico:', err);
+          // 2. Eliminar el archivo en Cloudinary (si tienes un campo publicId en tu modelo)
+          if (file.publicId) {
+            try {
+              await cloudinary.uploader.destroy(file.publicId);
+            } catch (cloudError) {
+              console.error('Error eliminando archivo en Cloudinary:', cloudError);
+              // Aquí decides si devuelves error o continúas. 
+              // Podrías continuar para eliminarlo de la BD de todos modos.
+            }
           }
 
-          // Eliminar el registro de la base de datos
+          // 3. Eliminar el registro de la base de datos
           await file.destroy();
 
           return res.status(200).json({ message: 'Archivo eliminado con éxito' });
@@ -42,7 +49,9 @@ export default async function handler(req, res) {
 
       default:
         res.setHeader('Allow', ['DELETE']);
-        return res.status(405).json({ message: `Método ${method} no permitido` });
+        return res
+          .status(405)
+          .json({ message: `Método ${method} no permitido` });
     }
   });
 }

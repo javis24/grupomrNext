@@ -1,70 +1,84 @@
+// /api/mktfiles/index.js
 import formidable from 'formidable';
-import fs from 'fs/promises';
-import path from 'path';
+import { v2 as cloudinary } from 'cloudinary';
 import File from '../../../models/MktFileModel';
 import { authenticateToken } from '../../../lib/auth';
 
+// Configurar Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// Para que Next.js no intente parsear el body
 export const config = {
   api: {
-    bodyParser: false, // Desactiva bodyParser para manejar archivos
+    bodyParser: false,
   },
 };
 
 export default async function handler(req, res) {
   const { method } = req;
 
-  authenticateToken(req, res, async () => {
-    const { id: userId } = req.user;
-
+  // Verificamos token antes de procesar
+  return authenticateToken(req, res, async () => {
     switch (method) {
       case 'POST': {
-        const uploadDir = path.join(process.cwd(), 'public/uploads'); // Carpeta donde se guardarán los archivos
-
+        // 1. Crear instancia de formidable (sin "new IncomingForm")
         const form = formidable({
+          maxFileSize: 10 * 1024 * 1024, // 10 MB
           keepExtensions: true,
-          uploadDir,
-          maxFileSize: 10 * 1024 * 1024, // Tamaño máximo del archivo: 10 MB
-          filename: (name, ext, part) => {
-            // Generar un nombre único para evitar colisiones
-            const uniqueName = `${Date.now()}-${part.originalFilename.replace(/\s+/g, '_')}`;
-            return uniqueName;
-          },
         });
 
+        // 2. Parsear la request
         form.parse(req, async (err, fields, files) => {
           if (err) {
             console.error('Error parsing file:', err);
-            return res.status(500).json({ message: 'Error al procesar el archivo' });
+            return res
+              .status(500)
+              .json({ message: 'Error al procesar el archivo' });
           }
 
-          const file = Array.isArray(files.file) ? files.file[0] : files.file;
+          // 3. Tomar el archivo subido (podría venir como files.file o similar)
+          const fileUploaded = Array.isArray(files.file)
+            ? files.file[0]
+            : files.file;
 
-          if (!file || !file.filepath) {
-            return res.status(400).json({ message: 'No se ha subido ningún archivo válido.' });
+          if (!fileUploaded) {
+            return res
+              .status(400)
+              .json({ message: 'No se subió ningún archivo válido.' });
           }
 
           try {
-            const uniqueFilename = path.basename(file.filepath); // Nombre único del archivo
-            const publicUrl = `/uploads/${uniqueFilename}`; // Genera la URL pública
+            // 4. Subir a Cloudinary
+            const uploadResult = await cloudinary.uploader.upload(
+              fileUploaded.filepath, 
+              {
+                folder: 'mis_pdfs',
+                resource_type: 'auto', // para pdf, imágenes, etc.
+              }
+            );
 
-            // Guarda el archivo en la base de datos
+            // 5. Guardar en la base de datos
+            //    Asumiendo que guardas filepath con `uploadResult.secure_url`
             const newFile = await File.create({
-              filename: uniqueFilename, // Guardamos el nombre único generado
-              originalFilename: file.originalFilename, // Guardamos el nombre original para referencia
-              filepath: publicUrl, // Guarda la URL pública
-              userId,
+              filename: uploadResult.original_filename,
+              originalFilename: fileUploaded.originalFilename,
+              filepath: uploadResult.secure_url,
+              userId: req.user.id, // si lo necesitas
             });
 
-            return res.status(201).json({ message: 'Archivo subido correctamente', file: newFile });
-          } catch (error) {
-            console.error('Error saving file:', error);
-
-            // Limpia el archivo temporal si ocurre un error
-            await fs.unlink(file.filepath).catch((unlinkErr) => {
-              console.error('Error deleting temporary file:', unlinkErr);
+            return res.status(201).json({
+              message: 'Archivo subido correctamente a Cloudinary',
+              file: newFile,
             });
-
-            return res.status(500).json({ message: 'Error al guardar el archivo' });
+          } catch (uploadError) {
+            console.error('Error subiendo a Cloudinary:', uploadError);
+            return res.status(500).json({
+              message: 'Error al subir el archivo a Cloudinary',
+            });
           }
         });
         break;
@@ -72,18 +86,8 @@ export default async function handler(req, res) {
 
       case 'GET': {
         try {
-          const files = await File.findAll({ where: { userId } });
-          if (!files.length) {
-            return res.status(404).json({ message: 'No se encontraron archivos.' });
-          }
-
-          // Devuelve la lista de archivos con la URL completa
-          return res.status(200).json(files.map((file) => ({
-            id: file.id,
-            filename: file.filename,
-            url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}${file.filepath}`, // Genera URL completa
-            createdAt: file.createdAt,
-          })));
+          const files = await File.findAll({ where: { userId: req.user.id } });
+          return res.status(200).json(files || []);
         } catch (error) {
           console.error('Error fetching files:', error);
           return res.status(500).json({ message: 'Error fetching files' });
@@ -92,7 +96,9 @@ export default async function handler(req, res) {
 
       default:
         res.setHeader('Allow', ['POST', 'GET']);
-        return res.status(405).json({ message: `Método ${method} no permitido` });
+        return res.status(405).json({
+          message: `Método ${method} no permitido`,
+        });
     }
   });
 }
