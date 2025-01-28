@@ -23,12 +23,14 @@ const SanoQuotationForm = () => {
   const [cotizacionNo, setCotizacionNo] = useState(1);
 
   useEffect(() => {
-    // Obtener el número de cotización del localStorage o inicializar en 1
-    const savedCotizacionNo = localStorage.getItem('cotizacionNo');
-    if (savedCotizacionNo) {
-      setCotizacionNo(parseInt(savedCotizacionNo, 10));
+    if (typeof window !== 'undefined') {
+      const savedCotizacionNo = window.localStorage.getItem('cotizacionNo');
+      if (savedCotizacionNo) {
+        setCotizacionNo(parseInt(savedCotizacionNo, 10));
+      }
     }
   }, []);
+  
 
   const handleChange = (e, index = null) => {
     const { name, value } = e.target;

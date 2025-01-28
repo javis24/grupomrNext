@@ -113,18 +113,13 @@ const CreateQuote = () => {
         ["ASIGNADO", clientData.assigned],
       ];
 
-      doc.autoTable({
+   doc.autoTable({
         body: clientDetails,
-        startY: 70,
-        theme: 'plain',
-        styles: {
-          cellPadding: 2,
-          fontSize: 8,
-        },
-        columnStyles: {
-          0: { halign: 'left', textColor: [0, 0, 0] },
-          1: { halign: 'right', textColor: [0, 0, 0] },
-        }
+        startY: 85,
+        theme: 'grid',
+        styles: { cellPadding: 2, fontSize: 8, halign: 'left'},
+        columnStyles: { 0: { cellWidth: 38 }, 1: { cellWidth: 50 }, 2: { cellWidth: 50 }, 3: { cellWidth: 50 } },
+        margin: { left: 10 }
       });
 
       // Tabla de servicios (dinámica)
