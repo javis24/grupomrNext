@@ -22,9 +22,19 @@ const Sales = db.define('Sales', {
         type: DataTypes.FLOAT,
         allowNull: false,
     },
+    previousSale: {
+        type: DataTypes.FLOAT,
+        allowNull: true,      
+        defaultValue: 0       
+      },
+    
+      unitName: {
+        type: DataTypes.STRING,
+        allowNull: true,     
+      }
 
 }, {
-    freezeTableName: true // Mantiene el nombre de la tabla tal cual
+    freezeTableName: true 
 });
 
 export default Sales;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react"; // Asegúrate de importar useCallback
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useTable } from "react-table";
 import { Bar } from "react-chartjs-2";
 import {
@@ -17,24 +17,39 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 export function ExcelBarChart() {
   const [tableData, setTableData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
-  const [newRow, setNewRow] = useState({ Año: "", Mes: "", Venta: "" });
+  
+  // Aquí agregamos los nuevos campos: "VentaAnterior" y "Unidad"
+  const [newRow, setNewRow] = useState({
+    Año: "",
+    Mes: "",
+    Venta: "",
+    VentaAnterior: "",
+    Unidad: ""
+  });
   const [editRow, setEditRow] = useState(null); // Para manejar la edición
   const [mesesSeleccionados, setMesesSeleccionados] = useState([]);
 
-  const meses = useMemo(() => [
-    { value: "ENERO", label: "Enero" },
-    { value: "FEBRERO", label: "Febrero" },
-    { value: "MARZO", label: "Marzo" },
-    { value: "ABRIL", label: "Abril" },
-    { value: "MAYO", label: "Mayo" },
-    { value: "JUNIO", label: "Junio" },
-    { value: "JULIO", label: "Julio" },
-    { value: "AGOSTO", label: "Agosto" },
-    { value: "SEPTIEMBRE", label: "Septiembre" },
-    { value: "OCTUBRE", label: "Octubre" },
-    { value: "NOVIEMBRE", label: "Noviembre" },
-    { value: "DICIEMBRE", label: "Diciembre" },
-  ], []);
+  // Estado para el porcentaje de proyección que el usuario escoge
+  const [projectionPercentage, setProjectionPercentage] = useState(15);
+
+  // Lista de meses (para el filtro)
+  const meses = useMemo(
+    () => [
+      { value: "ENERO", label: "Enero" },
+      { value: "FEBRERO", label: "Febrero" },
+      { value: "MARZO", label: "Marzo" },
+      { value: "ABRIL", label: "Abril" },
+      { value: "MAYO", label: "Mayo" },
+      { value: "JUNIO", label: "Junio" },
+      { value: "JULIO", label: "Julio" },
+      { value: "AGOSTO", label: "Agosto" },
+      { value: "SEPTIEMBRE", label: "Septiembre" },
+      { value: "OCTUBRE", label: "Octubre" },
+      { value: "NOVIEMBRE", label: "Noviembre" },
+      { value: "DICIEMBRE", label: "Diciembre" },
+    ],
+    []
+  );
 
   useEffect(() => {
     const fetchData = async () => {
@@ -58,6 +73,7 @@ export function ExcelBarChart() {
     fetchData();
   }, []);
 
+  // Maneja el cambio en los inputs (incluyendo los nuevos campos)
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     if (editRow) {
@@ -67,16 +83,20 @@ export function ExcelBarChart() {
     }
   };
 
+  // Agregar una nueva fila (POST) con los campos adicionales
   const addRow = async () => {
-    if (!newRow.Año || !newRow.Mes || !newRow.Venta) {
+    const { Año, Mes, Venta, VentaAnterior, Unidad } = newRow;
+    if (!Año || !Mes || !Venta || !VentaAnterior || !Unidad) {
       alert("Por favor, completa todos los campos antes de agregar.");
       return;
     }
 
     const newData = {
-      year: parseInt(newRow.Año, 10),
-      month: newRow.Mes.toUpperCase(),
-      sale: parseFloat(newRow.Venta),
+      year: parseInt(Año, 10),
+      month: Mes.toUpperCase(),
+      sale: parseFloat(Venta),           // Venta actual
+      previousSale: parseFloat(VentaAnterior), // Venta año anterior
+      unitName: Unidad                   // Unidad o nombre de la unidad
     };
 
     try {
@@ -91,14 +111,24 @@ export function ExcelBarChart() {
       }
 
       const savedData = await response.json();
+      // Agregamos el registro nuevo al estado
       setTableData((prev) => [...prev, savedData]);
       setFilteredData((prev) => [...prev, savedData]);
-      setNewRow({ Año: "", Mes: "", Venta: "" });
+
+      // Reseteamos el formulario
+      setNewRow({
+        Año: "",
+        Mes: "",
+        Venta: "",
+        VentaAnterior: "",
+        Unidad: ""
+      });
     } catch (error) {
       console.error("Error al guardar el dato:", error);
     }
   };
 
+  // Eliminar fila (DELETE)
   const deleteRow = useCallback(async (id) => {
     try {
       const response = await fetch("/api/sales/salestabla", {
@@ -118,32 +148,41 @@ export function ExcelBarChart() {
     }
   }, []);
 
+  // Editar fila (PUT) con los campos adicionales
   const editRowData = async () => {
-    if (!editRow.id || !editRow.Año || !editRow.Mes || !editRow.Venta) {
+    if (!editRow.id) {
+      alert("No se encontró el ID del registro a editar.");
+      return;
+    }
+
+    const { Año, Mes, Venta, VentaAnterior, Unidad, id } = editRow;
+    if (!Año || !Mes || !Venta || !VentaAnterior || !Unidad) {
       alert("Completa todos los campos antes de guardar.");
       return;
     }
-  
+
     const updatedData = {
-      id: editRow.id,
-      year: parseInt(editRow.Año, 10),
-      month: editRow.Mes.toUpperCase(),
-      sale: parseFloat(editRow.Venta),
+      id,
+      year: parseInt(Año, 10),
+      month: Mes.toUpperCase(),
+      sale: parseFloat(Venta),
+      previousSale: parseFloat(VentaAnterior),
+      unitName: Unidad
     };
-  
+
     try {
       const response = await fetch("/api/sales/salestabla", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedData),
       });
-  
+
       if (!response.ok) {
         throw new Error("Error al actualizar el registro");
       }
-  
+
       const updatedRecord = await response.json();
-  
+
       // Actualiza los datos en el estado
       setTableData((prev) =>
         prev.map((item) => (item.id === updatedRecord.id ? updatedRecord : item))
@@ -151,15 +190,15 @@ export function ExcelBarChart() {
       setFilteredData((prev) =>
         prev.map((item) => (item.id === updatedRecord.id ? updatedRecord : item))
       );
-  
+
       // Resetea la fila en edición
       setEditRow(null);
     } catch (error) {
       console.error("Error al actualizar el registro:", error);
     }
   };
-  
 
+  // Filtro de meses
   const aplicarFiltros = () => {
     if (mesesSeleccionados.length === 0) {
       alert("Por favor, selecciona al menos un mes.");
@@ -185,39 +224,45 @@ export function ExcelBarChart() {
     setMesesSeleccionados(seleccionados);
   };
 
-  const calcularProyeccion = (valor) => {
-    return valor * 0.15 + valor; // 15% adicional
-  };
+  // Cálculo de la proyección basado en la venta del año anterior
+  const calcularProyeccion = useCallback(
+    (ventaAnterior) => {
+      return ventaAnterior + ventaAnterior * (projectionPercentage / 100);
+    },
+    [projectionPercentage]
+  );
 
-  const datosConProyeccion = filteredData.map((row) => ({
-    ...row,
-    proyeccion: calcularProyeccion(row.sale),
-  }));
+  // Creamos un arreglo que incluye la venta anterior y su proyección
+  const datosConProyeccion = useMemo(() => {
+    return filteredData.map((row) => ({
+      ...row,
+      proyeccion: calcularProyeccion(row.previousSale || 0),
+    }));
+  }, [filteredData, calcularProyeccion]);
 
-  // Datos para la gráfica
+  // Datos para la gráfica: comparamos Venta del Año Anterior vs Proyección
   const chartData = useMemo(() => {
-    const labels = datosConProyeccion.map((row) => row.month);
-    const ventas2023 = datosConProyeccion.map((row) => row.sale);
-    const proyecciones = datosConProyeccion.map((row) =>
-      calcularProyeccion(row.sale)
-    );
+    const labels = datosConProyeccion.map((row) => `${row.month} (${row.unitName || 'Sin Unidad'})`);
+
+    const ventasAnioAnterior = datosConProyeccion.map((row) => row.previousSale || 0);
+    const proyecciones = datosConProyeccion.map((row) => row.proyeccion || 0);
 
     return {
       labels,
       datasets: [
         {
-          label: "2023",
-          data: ventas2023,
+          label: "Año Anterior",
+          data: ventasAnioAnterior,
           backgroundColor: "rgba(255, 99, 132, 0.5)",
         },
         {
-          label: "Proyección",
+          label: `Proyección (${projectionPercentage}%)`,
           data: proyecciones,
           backgroundColor: "rgba(54, 162, 235, 0.5)",
         },
       ],
     };
-  }, [datosConProyeccion]);
+  }, [datosConProyeccion, projectionPercentage]);
 
   const chartOptions = {
     responsive: true,
@@ -227,11 +272,12 @@ export function ExcelBarChart() {
       },
       title: {
         display: true,
-        text: "Proyección de Ventas por Mes",
+        text: "Proyección de Ventas Basada en Año Anterior",
       },
     },
   };
 
+  // Definimos las columnas (ahora con Unidad y Venta Año Anterior)
   const columns = useMemo(
     () => [
       {
@@ -243,12 +289,21 @@ export function ExcelBarChart() {
         accessor: "year",
       },
       {
-        Header: "Venta",
+        Header: "Unidad",
+        accessor: "unitName", // donde guardamos la unidad
+      },
+      {
+        Header: "Venta Actual",
         accessor: "sale",
         Cell: ({ value }) => `$ ${value ? value.toFixed(2) : "0.00"}`,
       },
       {
-        Header: "Proyección (15%)",
+        Header: "Venta Año Anterior",
+        accessor: "previousSale",
+        Cell: ({ value }) => `$ ${value ? value.toFixed(2) : "0.00"}`,
+      },
+      {
+        Header: `Proyección (${projectionPercentage}%)`,
         accessor: "proyeccion",
         Cell: ({ value }) => `$ ${value ? value.toFixed(2) : "0.00"}`,
       },
@@ -264,6 +319,8 @@ export function ExcelBarChart() {
                   Año: row.original.year,
                   Mes: row.original.month,
                   Venta: row.original.sale,
+                  VentaAnterior: row.original.previousSale,
+                  Unidad: row.original.unitName,
                 })
               }
             >
@@ -279,7 +336,7 @@ export function ExcelBarChart() {
         ),
       },
     ],
-    []
+    [projectionPercentage, deleteRow]
   );
 
   const tableInstance = useTable({
@@ -295,22 +352,22 @@ export function ExcelBarChart() {
       <h1 className="text-2xl font-bold mb-4">Tabla de Ventas con Filtros</h1>
 
       {/* Formulario para agregar filas */}
-      <div className="mb-4 flex gap-2 text-black">
+      <div className="mb-4 flex gap-2 text-black flex-wrap">
         <input
           type="number"
           name="Año"
           value={editRow ? editRow.Año : newRow.Año}
           onChange={handleInputChange}
           placeholder="Año"
-          className="border border-gray-300 p-1 text-sm rounded w-20"
+          className="border border-gray-300 p-1 text-sm rounded w-16"
         />
         <input
           type="text"
           name="Mes"
           value={editRow ? editRow.Mes : newRow.Mes}
           onChange={handleInputChange}
-          placeholder="Mes (ENERO, FEBRERO, etc.)"
-          className="border border-gray-300 p-1 text-sm rounded w-24"
+          placeholder="Mes (ENE, FEB, etc.)"
+          className="border border-gray-300 p-1 text-sm rounded w-20"
         />
         <input
           type="number"
@@ -318,35 +375,62 @@ export function ExcelBarChart() {
           name="Venta"
           value={editRow ? editRow.Venta : newRow.Venta}
           onChange={handleInputChange}
-          placeholder="Venta"
-          className="border border-gray-300 p-1 text-sm rounded w-28"
+          placeholder="Venta Actual"
+          className="border border-gray-300 p-1 text-sm rounded w-24"
+        />
+        <input
+          type="number"
+          step="0.01"
+          name="VentaAnterior"
+          value={editRow ? editRow.VentaAnterior : newRow.VentaAnterior}
+          onChange={handleInputChange}
+          placeholder="Venta Año Ant."
+          className="border border-gray-300 p-1 text-sm rounded w-24"
+        />
+        <input
+          type="text"
+          name="Unidad"
+          value={editRow ? editRow.Unidad : newRow.Unidad}
+          onChange={handleInputChange}
+          placeholder="Unidad"
+          className="border border-gray-300 p-1 text-sm rounded w-24"
         />
         {editRow ? (
-          <button
-            className="bg-green-500 text-white px-3 py-1"
-            onClick={editRowData}
-          >
-            Guardar
-          </button>
+          <>
+            <button className="bg-green-500 text-white px-3 py-1" onClick={editRowData}>
+              Guardar
+            </button>
+            <button
+              className="bg-red-500 text-white px-3 py-1"
+              onClick={() => setEditRow(null)}
+            >
+              Cancelar
+            </button>
+          </>
         ) : (
-          <button
-            className="bg-blue-500 text-white px-3 py-1"
-            onClick={addRow}
-          >
+          <button className="bg-blue-500 text-white px-3 py-1" onClick={addRow}>
             Agregar
-          </button>
-        )}
-        {editRow && (
-          <button
-            className="bg-red-500 text-white px-3 py-1"
-            onClick={() => setEditRow(null)}
-          >
-            Cancelar
           </button>
         )}
       </div>
 
-      {/* Filtros por selección múltiple */}
+      {/* Select para cambiar el porcentaje de proyección */}
+      <div className="mb-4 text-black">
+        <label className="mr-2 font-bold">Proyección:</label>
+        <select
+          value={projectionPercentage}
+          onChange={(e) => setProjectionPercentage(Number(e.target.value))}
+          className="border border-gray-300 p-1 text-sm rounded"
+        >
+          <option value={5}>5%</option>
+          <option value={10}>10%</option>
+          <option value={15}>15%</option>
+          <option value={20}>20%</option>
+          <option value={25}>25%</option>
+        </select>
+      </div>
+
+      {/* Filtros por selección múltiple (Meses) */}
       <div className="mb-4">
         <div className="mb-2 flex flex-wrap gap-2">
           {mesesSeleccionados.map((mes) => (
@@ -379,7 +463,10 @@ export function ExcelBarChart() {
             Filtrar
           </button>
           <button
-            onClick={() => setMesesSeleccionados([])}
+            onClick={() => {
+              setMesesSeleccionados([]);
+              setFilteredData(tableData); // Volvemos a mostrar todos
+            }}
             className="bg-red-500 text-white px-3 py-1 rounded text-sm"
           >
             Limpiar Selección
@@ -392,7 +479,7 @@ export function ExcelBarChart() {
         <Bar data={chartData} options={chartOptions} />
       </div>
 
-      {/* Tabla con los datos filtrados */}
+      {/* Tabla con los datos */}
       <div className="mb-4 w-full max-w-4xl">
         <table
           {...getTableProps()}
