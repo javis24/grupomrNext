@@ -298,15 +298,23 @@ const handleImageChange = (index, e) => {
   
   
 
-  // Filtra los reportes según search, fechas, etc.
-const filteredReports = salesReports.filter((report) => {
-  const matchesSearch = report.clienteProveedorProspecto
-    ?.toLowerCase()
-    .includes(search.toLowerCase());
-  const matchesDate = (!startDate || new Date(report.createdAt) >= new Date(startDate)) &&
-                      (!endDate || new Date(report.createdAt) <= new Date(endDate));
-  return matchesSearch && matchesDate;
-});
+  const filteredReports = salesReports.filter((report) => {
+    // Convertimos el texto de búsqueda a minúsculas
+    const text = search.toLowerCase();
+  
+    // matchesSearch será true si el texto aparece en clienteProveedorProspecto O en empresa
+    const matchesSearch =
+      report.clienteProveedorProspecto?.toLowerCase().includes(text) ||
+      report.empresa?.toLowerCase().includes(text);
+  
+    const matchesDate =
+      (!startDate || new Date(report.createdAt) >= new Date(startDate)) &&
+      (!endDate || new Date(report.createdAt) <= new Date(endDate));
+  
+    return matchesSearch && matchesDate;
+  });
+  
+  
 
 // Cálculo para la paginación
 const indexOfLastReport = currentPage * REPORTS_PER_PAGE;
