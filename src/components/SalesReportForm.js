@@ -56,7 +56,13 @@ export default function SalesReportList() {
   const [image, setImage] = useState(null);
   const [imageUrl, setImageUrl] = useState('');
 
-  const handleImageChange = (index, e) => {
+  // Cantidad de reportes por página
+const REPORTS_PER_PAGE = 5; // Ajusta según lo que necesites
+
+// Estado que controla la página actual
+const [currentPage, setCurrentPage] = useState(1);
+
+const handleImageChange = (index, e) => {
     const updatedReportsList = [...reportsList];
     const selectedImage = e.target.files[0];
     updatedReportsList[index].image = selectedImage;
@@ -292,12 +298,30 @@ export default function SalesReportList() {
   
   
 
-  const filteredReports = salesReports.filter((report) => {
-    const matchesSearch = report.clienteProveedorProspecto?.toLowerCase().includes(search.toLowerCase());
-    const matchesDate = (!startDate || new Date(report.createdAt) >= new Date(startDate)) &&
-                        (!endDate || new Date(report.createdAt) <= new Date(endDate));
-    return matchesSearch && matchesDate;
-  });
+  // Filtra los reportes según search, fechas, etc.
+const filteredReports = salesReports.filter((report) => {
+  const matchesSearch = report.clienteProveedorProspecto
+    ?.toLowerCase()
+    .includes(search.toLowerCase());
+  const matchesDate = (!startDate || new Date(report.createdAt) >= new Date(startDate)) &&
+                      (!endDate || new Date(report.createdAt) <= new Date(endDate));
+  return matchesSearch && matchesDate;
+});
+
+// Cálculo para la paginación
+const indexOfLastReport = currentPage * REPORTS_PER_PAGE;
+const indexOfFirstReport = indexOfLastReport - REPORTS_PER_PAGE;
+
+// Este es el slice de reportes que se va a mostrar en la tabla
+const currentReports = filteredReports.slice(indexOfFirstReport, indexOfLastReport);
+
+// Cantidad total de páginas
+const totalPages = Math.ceil(filteredReports.length / REPORTS_PER_PAGE);
+
+
+
+
+
   const exportReportToPDF = (report) => {
     const doc = new jsPDF();
     const imgUrl = '/logo_mr.png';
@@ -452,7 +476,7 @@ export default function SalesReportList() {
               </tr>
             </thead>
             <tbody>
-              {filteredReports.map((report) => (
+              {currentReports.map((report) => (
                 <tr key={report.id} className="hover:bg-[#374151]">
                   <td className="px-4 py-2">{report.clienteProveedorProspecto}</td>
                   <td className="px-4 py-2">{report.empresa}</td>
