@@ -117,9 +117,10 @@ const CreateQuote = () => {
         body: clientDetails,
         startY: 85,
         theme: 'grid',
-        styles: { cellPadding: 2, fontSize: 8, halign: 'left'},
-        columnStyles: { 0: { cellWidth: 38 }, 1: { cellWidth: 50 }, 2: { cellWidth: 50 }, 3: { cellWidth: 50 } },
-        margin: { left: 10 }
+        headStyles: {
+          fillColor: [255, 204, 0],
+          textColor: 0,
+        },
       });
 
       // Tabla de servicios (dinámica)
