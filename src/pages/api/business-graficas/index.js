@@ -70,7 +70,7 @@ export default async function handler(req, res) {
       const savedFile = await BusinessUnitReport.create({
         name: file.originalname,
         total: jsonData.reduce((acc, item) => acc + (item["Total Vendido"] || 0), 0),
-        fileData: file.filename,
+        fileData: file.filename, // Guardar solo el nombre del archivo
         userId: 1, // Cambiar según el usuario autenticado
       });
 
@@ -83,8 +83,21 @@ export default async function handler(req, res) {
       console.error("Error al procesar el archivo:", error);
       return res.status(500).json({ message: "Error al procesar el archivo", error: error.message });
     }
+  } else if (req.method === "GET") {
+    try {
+      // Obtener la lista de archivos desde la base de datos
+      const reports = await BusinessUnitReport.findAll({
+        attributes: ["id", "name", "createdAt"],
+        order: [["createdAt", "DESC"]],
+      });
+
+      return res.status(200).json(reports);
+    } catch (error) {
+      console.error("Error al obtener los reportes:", error);
+      return res.status(500).json({ message: "Error al obtener los reportes", error: error.message });
+    }
   } else {
-    res.setHeader("Allow", ["POST"]);
+    res.setHeader("Allow", ["POST", "GET"]);
     return res.status(405).json({ message: `Método ${req.method} no permitido` });
   }
 }
