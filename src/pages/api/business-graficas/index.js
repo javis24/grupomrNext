@@ -4,10 +4,13 @@ import fs from "fs";
 import * as XLSX from "xlsx";
 import BusinessUnitReport from "../../../models/BusinessUnitReport";
 
-// Configuración de Multer para guardar en /tmp
+// Configuración de Multer
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadPath = "/tmp"; // Directorio temporal de Vercel
+    const uploadPath = path.join(process.cwd(), "tmp"); // Ruta relativa al proyecto
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true }); // Crear la carpeta si no existe
+    }
     cb(null, uploadPath);
   },
   filename: function (req, file, cb) {
@@ -45,11 +48,17 @@ export default async function handler(req, res) {
         return res.status(400).json({ message: "No se proporcionó un archivo" });
       }
 
-      // Ruta completa del archivo en /tmp
-      const filePath = path.join("/tmp", file.filename);
+      // Ruta completa del archivo
+      const filePath = path.join(process.cwd(), "tmp", file.filename);
       console.log("Archivo guardado en:", filePath);
 
-      // Leer el archivo Excel desde /tmp
+      // Verificar si el archivo existe
+      if (!fs.existsSync(filePath)) {
+        console.error("El archivo no se guardó correctamente.");
+        return res.status(500).json({ message: "Error al guardar el archivo" });
+      }
+
+      // Leer el archivo Excel
       const workbook = XLSX.readFile(filePath);
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
@@ -57,14 +66,11 @@ export default async function handler(req, res) {
 
       console.log("Datos procesados del archivo:", jsonData);
 
-      // Calcular el total
-      const total = jsonData.reduce((acc, item) => acc + (item["Total Vendido"] || 0), 0);
-
       // Guardar en la base de datos
       const savedFile = await BusinessUnitReport.create({
         name: file.originalname,
-        total,
-        fileData: file.filename, // Solo guardamos el nombre del archivo, no la ruta completa
+        total: jsonData.reduce((acc, item) => acc + (item["Total Vendido"] || 0), 0),
+        fileData: file.filename,
         userId: 1, // Cambiar según el usuario autenticado
       });
 
@@ -77,23 +83,8 @@ export default async function handler(req, res) {
       console.error("Error al procesar el archivo:", error);
       return res.status(500).json({ message: "Error al procesar el archivo", error: error.message });
     }
-  } else if (req.method === "GET") {
-    try {
-      // Obtener la lista de archivos
-      const reports = await BusinessUnitReport.findAll({
-        attributes: ["id", "name", "createdAt"],
-        order: [["createdAt", "DESC"]],
-      });
-
-      return res.status(200).json(reports);
-    } catch (error) {
-      console.error("Error al obtener los reportes:", error);
-      return res
-        .status(500)
-        .json({ message: "Error al obtener los reportes", error: error.message });
-    }
   } else {
-    res.setHeader("Allow", ["POST", "GET"]);
+    res.setHeader("Allow", ["POST"]);
     return res.status(405).json({ message: `Método ${req.method} no permitido` });
   }
 }

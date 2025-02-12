@@ -14,7 +14,7 @@ export default async function handler(req, res) {
       }
 
       // Construir la ruta completa del archivo
-      const filePath = path.join(process.cwd(), "public", report.fileData);
+      const filePath = path.join("/tmp", report.fileData);
       console.log("Intentando eliminar archivo en:", filePath);
 
       // Eliminar archivo físico si existe
@@ -31,7 +31,7 @@ export default async function handler(req, res) {
       console.error("Error al eliminar el archivo:", error.message);
       return res.status(500).json({ message: "Error al eliminar el archivo", error: error.message });
     }
-  }  if (req.method === "GET") {
+  } else if (req.method === "GET") {
     try {
       // Buscar el registro en la base de datos
       const report = await BusinessUnitReport.findOne({ where: { id } });
