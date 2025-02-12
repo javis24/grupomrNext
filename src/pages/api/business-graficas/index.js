@@ -48,9 +48,8 @@ export default async function handler(req, res) {
         return res.status(400).json({ message: "No se proporcionó un archivo" });
       }
 
-      // Ruta completa del archivo
-      const filePath = path.join(process.cwd(), "tmp", file.filename);
-      console.log("Archivo guardado en:", filePath);
+      const filePath = path.join("/tmp", report.fileData); // Usa barras normales
+      console.log("Ruta del archivo:", filePath);
 
       // Verificar si el archivo existe
       if (!fs.existsSync(filePath)) {
