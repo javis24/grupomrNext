@@ -156,7 +156,7 @@ const CreateQuote = () => {
        doc.rect(14, doc.lastAutoTable.finalY + 60, 182, 10, 'F');
        doc.text("DETALLES ADICIONALES", 105, doc.lastAutoTable.finalY + 67, null, 'center');
  
-       doc.text(detallesAdicionales || "No hay detalles adicionales.", 105, doc.lastAutoTable.finalY + 75, { align: 'center' }); 
+       doc.text(detallesAdicionales || "No hay detalles adicionales.", 105, doc.lastAutoTable.finalY + 73, { align: 'center' }); 
 
        // Pie de página
        doc.setFontSize(8);
