@@ -4,20 +4,21 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 export default function Chat() {
-  const [clients, setClients] = useState([]); // Lista de clientes
-  const [selectedClient, setSelectedClient] = useState(null); // Cliente seleccionado
-  const [message, setMessage] = useState(''); // Mensaje a enviar
-  const [loading, setLoading] = useState(false); // Estado de carga
-  const [response, setResponse] = useState(null); // Respuesta de la API
+  const [clients, setClients] = useState([]);
+  const [filteredClients, setFilteredClients] = useState([]);
+  const [selectedClient, setSelectedClient] = useState(null);
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [response, setResponse] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // Obtener la lista de clientes desde la API
   useEffect(() => {
     const fetchClients = async () => {
       try {
-        const token = localStorage.getItem('token'); // Obtener el token del almacenamiento local
+        const token = localStorage.getItem('token');
         const res = await axios.get('/api/clients/namesPhones', {
           headers: {
-            Authorization: `Bearer ${token}`, // Agregar el token en el encabezado
+            Authorization: `Bearer ${token}`,
           },
         });
         setClients(res.data);
@@ -27,14 +28,25 @@ export default function Chat() {
     };
     fetchClients();
   }, []);
-  
-  
+
+  useEffect(() => {
+    if (searchTerm) {
+      const filtered = clients.filter(
+        (client) =>
+          client.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          client.contactPhone.includes(searchTerm)
+      );
+      setFilteredClients(filtered);
+    } else {
+      setFilteredClients([]); // No mostrar clientes si no hay búsqueda
+    }
+  }, [searchTerm, clients]);
 
   const handleClientSelect = (e) => {
-    const selectedId = e.target.value; // Obtener el ID del cliente seleccionado
+    const selectedId = e.target.value;
     const client = clients.find((client) => client.id.toString() === selectedId);
     setSelectedClient(client);
-    setResponse(null); // Limpiar cualquier respuesta previa
+    setResponse(null);
   };
 
   const handleSubmit = async (e) => {
@@ -64,23 +76,48 @@ export default function Chat() {
       <main className="flex-1 p-6">
         <h1 className="text-2xl font-bold mb-4">Enviar Mensaje por WhatsApp</h1>
 
-        {/* Select para Todos los Clientes */}
+        {/* Buscador */}
         <div className="mb-4">
-          <label htmlFor="clients" className="block text-sm font-medium mb-2">
-            Seleccionar Cliente:
-          </label>
-          <select
-            id="clients"
-            onChange={handleClientSelect}
+          <input
+            type="text"
+            placeholder="Buscar por nombre o teléfono"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full p-2 rounded-md border border-gray-700 bg-[#1c2534] text-white focus:ring-2 focus:ring-indigo-500"
-          >
-            <option value="">-- Selecciona un Cliente --</option>
-            {clients.map((client) => (
-              <option key={client.id} value={client.id}>
-                {client.fullName}
-              </option>
-            ))}
-          </select>
+          />
+        </div>
+
+        {/* Tabla de Clientes */}
+        <div className="mb-4 overflow-x-auto">
+          <table className="min-w-full bg-[#1c2534] rounded-md">
+            <thead>
+              <tr>
+                <th className="py-2 px-4 border-b">Nombre</th>
+                <th className="py-2 px-4 border-b">WhatsApp</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredClients.map((client) => (
+                <tr key={client.id}>
+                  <td className="py-2 px-4 border-b">{client.fullName}</td>
+                  <td className="py-2 px-4 border-b">
+                    {client.contactPhone ? (
+                      <a
+                        href={`https://wa.me/${client.contactPhone}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 hover:underline"
+                      >
+                        {client.contactPhone}
+                      </a>
+                    ) : (
+                      'Sin número'
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
 
         {/* Detalles del Cliente Seleccionado */}
