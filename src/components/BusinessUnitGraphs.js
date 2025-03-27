@@ -116,29 +116,32 @@ export default function BusinessUnitGraphs() {
   };
 
 
-  const downloadFile = async (fileId) => {
+  const downloadFile = async (fileId, fallbackName = "archivo.xlsx") => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(`/api/business-graficas/${fileId}`, {
         headers: { Authorization: `Bearer ${token}` },
-        responseType: "blob", // Para manejar archivos binarios
+        responseType: "blob",
       });
   
-      const fileName = response.headers["content-disposition"]
-        ?.split("filename=")[1]
-        ?.replace(/"/g, ""); // Extraer el nombre del archivo del encabezado
+      const fileName =
+        response.headers["content-disposition"]
+          ?.split("filename=")[1]
+          ?.replace(/"/g, "") || fallbackName;
+  
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", fileName || "archivo.xlsx"); // Usar el nombre del archivo si está disponible
+      link.setAttribute("download", fileName);
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      link.remove();
     } catch (error) {
       console.error("Error al descargar el archivo:", error.response?.data || error.message);
       alert("Error al descargar el archivo");
     }
   };
+  
     
   const handleDelete = async (fileId) => {
     try {
@@ -224,7 +227,7 @@ export default function BusinessUnitGraphs() {
                         onClick={() => downloadFile(file.id, file.name)}
                         className="bg-blue-500 text-white p-1 rounded hover:bg-blue-600"
                       >
-                        Descargar
+                        Descargarr
                       </button>
                       <button
                         onClick={() => handleDelete(file.id)}

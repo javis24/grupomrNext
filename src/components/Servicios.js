@@ -287,9 +287,23 @@ export default function ServiceList() {
     };
   };
   
-  const filteredServices = services.filter((service) =>
-    service.programacion?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredServices = services.filter((service) => {
+    const searchTerm = search.toLowerCase();
+    return (
+      service.contactName?.toLowerCase().includes(searchTerm) ||
+      service.programacion?.toLowerCase().includes(searchTerm) ||
+      service.equipo?.toLowerCase().includes(searchTerm) ||
+      service.numeroEconomico?.toLowerCase().includes(searchTerm) ||
+      service.contenido?.toLowerCase().includes(searchTerm) ||
+      service.manifiesto?.toLowerCase().includes(searchTerm) ||
+      service.ubicacion?.toLowerCase().includes(searchTerm) ||
+      service.rfc?.toLowerCase().includes(searchTerm) ||
+      service.contacto?.toLowerCase().includes(searchTerm) ||
+      service.telefono?.toLowerCase().includes(searchTerm) ||
+      service.email?.toLowerCase().includes(searchTerm)
+    );
+  });
+  
 // Paginación
 const indexOfLastItem = currentPage * itemsPerPage;
 const indexOfFirstItem = indexOfLastItem - itemsPerPage;

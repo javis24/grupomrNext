@@ -16,7 +16,7 @@
     "axios": "^1.7.5",
     "bcryptjs": "^2.4.3",
     "chart.js": "^4.4.4",
-    "cloudinary": "^2.5.1",
+    "cloudinary": "^2.6.0",
     "date-fns": "^3.6.0",
     "dotenv": "^16.4.5",
     "formidable": "^3.5.2",
@@ -45,6 +45,7 @@
     "react-toastify": "^11.0.2",
     "sequelize": "^6.37.3",
     "socket.io-client": "^4.7.5",
+    "streamifier": "^0.1.1",
     "uuid": "^11.0.3",
     "whatsapp-web.js": "^1.26.0",
     "xlsx": "^0.18.5"
