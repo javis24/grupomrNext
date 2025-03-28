@@ -50,7 +50,7 @@ export default function Sidebar() {
  const canViewCalendario = ['mgaliano@grupomrlaguna.com', 'Hdelbosque@grupomrlaguna.com', 'gustavosalgado@grupomrlaguna.com', 'luispatino@grupomrlaguna.com'].includes(userEmail);
  const canViewChat = ['mgaliano@grupomrlaguna.com', 'Hdelbosque@grupomrlaguna.com', 'gustavosalgado@grupomrlaguna.com', 'luispatino@grupomrlaguna.com'].includes(userEmail);
  const canViewIncidencias = ['mgaliano@grupomrlaguna.com', 'Hdelbosque@grupomrlaguna.com', 'gustavosalgado@grupomrlaguna.com', 'luispatino@grupomrlaguna.com'].includes(userEmail);
- const hasTotalAccess = ['coordinadora@grupomrlaguna.com', 'facturacion@grupomrlaguna.com'].includes(userEmail);
+ const hasTotalAccess = ['coordinadora@grupomrlaguna.com', 'facturacion@grupomrlaguna.com', 'mgaliano@grupomrlaguna.com'].includes(userEmail);
  const hasPDF = ['tarimas@grupomrlaguna.com', 'logistica@grupomrlaguna.com'].includes(userEmail);
  const canViewAsesores = ['direccion@grupomrlaguna.com', 'coordinadora@grupomrlaguna.com'].includes(userEmail); 
 
