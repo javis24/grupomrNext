@@ -214,19 +214,21 @@ export function ExcelBarChart() {
     let datosFiltrados = tableData;
   
     if (mesesSeleccionados.length > 0) {
-      datosFiltrados = datosFiltrados.filter((row) =>
-        mesesSeleccionados.includes(row.month.toUpperCase())
-      );
+      datosFiltrados = datosFiltrados.filter((row) => {
+        const mes = (row.month || "").toUpperCase().trim();
+        return mesesSeleccionados.includes(mes);
+      });
     }
   
     if (unidadSeleccionada !== "") {
       datosFiltrados = datosFiltrados.filter(
-        (row) => row.unitName === unidadSeleccionada
+        (row) => (row.unitName || "").trim().toUpperCase() === unidadSeleccionada.trim().toUpperCase()
       );
     }
   
     setFilteredData(datosFiltrados);
   };
+  
 
   const handleMesesSeleccionados = (e) => {
     const seleccionados = Array.from(
@@ -462,8 +464,9 @@ export function ExcelBarChart() {
         >
           {meses.map((mes) => (
             <option key={mes.value} value={mes.value}>
-              {mes.label}
-            </option>
+            {mes.label}
+          </option>
+          
           ))}
         </select>
 
