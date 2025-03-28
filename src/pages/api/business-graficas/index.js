@@ -60,7 +60,11 @@ export default async function handler(req, res) {
       const workbook = XLSX.read(file.buffer, { type: "buffer" });
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+        range: 1,
+        header: ["Unidad", "Total Vendido"], 
+      });
+      
 
       // Subir a Cloudinary
       const cloudinaryResult = await uploadToCloudinary(file.buffer, file.originalname);
