@@ -17,6 +17,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 export function ExcelBarChart() {
   const [tableData, setTableData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
+  const [unidadSeleccionada, setUnidadSeleccionada] = useState("");
   
   // Aquí agregamos los nuevos campos: "VentaAnterior" y "Unidad"
   const [newRow, setNewRow] = useState({
@@ -72,6 +73,10 @@ export function ExcelBarChart() {
 
     fetchData();
   }, []);
+
+  
+
+
 
   // Maneja el cambio en los inputs (incluyendo los nuevos campos)
   const handleInputChange = (e) => {
@@ -199,20 +204,27 @@ export function ExcelBarChart() {
   };
 
   // Filtro de meses
+
+  const unidadesUnicas = useMemo(() => {
+    const todas = tableData.map((row) => row.unitName);
+    return [...new Set(todas.filter(Boolean))]; // Quitar duplicados y vacíos
+  }, [tableData]);
+
   const aplicarFiltros = () => {
-    if (mesesSeleccionados.length === 0) {
-      alert("Por favor, selecciona al menos un mes.");
-      return;
+    let datosFiltrados = tableData;
+  
+    if (mesesSeleccionados.length > 0) {
+      datosFiltrados = datosFiltrados.filter((row) =>
+        mesesSeleccionados.includes(row.month.toUpperCase())
+      );
     }
-
-    const datosFiltrados = tableData.filter((row) =>
-      mesesSeleccionados.includes(row.month.toUpperCase())
-    );
-
-    if (datosFiltrados.length === 0) {
-      alert("No hay datos que coincidan con los meses seleccionados.");
+  
+    if (unidadSeleccionada !== "") {
+      datosFiltrados = datosFiltrados.filter(
+        (row) => row.unitName === unidadSeleccionada
+      );
     }
-
+  
     setFilteredData(datosFiltrados);
   };
 
@@ -241,28 +253,28 @@ export function ExcelBarChart() {
   }, [filteredData, calcularProyeccion]);
 
   // Datos para la gráfica: comparamos Venta del Año Anterior vs Proyección
-  const chartData = useMemo(() => {
-    const labels = datosConProyeccion.map((row) => `${row.month} (${row.unitName || 'Sin Unidad'})`);
-
-    const ventasAnioAnterior = datosConProyeccion.map((row) => row.previousSale || 0);
-    const proyecciones = datosConProyeccion.map((row) => row.proyeccion || 0);
-
-    return {
-      labels,
-      datasets: [
-        {
-          label: "Año Anterior",
-          data: ventasAnioAnterior,
-          backgroundColor: "rgba(255, 99, 132, 0.5)",
-        },
-        {
-          label: `Proyección (${projectionPercentage}%)`,
-          data: proyecciones,
-          backgroundColor: "rgba(54, 162, 235, 0.5)",
-        },
-      ],
-    };
-  }, [datosConProyeccion, projectionPercentage]);
+        const chartData = useMemo(() => {
+        const labels = datosConProyeccion.map((row) => `${row.month} (${row.unitName || 'Sin Unidad'})`);
+        const ventasActuales = datosConProyeccion.map((row) => row.sale || 0);
+        const ventasAnioAnterior = datosConProyeccion.map((row) => row.previousSale || 0);
+      
+        return {
+          labels,
+          datasets: [
+            {
+              label: "Año Anterior",
+              data: ventasAnioAnterior,
+              backgroundColor: "rgba(255, 99, 132, 0.5)",
+            },
+            {
+              label: "Venta Actual",
+              data: ventasActuales,
+              backgroundColor: "rgba(54, 162, 235, 0.5)",
+            },
+          ],
+        };
+      }, [datosConProyeccion]);
+  
 
   const chartOptions = {
     responsive: true,
@@ -456,12 +468,25 @@ export function ExcelBarChart() {
         </select>
 
         <div className="mt-2 flex gap-2">
-          <button
-            onClick={aplicarFiltros}
-            className="bg-green-500 text-white px-3 py-1 rounded text-sm"
+        <label className="text-white mr-2">Planta / Unidad:</label>
+          <select
+            className="border border-gray-300 p-1 text-sm rounded text-black"
+            value={unidadSeleccionada}
+            onChange={(e) => setUnidadSeleccionada(e.target.value)}
           >
-            Filtrar
-          </button>
+            <option value="">Todas</option>
+            {unidadesUnicas.map((unidad, index) => (
+              <option key={index} value={unidad}>
+                {unidad}
+              </option>
+            ))}
+          </select>
+          <button
+          onClick={aplicarFiltros}
+          className="bg-green-500 text-white px-3 py-1 rounded text-sm"
+        >
+          Filtrar
+        </button>
           <button
             onClick={() => {
               setMesesSeleccionados([]);
@@ -474,6 +499,21 @@ export function ExcelBarChart() {
         </div>
       </div>
 
+      {(unidadSeleccionada || mesesSeleccionados.length > 0) && (
+          <div className="text-white mb-4 text-sm">
+            <span className="mr-4">
+              <strong>Filtros activos:</strong>
+            </span>
+            {unidadSeleccionada && (
+              <span className="mr-4">Unidad: <b>{unidadSeleccionada}</b></span>
+            )}
+            {mesesSeleccionados.length > 0 && (
+              <span>
+                Meses: <b>{mesesSeleccionados.join(", ")}</b>
+              </span>
+            )}
+          </div>
+        )}
       {/* Gráfica */}
       <div className="mb-8 w-full max-w-4xl">
         <Bar data={chartData} options={chartOptions} />
