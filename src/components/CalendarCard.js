@@ -39,7 +39,7 @@ useEffect(() => {
       const citaDate = new Date(cita.date);
       const diff = (citaDate - now) / (1000 * 60 * 60 * 24); // diferencia en días
       return (
-        cita.assignedTo?.id === userId && // Solo las que le asignaron
+        cita.assignedUser?.id === userId && 
         diff >= 0 && diff <= 2
       );
     });
@@ -55,44 +55,7 @@ useEffect(() => {
 }, [appointments]);
 
 
-useEffect(() => {
-  const token = localStorage.getItem('token');
-  if (!token || appointments.length === 0) return;
-
-  const decoded = jwt.decode(token);
-  const userId = decoded?.id;
-  const now = new Date();
-  const proximas = appointments.filter((cita) => {
-    const citaDate = new Date(cita.date);
-    const diff = (citaDate - now) / (1000 * 60 * 60 * 24);
-    return diff >= 0 && diff <= 2;
-  });
-  
-
-if (proximas.length > 0) {
-  proximas.forEach((cita) => {
-    toast.info(`Tienes una cita próxima el ${new Date(cita.date).toLocaleDateString()} con ${cita.clientName}`);
-  });
-}
-
-  const twoHoursLater = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-
-  const citaProxima = appointments.find(
-    (cita) =>
-      cita.user?.id === userId &&
-      new Date(cita.date) >= now &&
-      new Date(cita.date) <= twoHoursLater
-  );
-
-  if (citaProxima) {
-    alert(
-      `🔔 Tienes una cita próxima a las ${new Date(citaProxima.date).toLocaleTimeString()} con estatus: ${citaProxima.clientStatus}`
-    );
-  }
-}, [appointments]);
-
-
-useEffect(() => {
+  useEffect(() => {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
