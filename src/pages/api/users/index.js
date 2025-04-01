@@ -1,6 +1,6 @@
 import Users from '../../../models/UserModel';
 import { authenticateToken } from '../../../lib/auth';
-import bcrypt from 'bcryptjs'; // Para hashear las contraseñas
+import bcrypt from 'bcryptjs';
 import { Op } from 'sequelize';
 
 export default async function handler(req, res) {

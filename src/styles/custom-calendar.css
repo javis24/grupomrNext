@@ -22,3 +22,7 @@
     color: red !important; /* Colorear fines de semana en rojo */
   }
   
+  .bg-white {
+    --tw-bg-opacity: 1;
+    background-color: rgb(29 99 58);
+}

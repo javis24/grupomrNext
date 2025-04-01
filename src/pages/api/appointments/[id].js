@@ -20,9 +20,9 @@ export default async function handler(req, res) {
         break;
 
       case 'PUT':
-        const { date, clientName, clientStatus } = req.body;
+        const { date, clientName, clientStatus, assignedTo } = req.body;
 
-        if (!date || !clientName || !clientStatus) {
+        if (!date || !clientName || !clientStatus || !assignedTo) {
           return res.status(400).json({ message: "Todos los campos son necesarios" });
         }
 
@@ -33,6 +33,7 @@ export default async function handler(req, res) {
           appointment.date = date;
           appointment.clientName = clientName;
           appointment.clientStatus = clientStatus;
+          appointment.assignedTo = assignedTo;
 
           await appointment.save();
           res.status(200).json({ message: "Cita actualizada con éxito", appointment });

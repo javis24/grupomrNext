@@ -5,6 +5,10 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import '../styles/custom-calendar.css';
 
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+
 
 // Cargar Calendar de manera diferida para optimizar el tiempo de carga
 const Calendar = lazy(() => import('react-calendar'));
@@ -18,6 +22,91 @@ const CalendarCard = () => {
   const [editingAppointment, setEditingAppointment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+const [users, setUsers] = useState([]);
+const [selectedUser, setSelectedUser] = useState('');
+
+useEffect(() => {
+  const notifyUpcomingAppointments = () => {
+    const token = localStorage.getItem('token');
+    if (!token || appointments.length === 0) return;
+
+    const decoded = jwt.decode(token);
+    const userId = decoded?.id;
+    const now = new Date();
+
+    const proximas = appointments.filter((cita) => {
+      const citaDate = new Date(cita.date);
+      const diff = (citaDate - now) / (1000 * 60 * 60 * 24); // diferencia en días
+      return (
+        cita.assignedTo?.id === userId && // Solo las que le asignaron
+        diff >= 0 && diff <= 2
+      );
+    });
+
+    proximas.forEach((cita) => {
+      toast.info(`🔔 Tienes una cita próxima el ${new Date(cita.date).toLocaleDateString()} con ${cita.clientName}`, {
+        autoClose: 5000,
+      });
+    });
+  };
+
+  notifyUpcomingAppointments();
+}, [appointments]);
+
+
+useEffect(() => {
+  const token = localStorage.getItem('token');
+  if (!token || appointments.length === 0) return;
+
+  const decoded = jwt.decode(token);
+  const userId = decoded?.id;
+  const now = new Date();
+  const proximas = appointments.filter((cita) => {
+    const citaDate = new Date(cita.date);
+    const diff = (citaDate - now) / (1000 * 60 * 60 * 24);
+    return diff >= 0 && diff <= 2;
+  });
+  
+
+if (proximas.length > 0) {
+  proximas.forEach((cita) => {
+    toast.info(`Tienes una cita próxima el ${new Date(cita.date).toLocaleDateString()} con ${cita.clientName}`);
+  });
+}
+
+  const twoHoursLater = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+
+  const citaProxima = appointments.find(
+    (cita) =>
+      cita.user?.id === userId &&
+      new Date(cita.date) >= now &&
+      new Date(cita.date) <= twoHoursLater
+  );
+
+  if (citaProxima) {
+    alert(
+      `🔔 Tienes una cita próxima a las ${new Date(citaProxima.date).toLocaleTimeString()} con estatus: ${citaProxima.clientStatus}`
+    );
+  }
+}, [appointments]);
+
+
+useEffect(() => {
+  const fetchUsers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.get('/api/users', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUsers(res.data);
+    } catch (error) {
+      console.error('Error cargando usuarios:', error);
+    }
+  };
+
+  fetchUsers();
+}, []);
 
   // Cargar citas desde la API y evitar cargar más de una vez si ya tenemos los datos
   useEffect(() => {
@@ -54,26 +143,37 @@ const CalendarCard = () => {
   const handleAddAppointment = useCallback(async () => {
     const token = localStorage.getItem('token');
     if (!token) return alert('No se encontró el token');
-
-    if (!clientName || !clientStatus) return alert('Por favor, rellena todos los campos');
-
+  
+    if (!clientName || !clientStatus || !selectedUser) {
+      return alert('Por favor, rellena todos los campos incluyendo el usuario');
+    }
+  
     try {
       const response = await axios.post(
         '/api/appointments',
-        { date: date.toISOString(), clientName, clientStatus },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+        {
+          date: date.toISOString(),
+          clientName,
+          clientStatus,
+          assignedTo: parseInt(selectedUser),
 
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+  
       if (response.status === 201) {
-        setAppointments((prevAppointments) => [...prevAppointments, response.data]);
+        setAppointments((prev) => [...prev, response.data]);
         setClientName('');
         setClientStatus('');
-        console.log('Cita creada con éxito');
+        setSelectedUser('');
       }
     } catch (error) {
       console.error('Error creando la cita:', error);
     }
-  }, [date, clientName, clientStatus]);
+  }, [date, clientName, clientStatus, selectedUser]);
+  
 
   // Función de edición de citas
   const handleEditAppointment = useCallback(async (id) => {
@@ -162,6 +262,7 @@ const CalendarCard = () => {
       <p><strong>Fecha:</strong> {new Date(appointment.date).toLocaleDateString()}</p>
       <p><strong>Nombre del cliente:</strong> {appointment.clientName}</p>
       <p><strong>Status:</strong> {appointment.clientStatus}</p>
+      <p><strong>Asesor asignado:</strong> {appointment.assignedUser?.name || 'No asignado'}</p>
       <button onClick={() => onEdit(appointment.id)} className="bg-yellow-400 text-white p-2 rounded hover:bg-yellow-600 mr-2">Editar</button>
       <button onClick={() => onDelete(appointment.id)} className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 mr-2">Eliminar</button>
       <button onClick={() => onExport(appointment)} className="bg-green-500 text-white p-2 rounded hover:bg-green-600">Exportar a PDF</button>
@@ -174,12 +275,24 @@ const CalendarCard = () => {
         <h2 className="text-2xl font-bold mb-4">Calendario</h2>
         <Suspense fallback={<div>Loading calendar...</div>}>
           <div className="w-full mb-4">
-            <Calendar onChange={setDate} value={date} locale="es-ES" className="bg-white rounded-md shadow-md w-full" />
+            <Calendar onChange={setDate} value={date} locale="es-ES" className="bg-white rounded-md shadow-md w-full text-black" />
           </div>
         </Suspense>
         <div className="flex flex-col gap-2">
           <input type="text" placeholder="Nombre del cliente" value={clientName} onChange={(e) => setClientName(e.target.value)} className="w-full p-3 mb-2 rounded bg-[#374151] text-white" />
           <input type="text" placeholder="Status" value={clientStatus} onChange={(e) => setClientStatus(e.target.value)} className="w-full p-3 mb-2 rounded bg-[#374151] text-white" />
+          <select
+                value={selectedUser}
+                onChange={(e) => setSelectedUser(e.target.value)}
+                className="w-full p-3 mb-2 rounded bg-[#374151] text-white"
+              >
+                <option value="">Seleccionar Usuario</option>
+                {users.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name}
+                  </option>
+                ))}
+              </select>
           {editingAppointment ? (
             <button onClick={() => handleEditAppointment(editingAppointment.id)} className="w-full bg-yellow-500 text-white p-3 rounded hover:bg-yellow-600">Update Appointment</button>
           ) : (
@@ -209,9 +322,11 @@ const CalendarCard = () => {
           )}
         </div>
       </div>
+      <ToastContainer position="top-right" autoClose={5000} hideProgressBar newestOnTop />
     </div>
   );
 };
+
 
 CalendarCard.displayName = "CalendarCard";
 

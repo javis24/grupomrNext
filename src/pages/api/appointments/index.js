@@ -6,47 +6,56 @@ export default async function handler(req, res) {
   const { method } = req;
 
   authenticateToken(req, res, async () => {
-    const { role, id: userId } = req.user;
+    const { role, id: loggedUserId } = req.user;
 
     try {
       switch (method) {
         case 'GET': {
           const queryOptions = {
-            attributes: ['id', 'date', 'clientName', 'clientStatus'], // Evitar enviar todos los atributos
+            attributes: ['id', 'date', 'clientName', 'clientStatus', 'assignedTo'],
             include: [
               {
                 model: Users,
-                as: 'user',
+                as: 'user', // quien creó la cita
                 attributes: ['id', 'name', 'email'],
               },
-            ],
+              {
+                model: Users,
+                as: 'assignedUser', // asesor asignado
+                attributes: ['id', 'name', 'email'],
+              },
+            ],            
           };
-
-          if (role === 'vendedor') {
-            queryOptions.where = { userId };
+        
+          if (role !== 'admin') {
+            // Si NO es admin, solo ver las citas asignadas a ese usuario
+            queryOptions.where = { assignedTo: loggedUserId };
           }
-
+        
           const appointments = await Appointments.findAll(queryOptions);
-
+        
           if (!appointments || appointments.length === 0) {
             return res.status(204).json({ message: 'No appointments found' });
           }
-
+        
           return res.status(200).json(appointments);
         }
+        
+        
 
         case 'POST': {
-          const { date, clientName, clientStatus } = req.body;
+          const { date, clientName, clientStatus, assignedTo } = req.body;
 
-          if (!date || !clientName || !clientStatus) {
-            return res.status(400).json({ message: 'Required fields are missing' });
+          if (!date || !clientName || !clientStatus || !assignedTo) {
+            return res.status(400).json({ message: 'Todos los campos son requeridos' });
           }
 
           const newAppointment = await Appointments.create({
             date,
             clientName,
             clientStatus,
-            userId,
+            assignedTo,
+            userId: loggedUserId, // quien la creó
           });
 
           return res.status(201).json(newAppointment);

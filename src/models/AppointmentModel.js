@@ -17,6 +17,18 @@ const Appointments = db.define('appointments', {
         type: DataTypes.STRING,
         allowNull: false,
     },
+    assignedTo: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: Users,
+          key: 'id',
+        }
+      },      
+      notified: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+      },      
     userId: {
         type: DataTypes.INTEGER,
         allowNull: false,
@@ -31,5 +43,7 @@ const Appointments = db.define('appointments', {
 
 Users.hasMany(Appointments);
 Appointments.belongsTo(Users, { foreignKey: 'userId' });
+Appointments.belongsTo(Users, { foreignKey: 'assignedTo', as: 'assignedUser' });
+
 
 export default Appointments;
