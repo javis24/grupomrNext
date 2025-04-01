@@ -1,15 +1,14 @@
-// src/pages/reportes-unidad-negocio.js
 import Sidebar from '@/components/Sidebar';
-import { ExcelBarChart } from '@/components/ExcelBarChart'; // Importar el componente ExcelBarChart
+import BusinessUnitGraphs from '@/components/BusinessUnitGraphs';
 import '../app/globals.css';
 
 
-export default function ReporteMensual() {
+export default function GraficasReportes() {
   return (
     <div className="flex min-h-screen bg-[#0e1624] text-white">
       <Sidebar />
       <main className="flex-1 p-0">
-      <ExcelBarChart />
+      <BusinessUnitGraphs />
       </main>
     </div>
   );

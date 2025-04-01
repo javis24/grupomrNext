@@ -96,6 +96,13 @@ export default function Sidebar() {
               </Link>
             </li>
           )}
+           {(canViewReportesUnidadNegocio || canViewReportesMensuales   || hasTotalAccess) && (
+        <li className="mb-4">
+              <Link href="graficas-reportes" className="flex items-center p-2 rounded hover:bg-[#374151]">
+                {!isCollapsed && 'Gráficas Reportes'}
+              </Link>
+            </li>
+          )}
           {(canViewCalendario || hasTotalAccess) && (
             <li className="mb-4">
               <Link href="/calendario" className="flex items-center p-2 rounded hover:bg-[#374151]">
