@@ -45,21 +45,38 @@ export default async function handler(req, res) {
 
         case 'POST': {
           const { date, clientName, clientStatus, assignedTo } = req.body;
-
+        
           if (!date || !clientName || !clientStatus || !assignedTo) {
             return res.status(400).json({ message: 'Todos los campos son requeridos' });
           }
-
+        
           const newAppointment = await Appointments.create({
             date,
             clientName,
             clientStatus,
             assignedTo,
-            userId: loggedUserId, // quien la creó
+            userId: loggedUserId,
           });
-
-          return res.status(201).json(newAppointment);
+        
+          // Recargar con relaciones
+          const fullAppointment = await Appointments.findByPk(newAppointment.id, {
+            include: [
+              {
+                model: Users,
+                as: 'user',
+                attributes: ['id', 'name', 'email'],
+              },
+              {
+                model: Users,
+                as: 'assignedUser',
+                attributes: ['id', 'name', 'email'],
+              },
+            ],
+          });
+        
+          return res.status(201).json(fullAppointment);
         }
+        
 
         default:
           res.setHeader('Allow', ['GET', 'POST']);
