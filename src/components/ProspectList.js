@@ -254,6 +254,18 @@ export default function ProspectList() {
     setModalIsOpen(true);
   };
 
+  const getProspectStatusColor = (createdAt) => {
+    const createdDate = new Date(createdAt);
+    const today = new Date();
+    const diffTime = Math.abs(today - createdDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+    if (diffDays < 14) return 'bg-green-500';      // Menos de 2 semanas
+    else if (diffDays >= 14 && diffDays <= 30) return 'bg-yellow-500';  // Entre 2 semanas y 1 mes
+    else return 'bg-red-500';                      // Más de 1 mes
+  };
+  
+
   const handleConvertClick = (prospect) => {
     setNewClient({
       fullName: prospect.contactName || "",
@@ -268,6 +280,12 @@ export default function ProspectList() {
       planta: "",
       producto: "",
       assignedUser: "",
+      billingContactName: "",
+      billingPhone: "",
+      billingEmail: "",
+      usoCFDI: "",
+      paymentMethod: "",
+      paymentConditions: "",
     });
     setEditingProspect(prospect);
     setModalType("convertToClient");
@@ -347,10 +365,14 @@ export default function ProspectList() {
       key={prospect.id}
       className="p-4 mb-2 bg-[#1f2937] rounded shadow-md flex justify-between items-center"
     >
-      <div>
-        <h3 className="text-xl font-bold">{prospect.contactName}</h3>
-        <p>Empresa: {prospect.company}</p>
-        <p>Proceso de venta: {prospect.saleProcess}</p>
+      <div className="flex items-center space-x-4">
+        <div className={`w-4 h-4 rounded-full ${getProspectStatusColor(prospect.createdAt)}`}></div>
+        <div>
+          <h3 className="text-xl font-bold">{prospect.contactName}</h3>
+          <p>Empresa: {prospect.company}</p>
+          <p>Proceso de venta: {prospect.saleProcess}</p>
+          <p>Fecha de creación: {new Date(prospect.createdAt).toLocaleDateString('es-MX')}</p>
+        </div>
       </div>
       <div className="flex items-center space-x-2">
         <button
@@ -377,6 +399,7 @@ export default function ProspectList() {
     </div>
   ))}
 </div>
+
 
   
        {/* Modal reutilizado para crear o editar prospecto */}
