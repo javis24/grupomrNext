@@ -83,14 +83,15 @@ export default function ProspectList() {
       doc.setTextColor(0, 0, 0);
       doc.text("LISTA DE PROSPECTOS", 105, 57, null, 'center');
   
-      const tableColumn = ["NOMBRE", "EMPRESA", "TELÉFONO", "EMAIL", "VENTA"];
+      const tableColumn = ["NOMBRE", "EMPRESA", "TELÉFONO", "EMAIL", "PROCESO DE VENTA", "STATUS CLIENTE"];
   
       const tableRows = prospects.map(p => [
         p.contactName || '',
         p.company || '',
         p.phone || '',
         p.email || '',
-        p.saleProcess || ''
+        p.saleProcess || '',
+        p.createdAt || ''
       ]);
   
       doc.autoTable({
@@ -101,11 +102,13 @@ export default function ProspectList() {
         headStyles: { fillColor: [255, 204, 0], textColor: 0 },
         styles: { fontSize: 10, halign: 'center' },
         columnStyles: {
-          0: { cellWidth: 40 },
-          1: { cellWidth: 40 },
+          0: { cellWidth: 20 },
+          1: { cellWidth: 30 },
           2: { cellWidth: 30 },
           3: { cellWidth: 50 },
-          4: { cellWidth: 30 },
+          4: { cellWidth: 20 },
+          5: { cellWidth: 25 },
+          
         },
       });
   
@@ -139,6 +142,7 @@ export default function ProspectList() {
         ["TELÉFONO", prospect.phone],
         ["EMAIL", prospect.email],
         ["PROCESO DE VENTA", prospect.saleProcess],
+        ["STATUS CLIENTE", prospect.createdAt],
       ];
   
       doc.autoTable({
