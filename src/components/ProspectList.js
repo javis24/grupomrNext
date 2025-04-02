@@ -342,41 +342,42 @@ export default function ProspectList() {
 
 
       <div className="w-full max-w-4xl mt-6">
-        {prospects.map((prospect) => (
-          <div
-            key={prospect.id}
-            className="p-4 mb-2 bg-[#1f2937] rounded shadow-md flex justify-between items-center"
-          >
-            <div>
-              <h3 className="text-xl font-bold">{prospect.contactName}</h3>
-              <p>Empresa: {prospect.company}</p>
-              <p>Proceso de venta: {prospect.saleProcess}</p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => handleEdit(prospect)}
-                className="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600"
-              >
-                Editar
-              </button>
-              <button
-                onClick={() => exportSingleProspectToPDF(prospect)}
-                className="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600"
-              >
-                Exportar PDF
-              </button>
-              {prospect.saleProcess === "Cerrado" && (
-                <button
-                  onClick={() => handleConvertClick(prospect)}
-                  className="bg-green-500 text-white p-2 rounded hover:bg-green-600"
-                >
-                  Convertir a Cliente
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
+  {filteredProspects.map((prospect) => (
+    <div
+      key={prospect.id}
+      className="p-4 mb-2 bg-[#1f2937] rounded shadow-md flex justify-between items-center"
+    >
+      <div>
+        <h3 className="text-xl font-bold">{prospect.contactName}</h3>
+        <p>Empresa: {prospect.company}</p>
+        <p>Proceso de venta: {prospect.saleProcess}</p>
       </div>
+      <div className="flex items-center space-x-2">
+        <button
+          onClick={() => handleEdit(prospect)}
+          className="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600"
+        >
+          Editar
+        </button>
+        <button
+          onClick={() => exportSingleProspectToPDF(prospect)}
+          className="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600"
+        >
+          Exportar PDF
+        </button>
+        {prospect.saleProcess === "Cerrado" && (
+          <button
+            onClick={() => handleConvertClick(prospect)}
+            className="bg-green-500 text-white p-2 rounded hover:bg-green-600"
+          >
+            Convertir a Cliente
+          </button>
+        )}
+      </div>
+    </div>
+  ))}
+</div>
+
   
        {/* Modal reutilizado para crear o editar prospecto */}
        {modalType && (
@@ -485,156 +486,183 @@ export default function ProspectList() {
         >
           <h2 className="text-2xl font-bold mb-4">Convertir a Cliente</h2>
           <form onSubmit={handleClientSave}>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <label className="block text-white">Razón Social</label>
-                <input
-                  type="text"
-                  value={newClient.fullName}
-                  onChange={(e) =>
-                    setNewClient({ ...newClient, fullName: e.target.value })
-                  }
-                  className="w-full p-2 rounded bg-[#1f2937] text-white"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-white">Nombre de Empresa</label>
-                <input
-                  type="text"
-                  value={newClient.companyName}
-                  onChange={(e) =>
-                    setNewClient({ ...newClient, companyName: e.target.value })
-                  }
-                  className="w-full p-2 rounded bg-[#1f2937] text-white"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-white">Teléfono de Empresa</label>
-                <input
-                  type="text"
-                  value={newClient.companyPhone}
-                  onChange={(e) =>
-                    setNewClient({ ...newClient, companyPhone: e.target.value })
-                  }
-                  className="w-full p-2 rounded bg-[#1f2937] text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-white">Giro de Negocios</label>
-                <input
-                  type="text"
-                  value={newClient.businessTurn}
-                  onChange={(e) =>
-                    setNewClient({ ...newClient, businessTurn: e.target.value })
-                  }
-                  className="w-full p-2 rounded bg-[#1f2937] text-white"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-white">Dirección</label>
-                <input
-                  type="text"
-                  value={newClient.address}
-                  onChange={(e) =>
-                    setNewClient({ ...newClient, address: e.target.value })
-                  }
-                  className="w-full p-2 rounded bg-[#1f2937] text-white"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-white">Nombre de Contacto</label>
-                <input
-                  type="text"
-                  value={newClient.contactName}
-                  onChange={(e) =>
-                    setNewClient({ ...newClient, contactName: e.target.value })
-                  }
-                  className="w-full p-2 rounded bg-[#1f2937] text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-white">Teléfono de Contacto</label>
-                <input
-                  type="text"
-                  value={newClient.contactPhone}
-                  onChange={(e) =>
-                    setNewClient({ ...newClient, contactPhone: e.target.value })
-                  }
-                  className="w-full p-2 rounded bg-[#1f2937] text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-white">Email</label>
-                <input
-                  type="email"
-                  value={newClient.email}
-                  onChange={(e) =>
-                    setNewClient({ ...newClient, email: e.target.value })
-                  }
-                  className="w-full p-2 rounded bg-[#1f2937] text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-white">Departamento</label>
-                <input
-                  type="text"
-                  value={newClient.position}
-                  onChange={(e) =>
-                    setNewClient({ ...newClient, position: e.target.value })
-                  }
-                  className="w-full p-2 rounded bg-[#1f2937] text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-white">Planta</label>
-                <input
-                  type="text"
-                  value={newClient.planta}
-                  onChange={(e) =>
-                    setNewClient({ ...newClient, planta: e.target.value })
-                  }
-                  className="w-full p-2 rounded bg-[#1f2937] text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-white">Producto</label>
-                <input
-                  type="text"
-                  value={newClient.producto}
-                  onChange={(e) =>
-                    setNewClient({ ...newClient, producto: e.target.value })
-                  }
-                  className="w-full p-2 rounded bg-[#1f2937] text-white"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-white">Usuario Asignado</label>
-                <select
-                  value={newClient.assignedUser}
-                  onChange={(e) =>
-                    setNewClient({ ...newClient, assignedUser: e.target.value })
-                  }
-                  className="w-full p-2 rounded bg-[#1f2937] text-white"
-                  required
-                >
-                  <option value="">Selecciona un usuario</option>
-                  {activeUsers.map((user) => (
-                    <option key={user.id} value={user.email}>
-                      {user.name} ({user.email})
-                    </option>
-                  ))}
-                </select>
-              </div>
+      <div className="grid grid-cols-5 gap-4">
+        <div>
+          <label className="block text-white">Razón Social</label>
+          <input
+            type="text"
+            value={newClient.fullName}
+            onChange={(e) => setNewClient({ ...newClient, fullName: e.target.value })}
+            className="w-full p-2 rounded bg-[#1f2937] text-white"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-white">Nombre de Empresa</label>
+          <input
+            type="text"
+            value={newClient.companyName}
+            onChange={(e) => setNewClient({ ...newClient, companyName: e.target.value })}
+            className="w-full p-2 rounded bg-[#1f2937] text-white"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-white">Teléfono de Empresa</label>
+          <input
+            type="text"
+            value={newClient.companyPhone}
+            onChange={(e) => setNewClient({ ...newClient, companyPhone: e.target.value })}
+            className="w-full p-2 rounded bg-[#1f2937] text-white"
+          />
+        </div>
+        <div>
+          <label className="block text-white">Giro de Negocios</label>
+          <input
+            type="text"
+            value={newClient.businessTurn}
+            onChange={(e) => setNewClient({ ...newClient, businessTurn: e.target.value })}
+            className="w-full p-2 rounded bg-[#1f2937] text-white"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-white">Dirección</label>
+          <input
+            type="text"
+            value={newClient.address}
+            onChange={(e) => setNewClient({ ...newClient, address: e.target.value })}
+            className="w-full p-2 rounded bg-[#1f2937] text-white"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-white">Nombre de Contacto</label>
+          <input
+            type="text"
+            value={newClient.contactName}
+            onChange={(e) => setNewClient({ ...newClient, contactName: e.target.value })}
+            className="w-full p-2 rounded bg-[#1f2937] text-white"
+          />
+        </div>
+        <div>
+          <label className="block text-white">Teléfono de Contacto</label>
+          <input
+            type="text"
+            value={newClient.contactPhone}
+            onChange={(e) => setNewClient({ ...newClient, contactPhone: e.target.value })}
+            className="w-full p-2 rounded bg-[#1f2937] text-white"
+          />
+        </div>
+        <div>
+          <label className="block text-white">Email</label>
+          <input
+            type="email"
+            value={newClient.email}
+            onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
+            className="w-full p-2 rounded bg-[#1f2937] text-white"
+          />
+        </div>
+        <div>
+          <label className="block text-white">Departamento</label>
+          <input
+            type="text"
+            value={newClient.position}
+            onChange={(e) => setNewClient({ ...newClient, position: e.target.value })}
+            className="w-full p-2 rounded bg-[#1f2937] text-white"
+          />
+        </div>
+        <div>
+          <label className="block text-white">Planta</label>
+          <input
+            type="text"
+            value={newClient.planta}
+            onChange={(e) => setNewClient({ ...newClient, planta: e.target.value })}
+            className="w-full p-2 rounded bg-[#1f2937] text-white"
+          />
+        </div>
+        <div>
+          <label className="block text-white">Producto</label>
+          <input
+            type="text"
+            value={newClient.producto}
+            onChange={(e) => setNewClient({ ...newClient, producto: e.target.value })}
+            className="w-full p-2 rounded bg-[#1f2937] text-white"
+            required
+          />
+        </div>
+        <div>
+          <label className="block text-white">Usuario Asignado</label>
+          <select
+            value={newClient.assignedUser}
+            onChange={(e) => setNewClient({ ...newClient, assignedUser: e.target.value })}
+            className="w-full p-2 rounded bg-[#1f2937] text-white"
+            required
+          >
+            <option value="">Selecciona un usuario</option>
+            {activeUsers.map((user) => (
+              <option key={user.id} value={user.email}>
+                {user.name} ({user.email})
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-white">Nombre de contacto de facturación</label>
+          <input
+            type="text"
+            value={newClient.billingContactName}
+            onChange={(e) => setNewClient({ ...newClient, billingContactName: e.target.value })}
+            className="w-full p-2 rounded bg-[#1f2937] text-white"
+          />
+        </div>
+        <div>
+          <label className="block text-white">Teléfono de facturación</label>
+          <input
+            type="text"
+            value={newClient.billingPhone}
+            onChange={(e) => setNewClient({ ...newClient, billingPhone: e.target.value })}
+            className="w-full p-2 rounded bg-[#1f2937] text-white"
+          />
+        </div>
+        <div>
+          <label className="block text-white">Email de facturación</label>
+          <input
+            type="email"
+            value={newClient.billingEmail}
+            onChange={(e) => setNewClient({ ...newClient, billingEmail: e.target.value })}
+            className="w-full p-2 rounded bg-[#1f2937] text-white"
+          />
+        </div>
+        <div>
+          <label className="block text-white">Uso CFDI</label>
+          <input
+            type="text"
+            value={newClient.usoCFDI}
+            onChange={(e) => setNewClient({ ...newClient, usoCFDI: e.target.value })}
+            className="w-full p-2 rounded bg-[#1f2937] text-white"
+          />
+        </div>
+        <div>
+              <label className="block text-white mb-2">Método de pago</label>
+              <input
+                type="text"
+                value={newClient.paymentMethod}
+                onChange={(e) => setNewClient({ ...newClient, paymentMethod: e.target.value })}
+                className="w-full p-2 rounded bg-[#1f2937] text-white"
+              />
             </div>
-            <button
-              type="submit"
-              className="bg-blue-500 text-white p-2 rounded mt-4"
-            >
+            <div>
+              <label className="block text-white mb-2">Condiciones de pago</label>
+              <input
+                type="text"
+                value={newClient.paymentConditions}
+                onChange={(e) => setNewClient({ ...newClient, paymentConditions: e.target.value })}
+                className="w-full p-2 rounded bg-[#1f2937] text-white"
+              />
+            </div>
+        </div>
+            <button type="submit" className="bg-blue-500 text-white p-2 rounded mt-4">
               Guardar
             </button>
           </form>
