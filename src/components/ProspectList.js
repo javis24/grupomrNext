@@ -4,6 +4,9 @@ import Modal from "react-modal";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+import jsPDF from 'jspdf'; // Importamos jsPDF
+import 'jspdf-autotable'; // Para la tabla
+
 const customStyles = {
   content: {
     top: "50%",
@@ -18,6 +21,7 @@ const customStyles = {
     padding: "20px",
   },
 };
+
 
 const initialClientState = {
   fullName: "",
@@ -48,6 +52,121 @@ export default function ProspectList() {
   });
   const [editingProspect, setEditingProspect] = useState(null);
   const [newClient, setNewClient] = useState(initialClientState);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchProcess, setSearchProcess] = useState("");
+
+
+
+  const exportAllProspectsToPDF = (prospects) => {
+    if (!prospects || prospects.length === 0) {
+      toast.warn("No hay prospectos para exportar.");
+      return;
+    }
+  
+    const doc = new jsPDF();
+    const imgUrl = '/logo_mr.png';
+    const image = new Image();
+    image.src = imgUrl;
+  
+    image.onload = () => {
+      doc.addImage(image, 'PNG', 20, 10, 40, 40);
+      doc.setFontSize(12);
+      doc.text("Materiales Reutilizables S.A. de C.V.", 105, 20, { align: 'center' });
+      doc.text("Benito Juarez 112 SUR, Col. 1ro de Mayo", 105, 27, { align: 'center' });
+      doc.text("Cd. Lerdo, Dgo. C.P. 35169", 105, 32, { align: 'center' });
+      doc.text("MRE040121UBA", 105, 37, { align: 'center' });
+  
+      doc.setFontSize(14);
+      doc.setFillColor(255, 204, 0);
+      doc.rect(14, 50, 182, 10, 'F');
+      doc.setTextColor(0, 0, 0);
+      doc.text("LISTA DE PROSPECTOS", 105, 57, null, 'center');
+  
+      const tableColumn = ["NOMBRE", "EMPRESA", "TELÉFONO", "EMAIL", "VENTA"];
+  
+      const tableRows = prospects.map(p => [
+        p.contactName || '',
+        p.company || '',
+        p.phone || '',
+        p.email || '',
+        p.saleProcess || ''
+      ]);
+  
+      doc.autoTable({
+        head: [tableColumn],
+        body: tableRows,
+        startY: 65,
+        theme: 'grid',
+        headStyles: { fillColor: [255, 204, 0], textColor: 0 },
+        styles: { fontSize: 10, halign: 'center' },
+        columnStyles: {
+          0: { cellWidth: 40 },
+          1: { cellWidth: 40 },
+          2: { cellWidth: 30 },
+          3: { cellWidth: 50 },
+          4: { cellWidth: 30 },
+        },
+      });
+  
+      doc.save('prospectos.pdf');
+    };
+  };  
+  
+  const exportSingleProspectToPDF = (prospect) => {
+    const doc = new jsPDF();
+    const imgUrl = '/logo_mr.png';
+    const image = new Image();
+    image.src = imgUrl;
+  
+    image.onload = () => {
+      doc.addImage(image, 'PNG', 20, 10, 20, 20);
+      doc.setFontSize(12);
+      doc.text("Materiales Reutilizables S.A. de C.V.", 105, 20, { align: 'center' });
+      doc.text("Benito Juarez 112 SUR, Col. 1ro de Mayo", 105, 27, { align: 'center' });
+      doc.text("Cd. Lerdo, Dgo. C.P. 35169", 105, 32, { align: 'center' });
+      doc.text("MRE040121UBA", 105, 37, { align: 'center' });
+  
+      doc.setFontSize(14);
+      doc.setFillColor(255, 204, 0);
+      doc.rect(160, 20, 40, 10, 'F');
+      doc.setTextColor(0, 0, 0);
+      doc.text("PROSPECTO", 180, 27, null, 'center');
+  
+      const details = [
+        ["NOMBRE", prospect.contactName],
+        ["EMPRESA", prospect.company],
+        ["TELÉFONO", prospect.phone],
+        ["EMAIL", prospect.email],
+        ["PROCESO DE VENTA", prospect.saleProcess],
+      ];
+  
+      doc.autoTable({
+        body: details,
+        startY: 50,
+        theme: 'plain',
+        styles: {
+          cellPadding: 1,
+          fontSize: 10,
+          lineWidth: 0.1,
+        },
+        columnStyles: {
+          0: { halign: 'left', textColor: [0, 0, 0], cellWidth: 60 },
+          1: { halign: 'left', textColor: [0, 0, 0], cellWidth: 100 },
+        },
+      });
+  
+      doc.save(`${prospect.contactName}_prospecto.pdf`);
+    };
+  };
+
+  const filteredProspects = prospects.filter((p) => {
+    const nameMatch = p.contactName.toLowerCase().includes(searchTerm.toLowerCase());
+    const processMatch = p.saleProcess.toLowerCase().includes(searchProcess.toLowerCase());
+    return nameMatch && processMatch;
+  });
+
+
 
   useEffect(() => {
     fetchProspects();
@@ -192,14 +311,36 @@ export default function ProspectList() {
   return (
     <div className="p-4 bg-[#0e1624] text-white min-h-screen flex flex-col items-center">
       <h1 className="text-3xl font-bold mb-4">Avances de Prospectos</h1>
-      <div className="flex space-x-4 mb-6">
+      <div className="flex flex-col md:flex-row gap-4 w-full max-w-4xl mb-4">
+        <input
+          type="text"
+          placeholder="Buscar por nombre"
+          className="p-2 rounded bg-[#1f2937] text-white w-full"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <input
+          type="text"
+          placeholder="Buscar por proceso de venta"
+          className="p-2 rounded bg-[#1f2937] text-white w-full"
+          value={searchProcess}
+          onChange={(e) => setSearchProcess(e.target.value)}
+        />
+        <button
+          onClick={() => exportAllProspectsToPDF(prospects)}
+          className="bg-red-500 text-white p-2 rounded hover:bg-red-600 w-full md:w-auto"
+        >
+          Exportar Todo a PDF
+        </button>
         <button
           onClick={handleCreateProspect}
-          className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
+          className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 w-full md:w-auto"
         >
           Crear Prospecto
         </button>
       </div>
+
+
       <div className="w-full max-w-4xl mt-6">
         {prospects.map((prospect) => (
           <div
@@ -217,6 +358,12 @@ export default function ProspectList() {
                 className="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600"
               >
                 Editar
+              </button>
+              <button
+                onClick={() => exportSingleProspectToPDF(prospect)}
+                className="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600"
+              >
+                Exportar PDF
               </button>
               {prospect.saleProcess === "Cerrado" && (
                 <button
