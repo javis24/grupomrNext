@@ -536,7 +536,7 @@ const exportAllClientsToPDF = () => {
               </select>
             </div>
             <div>
-              <label className="block text-white mb-2">Nombre de contacto de facturación</label>
+              <label className="block text-white mb-2">Nombre contacto pago</label>
               <input
                 type="text"
                 value={newClient.billingContactName}
