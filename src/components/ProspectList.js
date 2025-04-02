@@ -91,7 +91,9 @@ export default function ProspectList() {
         p.phone || '',
         p.email || '',
         p.saleProcess || '',
-        p.createdAt || ''
+        new Date(p.createdAt).toLocaleDateString('es-MX', {
+          year: 'numeric', month: '2-digit', day: '2-digit'
+        })
       ]);
   
       doc.autoTable({
