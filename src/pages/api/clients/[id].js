@@ -10,7 +10,8 @@ export default async function handler(req, res) {
 
     switch (method) {
       case 'PUT': {
-        const { fullName, companyName, companyPhone, businessTurn, address, contactName, contactPhone, email, position, planta, producto, assignedUser  } = req.body;
+        const { fullName, companyName, companyPhone, businessTurn, address, contactName, contactPhone, email, position, planta, producto, assignedUser, billingContactName, billingPhone, billingEmail,
+          usoCFDI, paymentMethod, paymentConditions, billingDepartment  } = req.body;
 
         // Validar los campos requeridos
         if (!fullName || !companyName || !businessTurn || !address || !planta) {
@@ -42,6 +43,13 @@ export default async function handler(req, res) {
           client.planta = planta || client.planta;
           client.producto = producto || client.producto;
           client.assignedUser = assignedUser || client.assignedUser;
+          client.billingContactName = billingContactName || client.billingContactName;
+          client.billingPhone = billingPhone || client.billingPhone;
+          client.billingEmail = billingEmail || client.billingEmail;
+          client.usoCFDI = usoCFDI || client.usoCFDI;
+          client.paymentMethod = paymentMethod || client.paymentMethod;
+          client.paymentConditions = paymentConditions || client.paymentConditions;
+          client.billingDepartment = billingDepartment || client.billingDepartment;
           await client.save();
 
           return res.status(200).json({ message: "Cliente actualizado con éxito", client });

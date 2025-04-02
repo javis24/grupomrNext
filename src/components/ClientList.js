@@ -124,6 +124,13 @@ export default function ClientList() {
         planta: '',
         producto: '',
         assignedUser: '',
+        billingContactName: '',
+        billingPhone: '',
+        billingEmail: '',
+        usoCFDI: '',
+        paymentMethod: '',
+        paymentConditions: '',
+        billingDepartment: '',
       });
     }
     setModalIsOpen(true);
@@ -210,6 +217,13 @@ const exportClientToPDF = (client) => {
       ["PLANTA", client.planta],
       ["PRODUCTO", client.producto],
       ["USUARIO ASIGNADO", client.assignedUser],
+      ["DEPARTAMENTO DE FACTURACIÓN", client.billingDepartment],
+      ["NOMBRE DE CONTACTO DE FACTURACIÓN", client.billingContactName],
+      ["TELÉFONO DE FACTURACIÓN", client.billingPhone],
+      ["CORREO ELECTRÓNICO DE FACTURACIÓN", client.billingEmail],
+      ["USO CFDI", client.usoCFDI],
+      ["MÉTODO DE PAGO", client.paymentMethod],
+      ["CONDICIONES DE PAGO", client.paymentConditions],
     ];
 
     // Ajustar la tabla para que sea más compacta
@@ -272,6 +286,13 @@ const exportAllClientsToPDF = () => {
         client.contactName,
         client.contactPhone,
         client.assignedUser,
+        client.billingContactName,
+        client.billingPhone,
+        client.billingEmail,
+        client.usoCFDI,
+        client.paymentMethod,
+        client.paymentConditions,
+        client.billingDepartment,
       ];
       tableRows.push(clientData);
     });
@@ -386,9 +407,9 @@ const exportAllClientsToPDF = () => {
         >
           <h2 className="text-2xl font-bold mb-4 text-white">{selectedClient ? 'Editar Cliente' : 'Añadir Cliente'}</h2>
           <form onSubmit={handleSubmit}>
-            <div className="grid grid-cols-3 md:grid-cols-2 lg:grid-cols-3 gap-2">
+           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               {/* Primera columna de inputs */}
-              <div className="mb-4">
+              <div>
                 <label className="block text-white mb-2">Razon Social</label>
                 <input
                   type="text"
@@ -399,7 +420,7 @@ const exportAllClientsToPDF = () => {
                 />
               </div>
 
-              <div className="mb-4">
+              <div>
                 <label className="block text-white mb-2">Nombre de Empresa</label>
                 <input
                   type="text"
@@ -409,7 +430,7 @@ const exportAllClientsToPDF = () => {
                   required
                 />
               </div>
-              <div className="mb-4">
+              <div>
                 <label className="block text-white mb-2">Teléfono de Empresa</label>
                 <input
                   type="text"
@@ -418,7 +439,7 @@ const exportAllClientsToPDF = () => {
                   className="w-full p-2 rounded bg-[#1f2937] text-white"
                 />
               </div>
-              <div className="mb-4">
+              <div>
                 <label className="block text-white mb-2">Giro de Negocios</label>
                 <input
                   type="text"
@@ -430,7 +451,7 @@ const exportAllClientsToPDF = () => {
               </div>
 
               {/* Segunda columna de inputs */}
-              <div className="mb-4">
+              <div>
                 <label className="block text-white mb-2">Dirección</label>
                 <input
                   type="text"
@@ -441,7 +462,7 @@ const exportAllClientsToPDF = () => {
                 />
               </div>
 
-              <div className="mb-4">
+              <div>
                 <label className="block text-white mb-2">Nombre de contacto</label>
                 <input
                   type="text"
@@ -451,7 +472,7 @@ const exportAllClientsToPDF = () => {
                 />
               </div>
 
-              <div className="mb-4">
+              <div>
                 <label className="block text-white mb-2">Teléfono de contacto</label>
                 <input
                   type="text"
@@ -462,7 +483,7 @@ const exportAllClientsToPDF = () => {
               </div>
 
               {/* Tercera columna de inputs */}
-              <div className="mb-4">
+              <div>
                 <label className="block text-white mb-2">Email</label>
                 <input
                   type="email"
@@ -472,7 +493,7 @@ const exportAllClientsToPDF = () => {
                 />
               </div>
 
-              <div className="mb-4">
+              <div>
                 <label className="block text-white mb-2">Departamento</label>
                 <input
                   type="text"
@@ -481,7 +502,7 @@ const exportAllClientsToPDF = () => {
                   className="w-full p-2 rounded bg-[#1f2937] text-white"
                 />
               </div>
-              <div className="mb-4">
+              <div>
               <label className="block text-white mb-2">Planta</label>
               <input
                 type="text"
@@ -490,7 +511,7 @@ const exportAllClientsToPDF = () => {
                 className="w-full p-2 rounded bg-[#1f2937] text-white"
               />
             </div>
-            <div className="mb-4">
+            <div>
               <label className="block text-white mb-2">Producto</label>
               <input
                 type="text"
@@ -500,7 +521,7 @@ const exportAllClientsToPDF = () => {
                 required
               />
             </div>
-            <div className="mb-4">
+            <div>
               <select
                 value={newClient.assignedUser}
                 onChange={(e) => setNewClient({ ...newClient, assignedUser: e.target.value })}
@@ -513,6 +534,60 @@ const exportAllClientsToPDF = () => {
                   </option>
                 ))}
               </select>
+            </div>
+            <div>
+              <label className="block text-white mb-2">Nombre de contacto de facturación</label>
+              <input
+                type="text"
+                value={newClient.billingContactName}
+                onChange={(e) => setNewClient({ ...newClient, billingContactName: e.target.value })}
+                className="w-full p-2 rounded bg-[#1f2937] text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-white mb-2">Teléfono de facturación</label>
+              <input
+                type="text"
+                value={newClient.billingPhone}
+                onChange={(e) => setNewClient({ ...newClient, billingPhone: e.target.value })}
+                className="w-full p-2 rounded bg-[#1f2937] text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-white mb-2">Email de facturación</label>
+              <input
+                type="email"
+                value={newClient.billingEmail}
+                onChange={(e) => setNewClient({ ...newClient, billingEmail: e.target.value })}
+                className="w-full p-2 rounded bg-[#1f2937] text-white"
+              />
+              </div>
+            <div>
+              <label className="block text-white mb-2">Uso CFDI</label>
+              <input
+                type="text"
+                value={newClient.usoCFDI}
+                onChange={(e) => setNewClient({ ...newClient, usoCFDI: e.target.value })}
+                className="w-full p-2 rounded bg-[#1f2937] text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-white mb-2">Método de pago</label>
+              <input
+                type="text"
+                value={newClient.paymentMethod}
+                onChange={(e) => setNewClient({ ...newClient, paymentMethod: e.target.value })}
+                className="w-full p-2 rounded bg-[#1f2937] text-white"
+              />
+            </div>
+            <div>
+              <label className="block text-white mb-2">Condiciones de pago</label>
+              <input
+                type="text"
+                value={newClient.paymentConditions}
+                onChange={(e) => setNewClient({ ...newClient, paymentConditions: e.target.value })}
+                className="w-full p-2 rounded bg-[#1f2937] text-white"
+              />
             </div>
           </div>
            <button type="submit" className="bg-blue-500 text-white p-2 rounded mt-4">

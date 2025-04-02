@@ -98,7 +98,56 @@ const Clients = db.define('clients', {
               isEmail: true, 
             },
         },
-    userId: {
+        billingContactName: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            validate: {
+                len: [0, 100]
+            }
+        },
+        billingPhone: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            validate: {
+                len: [0, 20]
+            }
+        },
+        billingEmail: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            validate: {
+                isEmail: true,
+            }
+        },
+        usoCFDI: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            validate: {
+                len: [0, 50]
+            }
+        },
+        paymentMethod: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            validate: {
+                len: [0, 50]
+            }
+        },
+        paymentConditions: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            validate: {
+                len: [0, 100]
+            }
+        },
+        billingDepartment: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            validate: {
+                len: [0, 100]
+            }
+        },
+      userId: {
         type: DataTypes.INTEGER,
         allowNull: false,
         validate: {

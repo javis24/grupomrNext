@@ -1,6 +1,5 @@
-// src/pages/reportes-unidad-negocio.js
 import Sidebar from '@/components/Sidebar';
-import { ExcelBarChart } from '@/components/ExcelBarChart'; // Importar el componente ExcelBarChart
+import { ExcelBarChart } from '@/components/ExcelBarChart'; 
 import '../app/globals.css';
 
 

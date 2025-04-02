@@ -48,7 +48,8 @@ export default async function handler(req, res) {
       }
 
       case 'POST': {
-        const { fullName, companyName, companyPhone, businessTurn, address, contactName, contactPhone, email, position, planta, producto, assignedUser  } = req.body;
+        const { fullName, companyName, companyPhone, businessTurn, address, contactName, contactPhone, email, position, planta, producto, assignedUser,  billingContactName, billingPhone, billingEmail,
+          usoCFDI, paymentMethod, paymentConditions, billingDepartment  } = req.body;
 
         // Verificar campos requeridos
         if (!fullName || !companyName || !businessTurn || !address || !planta) {
@@ -69,7 +70,14 @@ export default async function handler(req, res) {
             position,
             planta, 
             producto,
-            assignedUser ,
+            assignedUser,
+            billingContactName,
+            billingPhone,
+            billingEmail,
+            usoCFDI,
+            paymentMethod,
+            paymentConditions,
+            billingDepartment,
             userId,  // Asociar cliente con el usuario autenticado
           });
 
