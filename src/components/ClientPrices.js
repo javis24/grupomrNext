@@ -6,10 +6,12 @@ import { toast } from "react-toastify";
 export default function ClientPrices() {
   const [clientsData, setClientsData] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeUsers, setActiveUsers] = useState([]);
 
   // Al montar, obtenemos la lista actual
   useEffect(() => {
     fetchPrices();
+    fetchUsers();
   }, []);
 
   const fetchPrices = async () => {
@@ -19,6 +21,21 @@ export default function ClientPrices() {
       setClientsData(data);
     } catch (error) {
       console.error("Error al obtener precios:", error);
+    }
+  };
+
+
+  const fetchUsers = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get("/api/users", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setActiveUsers(response.data); 
+      // Asumo que response.data es un array de objetos 
+      // con algo como { id: 123, name: 'Juan', ... }
+    } catch (error) {
+      console.error("Error fetching users:", error.response?.data || error.message);
     }
   };
 
@@ -107,9 +124,38 @@ export default function ClientPrices() {
     item.cliente.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleSelectAsesor = async (uuid, newAsesor) => {
+    try {
+      // 1. Actualizamos localmente (en el front) para feedback inmediato.
+      const newData = [...clientsData];
+      // Busca el índice del cliente que coincida con el uuid
+      const index = newData.findIndex((c) => c.uuid === uuid);
+      if (index !== -1) {
+        newData[index] = {
+          ...newData[index],
+          asesorcomercial: newAsesor,
+        };
+        setClientsData(newData);
+      }
+  
+      // 2. Llamamos PUT a la API para guardar en la DB
+      await axios.put("/api/client-prices", {
+        uuid,
+        asesorcomercial: newAsesor,
+      });
+  
+      toast.success("Asesor comercial asignado correctamente.");
+    } catch (err) {
+      console.error("Error al asignar asesor:", err);
+      toast.error("Error al asignar asesor comercial.");
+    }
+  };
+  
+  
+
   return (
     <div className="p-4 bg-[#0e1624] text-white min-h-screen flex flex-col items-center">
-      <h1 className="text-3xl font-bold mb-4">Precios de Clientes</h1>
+      <h1 className="text-3xl font-bold mb-4">Cartera de Clientes Disponibles</h1>
 
       {/* Cargar archivo Excel */}
       <input
@@ -130,7 +176,7 @@ export default function ClientPrices() {
 
       <div className="flex min-h-screen bg-[#0e1624] text-white">
         <main className="flex-1 p-4">
-          <h1 className="text-2xl mb-4">Precios de Clientes</h1>
+          <h1 className="text-2xl mb-4">Cartera de Clientes Disponibles</h1>
 
           {/* Si quieres, muestra cuántos registros (filtrados) hay */}
           <p className="mb-2">Total registros mostrados: {filteredData.length}</p>
@@ -155,7 +201,20 @@ export default function ClientPrices() {
                   {/* Muestra un contador local */}
                   <td className="border px-4 py-2">{index + 1}</td>
                   <td className="border px-4 py-2">{item.cliente}</td>
-                  <td className="border px-4 py-2">{item.asesorcomercial}</td>
+                  <td className="border px-4 py-2"> 
+                    <select
+                      value={item.asesorcomercial}
+                      onChange={(e) => handleSelectAsesor(item.uuid, e.target.value)}
+                      className="bg-gray-700 text-white p-2 rounded"
+                    >
+                      <option value="">-- Selecciona asesor --</option>
+                      {activeUsers.map((user) => (
+                        <option key={user.id} value={user.name}>
+                          {user.name}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
                   <td className="border px-4 py-2">{item.contacto}</td>
                   <td className="border px-4 py-2">{item.email}</td>
                   <td className="border px-4 py-2">{item.telefono}</td>

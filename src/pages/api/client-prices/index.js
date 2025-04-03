@@ -49,6 +49,41 @@ export default async function handler(req, res) {
     }
   }
 
+
+    // PUT: actualizar "asesorcomercial" en un registro existente
+  if (req.method === 'PUT') {
+    try {
+      const { uuid, asesorcomercial } = req.body;
+
+      // Validaciones mínimas
+      if (!uuid) {
+        return res
+          .status(400)
+          .json({ error: 'Falta el UUID para identificar al cliente' });
+      }
+      if (!asesorcomercial) {
+        return res
+          .status(400)
+          .json({ error: 'Falta el nuevo asesor comercial' });
+      }
+
+      // Actualizar en la base de datos
+      await ClientePriceModel.update(
+        { asesorcomercial },
+        { where: { uuid } }
+      );
+
+      return res.status(200).json({
+        message: 'Asesor comercial asignado/actualizado correctamente',
+      });
+    } catch (error) {
+      console.error('Error al asignar asesor:', error);
+      return res
+        .status(500)
+        .json({ error: 'Error interno al asignar asesor' });
+    }
+  }
+
   // Si no es GET, POST o DELETE, no está permitido
   return res.status(405).json({ error: 'Método no permitido' });
 }
