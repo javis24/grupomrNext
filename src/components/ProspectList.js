@@ -144,7 +144,9 @@ export default function ProspectList() {
         ["TELÉFONO", prospect.phone],
         ["EMAIL", prospect.email],
         ["PROCESO DE VENTA", prospect.saleProcess],
-        ["STATUS CLIENTE", prospect.createdAt],
+        ["STATUS CLIENTE", new Date(prospect.createdAt).toLocaleDateString('es-MX', {
+          year: 'numeric', month: '2-digit', day: '2-digit'
+        })],
       ];
   
       doc.autoTable({
