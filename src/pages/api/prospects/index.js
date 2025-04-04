@@ -4,7 +4,6 @@ import Prospect from '../../../models/ProspectModel';
 export default async function handler(req, res) {
   authenticateToken(req, res, async () => {
     const { method } = req;
-
     switch (method) {
       case 'GET':
         try {

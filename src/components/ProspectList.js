@@ -169,10 +169,11 @@ export default function ProspectList() {
   };
 
   const filteredProspects = prospects.filter((p) => {
-    const nameMatch = p.contactName.toLowerCase().includes(searchTerm.toLowerCase());
-    const processMatch = p.saleProcess.toLowerCase().includes(searchProcess.toLowerCase());
+    const nameMatch = searchTerm === "" || p.contactName?.toLowerCase().includes(searchTerm.toLowerCase());
+    const processMatch = searchProcess === "" || p.saleProcess?.toLowerCase().includes(searchProcess.toLowerCase());
     return nameMatch && processMatch;
   });
+  
 
 
 

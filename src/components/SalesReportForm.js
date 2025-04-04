@@ -507,7 +507,29 @@ const totalPages = Math.ceil(filteredReports.length / REPORTS_PER_PAGE);
               ))}
             </tbody>
           </table>
+            {/* BOTONES DE PAGINACIÓN */}
+      {totalPages > 1 && (
+        <div className="flex justify-center mt-4">
+          <button
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(currentPage - 1)}
+            className="bg-gray-500 text-white px-3 py-1 mx-1 rounded disabled:opacity-50"
+          >
+            Anterior
+          </button>
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(currentPage + 1)}
+            className="bg-gray-500 text-white px-3 py-1 mx-1 rounded disabled:opacity-50"
+          >
+            Siguiente
+          </button>
         </div>
+      )}
+    </div>
+  
+
+
 
         <Modal
           isOpen={modalIsOpen}
