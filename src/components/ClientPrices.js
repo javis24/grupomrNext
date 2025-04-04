@@ -207,7 +207,7 @@ export default function ClientPrices() {
       doc.rect(160, 20, 40, 10, "F");
       doc.setFontSize(14);
       doc.setTextColor(0, 0, 0);
-      doc.text("REPORTE", 180, 27, { align: "center" });
+      doc.text("PROSPECTOS", 180, 27, { align: "center" });
 
       // Aquí agregas el texto del asesor comercial
       doc.setFontSize(12);
