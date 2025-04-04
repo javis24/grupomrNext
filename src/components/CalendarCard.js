@@ -244,7 +244,8 @@ useEffect(() => {
         <div className="flex flex-col gap-2">
           <input type="text" placeholder="Nombre del cliente" value={clientName} onChange={(e) => setClientName(e.target.value)} className="w-full p-3 mb-2 rounded bg-[#374151] text-white" />
           <input type="text" placeholder="Status" value={clientStatus} onChange={(e) => setClientStatus(e.target.value)} className="w-full p-3 mb-2 rounded bg-[#374151] text-white" />
-          <select
+          {userRole === 'admin' && (
+              <select
                 value={selectedUser}
                 onChange={(e) => setSelectedUser(e.target.value)}
                 className="w-full p-3 mb-2 rounded bg-[#374151] text-white"
@@ -256,6 +257,8 @@ useEffect(() => {
                   </option>
                 ))}
               </select>
+            )}
+
           {editingAppointment ? (
             <button onClick={() => handleEditAppointment(editingAppointment.id)} className="w-full bg-yellow-500 text-white p-3 rounded hover:bg-yellow-600">Update Appointment</button>
           ) : (
