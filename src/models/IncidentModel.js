@@ -22,6 +22,11 @@ const Incidents = db.define('Incidents', {
       type: DataTypes.INTEGER,
       allowNull: false
     },
+    imageUrl: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      defaultValue: ''
+    },    
     createdAt: {
       type: DataTypes.DATE,
       defaultValue: Sequelize.NOW
