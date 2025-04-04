@@ -3,7 +3,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
 const CreateQuote = () => {
-  const [quoteNumber, setQuoteNumber] = useState(0);
+  const [quoteNumber, setQuoteNumber] = useState(1);
   const [currentDate, setCurrentDate] = useState("");
   const [detallesAdicionales, setDetallesAdicionales] = useState('');
 

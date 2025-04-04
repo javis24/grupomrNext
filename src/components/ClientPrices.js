@@ -3,10 +3,15 @@ import axios from "axios";
 import * as XLSX from "xlsx";
 import { toast } from "react-toastify";
 
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
+
 export default function ClientPrices() {
   const [clientsData, setClientsData] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeUsers, setActiveUsers] = useState([]);
+  const [selectedAsesorExport, setSelectedAsesorExport] = useState("");
 
   // Al montar, obtenemos la lista actual
   useEffect(() => {
@@ -150,6 +155,119 @@ export default function ClientPrices() {
       toast.error("Error al asignar asesor comercial.");
     }
   };
+  // Asesores distintos que aparecen en la tabla
+  const asesoresEnTabla = Array.from(
+    new Set(
+      clientsData
+        .map((c) => c.asesorcomercial)
+        .filter((a) => a && a.trim() !== "")
+    )
+  );
+
+
+  // Exportar a PDF
+  // === Exportación a PDF adaptando tu estilo con logo, encabezados, etc. ===
+  const handleExportPDF = () => {
+    if (!selectedAsesorExport) {
+      toast.info("Selecciona un asesor para exportar.");
+      return;
+    }
+
+    // Filtrar los clientes de ese asesor
+    const dataToExport = clientsData.filter(
+      (item) => item.asesorcomercial === selectedAsesorExport
+    );
+    if (dataToExport.length === 0) {
+      toast.warn("No hay registros con ese asesor comercial.");
+      return;
+    }
+
+    // Crea el doc
+    const doc = new jsPDF();
+
+    // Cargamos la imagen (logo)
+    const imgUrl = "/logo_mr.png"; // Ajustar ruta según tu proyecto
+    const image = new Image();
+    image.src = imgUrl;
+
+    // Cuando cargue la imagen, generamos todo
+    image.onload = () => {
+      // Agregar logo
+      doc.addImage(image, "PNG", 20, 10, 20, 20);
+
+      // Encabezado de la empresa
+      doc.setFontSize(12);
+      doc.text("Materiales Reutilizables S.A. de C.V.", 105, 20, { align: "center" });
+      doc.text("Benito Juarez 112 SUR, Col. 1ro de Mayo", 105, 27, { align: "center" });
+      doc.text("Cd. Lerdo, Dgo. C.P. 35169", 105, 32, { align: "center" });
+      doc.text("MRE040121UBA", 105, 37, { align: "center" });
+
+      // Sección / título de reporte
+      doc.setFillColor(255, 204, 0); // Amarillo
+      doc.rect(160, 20, 40, 10, "F");
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.text("REPORTE", 180, 27, { align: "center" });
+
+      // Aquí agregas el texto del asesor comercial
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      // Por ejemplo, centrado en x=105, y=45
+      doc.text(`Asesor Comercial: ${selectedAsesorExport}`, 105, 45, { align: "center" });
+
+      // Ajusta 'startY' un poco más abajo, para que la tabla no se empalme
+      let startY = 55;
+
+      // Creamos las filas para autoTable
+      // Cada fila es un array de valores, como en tu PDF masivo
+      const rows = dataToExport.map((client, index) => [
+        index + 1,
+        client.cliente,
+        client.contacto,
+        client.email,
+        client.telefono,
+        client.ubicacion,
+        client.rfc,
+      ]);
+
+      // Definimos las columnas
+      const columns = [
+        { header: "#", dataKey: "num" },
+        { header: "Cliente", dataKey: "cliente" },
+        { header: "Contacto", dataKey: "contacto" },
+        { header: "Email", dataKey: "email" },
+        { header: "Teléfono", dataKey: "telefono" },
+        { header: "Ubicación", dataKey: "ubicacion" },
+        { header: "RFC", dataKey: "rfc" },
+      ];
+
+      // Generamos la tabla con estilo similar a tu diseño “single client”
+      doc.autoTable({
+        startY,
+        head: [columns.map((col) => col.header)],
+        body: rows,
+        theme: "plain", // se asemeja al 'plain' que usabas
+        styles: {
+          cellPadding: 1,
+          fontSize: 10,
+          lineWidth: 0.1,
+        },
+        columnStyles: {
+          0: { cellWidth: 10 }, // el # un poco pequeño
+          1: { cellWidth: 30 },
+          2: { cellWidth: 30 },
+          3: { cellWidth: 35 },
+          4: { cellWidth: 25 },
+          5: { cellWidth: 30 },
+          6: { cellWidth: 30 },
+        },
+      });
+
+      // Finalmente, descargamos el PDF con un nombre personalizado
+      doc.save(`Clientes_${selectedAsesorExport}.pdf`);
+    };
+  };
+
   
   
 
@@ -173,6 +291,26 @@ export default function ClientPrices() {
         onChange={(e) => setSearchTerm(e.target.value)}
         className="mb-4 p-2 rounded text-black"
       />
+
+        {/* Select para exportar a PDF los clientes de X asesor */}
+      <div className="mb-4 flex items-center space-x-2">
+        <label>Exportar clientes de:</label>
+        <select
+          value={selectedAsesorExport}
+          onChange={(e) => setSelectedAsesorExport(e.target.value)}
+          className="bg-gray-700 text-white p-2 rounded"
+        >
+          <option value="">-- Seleccionar asesor --</option>
+          {asesoresEnTabla.map((asesor) => (
+            <option key={asesor} value={asesor}>
+              {asesor}
+            </option>
+          ))}
+        </select>
+        <button onClick={handleExportPDF} className="bg-green-600 px-4 py-2 rounded">
+          Exportar a PDF
+        </button>
+      </div>
 
       <div className="flex min-h-screen bg-[#0e1624] text-white">
         <main className="flex-1 p-4">

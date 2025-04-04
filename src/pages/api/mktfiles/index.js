@@ -64,7 +64,7 @@ export default async function handler(req, res) {
             // 5. Guardar en la base de datos
             //    Asumiendo que guardas filepath con `uploadResult.secure_url`
             const newFile = await File.create({
-              filename: uploadResult.original_filename,
+              filename: fileUploaded.originalFilename,
               originalFilename: fileUploaded.originalFilename,
               filepath: uploadResult.secure_url,
               userId: req.user.id, // si lo necesitas
