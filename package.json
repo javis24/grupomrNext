@@ -48,7 +48,6 @@
     "socket.io-client": "^4.7.5",
     "streamifier": "^0.1.1",
     "uuid": "^11.0.3",
-    "whatsapp-web.js": "^1.26.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
