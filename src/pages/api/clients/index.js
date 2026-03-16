@@ -1,6 +1,7 @@
 import Clients from '../../../models/ClientModel';
 import { authenticateToken } from '../../../lib/auth';
 
+
 export default async function handler(req, res) {
   const { method, query } = req;  // Obtener el método HTTP y los parámetros de la query
 

@@ -1,6 +1,7 @@
 import { authenticateToken } from '../../../lib/auth';
 import Appointments from '../../../models/AppointmentModel';
 import Users from '../../../models/UserModel';
+import Clients from '../../../models/ClientModel';
 
 export default async function handler(req, res) {
   const { method } = req;
@@ -12,58 +13,48 @@ export default async function handler(req, res) {
       switch (method) {
         case 'GET': {
           const queryOptions = {
-            attributes: ['id', 'date', 'clientName', 'clientStatus', 'assignedTo'],
-            include: [
-              {
-                model: Users,
-                as: 'user', // quien creó la cita
-                attributes: ['id', 'name', 'email'],
-              },
-              {
-                model: Users,
-                as: 'assignedUser', // asesor asignado
-                attributes: ['id', 'name', 'email'],
-              },
-            ],            
+              attributes: ['id', 'date', 'clientName', 'clientStatus', 'assignedTo', 'userId'],
+              
+                  include: [
+                    { model: Users, attributes: ['id', 'name', 'email'] },
+                    { model: Users, as: 'assignedUser', attributes: ['id', 'name', 'email'] },
+                    { 
+                      model: Clients, 
+                      as: 'datosCliente', 
+                      attributes: ['contactPhone'] 
+                    }               
+],           
           };
-        
-          if (role !== 'admin') {
-            // Si NO es admin, solo ver las citas asignadas a ese usuario
+
+          if (role !== 'admin' && role !== 'gerencia') {
             queryOptions.where = { assignedTo: loggedUserId };
           }
-        
+
           const appointments = await Appointments.findAll(queryOptions);
-        
-          if (!appointments || appointments.length === 0) {
-            return res.status(204).json({ message: 'No appointments found' });
-          }
-        
-          return res.status(200).json(appointments);
+          return res.status(200).json(appointments || []);
         }
-        
-        
 
         case 'POST': {
           const { date, clientName, clientStatus, assignedTo } = req.body;
         
+          // Validación: assignedTo puede venir como string del select, hay que convertirlo
           if (!date || !clientName || !clientStatus || !assignedTo) {
             return res.status(400).json({ message: 'Todos los campos son requeridos' });
           }
         
           const newAppointment = await Appointments.create({
-            date,
+            date: new Date(date), // Aseguramos formato Date
             clientName,
             clientStatus,
-            assignedTo,
+            assignedTo: parseInt(assignedTo), // Forzamos número para MySQL
             userId: loggedUserId,
           });
         
-          // Recargar con relaciones
+          // Recargar con relaciones para devolver al frontend el objeto completo
           const fullAppointment = await Appointments.findByPk(newAppointment.id, {
             include: [
               {
                 model: Users,
-                as: 'user',
                 attributes: ['id', 'name', 'email'],
               },
               {
@@ -76,15 +67,18 @@ export default async function handler(req, res) {
         
           return res.status(201).json(fullAppointment);
         }
-        
 
         default:
           res.setHeader('Allow', ['GET', 'POST']);
           return res.status(405).end(`Method ${method} Not Allowed`);
       }
     } catch (error) {
-      console.error('Error handling /api/appointments:', error);
-      return res.status(500).json({ message: 'Internal Server Error' });
+      // ESTO ES CLAVE: Ver el error real en los logs de Vercel
+      console.error('DETALLE DEL ERROR EN APPOINTMENTS:', error);
+      return res.status(500).json({ 
+        message: 'Error al procesar la cita', 
+        error: error.message 
+      });
     }
   });
 }
