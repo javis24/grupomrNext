@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import Modal from "react-modal";
-import { toast } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 import jsPDF from 'jspdf'; // Importamos jsPDF
@@ -336,370 +336,145 @@ export default function ProspectList() {
   };
 
   return (
-    <div className="p-4 bg-[#0e1624] text-white min-h-screen flex flex-col items-center">
-      <h1 className="text-3xl font-bold mb-4">Avances de Prospectos</h1>
-      <div className="flex flex-col md:flex-row gap-4 w-full max-w-4xl mb-4">
-        <input
-          type="text"
-          placeholder="Buscar por nombre"
-          className="p-2 rounded bg-[#1f2937] text-white w-full"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        <input
-          type="text"
-          placeholder="Buscar por proceso de venta"
-          className="p-2 rounded bg-[#1f2937] text-white w-full"
-          value={searchProcess}
-          onChange={(e) => setSearchProcess(e.target.value)}
-        />
-        <button
-          onClick={() => exportAllProspectsToPDF(prospects)}
-          className="bg-red-500 text-white p-2 rounded hover:bg-red-600 w-full md:w-auto"
-        >
-          Exportar Todo a PDF
-        </button>
-        <button
-          onClick={handleCreateProspect}
-          className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 w-full md:w-auto"
-        >
-          Crear Prospecto
-        </button>
-      </div>
+        <div className="p-2 md:p-6 bg-[#0e1624] text-white min-h-screen flex flex-col items-center">
+            <h1 className="text-2xl md:text-3xl font-black mb-6 uppercase tracking-tight">Avances de <span className="text-blue-500">Prospectos</span></h1>
+            
+            {/* BUSCADORES Y ACCIONES */}
+            <div className="w-full max-w-5xl bg-[#1f2937] p-4 rounded-2xl border border-gray-700 shadow-2xl mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+                    <div className="md:col-span-4">
+                        <input
+                            type="text" placeholder="Buscar por nombre..."
+                            className="w-full p-3 rounded-xl bg-[#0e1624] border border-gray-700 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                            value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    <div className="md:col-span-4">
+                        <input
+                            type="text" placeholder="Filtrar proceso..."
+                            className="w-full p-3 rounded-xl bg-[#0e1624] border border-gray-700 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                            value={searchProcess} onChange={(e) => setSearchProcess(e.target.value)}
+                        />
+                    </div>
+                    <div className="md:col-span-4 flex gap-2">
+                        <button onClick={handleCreateProspect} className="flex-1 bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 font-black text-[10px] uppercase">
+                            + Crear
+                        </button>
+                    </div>
+                </div>
+            </div>
 
+            {/* LISTADO DE TARJETAS (MOBILE FIRST) */}
+            <div className="w-full max-w-5xl space-y-4">
+                {filteredProspects.map((prospect) => (
+                    <div key={prospect.id} className="relative bg-[#1f2937] p-5 rounded-2xl border border-gray-700 flex flex-col md:flex-row justify-between gap-4 transition-all hover:border-gray-500">
+                        <div className={`absolute left-0 top-4 bottom-4 w-1 rounded-r-full ${getProspectStatusColor(prospect.createdAt)}`}></div>
+                        <div className="flex flex-col">
+                            <h3 className="text-lg font-black text-blue-400 uppercase tracking-tight">{prospect.contactName}</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 text-xs text-gray-400 mt-2">
+                                <p>🏢 {prospect.company}</p>
+                                <p>⚙️ {prospect.saleProcess}</p>
+                                <p className="text-[10px] font-mono mt-1">📅 {new Date(prospect.createdAt).toLocaleDateString('es-MX')}</p>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 sm:flex items-center gap-2 border-t border-gray-700 md:border-none pt-3 md:pt-0">
+                            <button onClick={() => handleEdit(prospect)} className="p-2 bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 rounded-lg font-bold text-[10px] uppercase">Editar</button>
+                            <button onClick={() => exportSingleProspectToPDF(prospect)} className="p-2 bg-gray-700 text-gray-300 rounded-lg font-bold text-[10px] uppercase">PDF</button>
+                            {prospect.saleProcess === "Cerrado" && (
+                                <button onClick={() => handleConvertClick(prospect)} className="col-span-2 md:col-auto p-2 bg-green-600 text-white rounded-lg font-black text-[10px] uppercase animate-pulse tracking-wider">Convertir</button>
+                            )}
+                        </div>
+                    </div>
+                ))}
+            </div>
 
-      <div className="w-full max-w-4xl mt-6">
-  {filteredProspects.map((prospect) => (
-    <div
-      key={prospect.id}
-      className="p-4 mb-2 bg-[#1f2937] rounded shadow-md flex justify-between items-center"
-    >
-      <div className="flex items-center space-x-4">
-        <div className={`w-4 h-4 rounded-full ${getProspectStatusColor(prospect.createdAt)}`}></div>
-        <div>
-          <h3 className="text-xl font-bold">{prospect.contactName}</h3>
-          <p>Empresa: {prospect.company}</p>
-          <p>Proceso de venta: {prospect.saleProcess}</p>
-          <p>Fecha de creación: {new Date(prospect.createdAt).toLocaleDateString('es-MX')}</p>
-        </div>
-      </div>
-      <div className="flex items-center space-x-2">
-        <button
-          onClick={() => handleEdit(prospect)}
-          className="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600"
-        >
-          Editar
-        </button>
-        <button
-          onClick={() => exportSingleProspectToPDF(prospect)}
-          className="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600"
-        >
-          Exportar PDF
-        </button>
-        {prospect.saleProcess === "Cerrado" && (
-          <button
-            onClick={() => handleConvertClick(prospect)}
-            className="bg-green-500 text-white p-2 rounded hover:bg-green-600"
-          >
-            Convertir a Cliente
-          </button>
-        )}
-      </div>
-    </div>
-  ))}
-</div>
+            {/* MODAL GLOBAL */}
+            {modalType && (
+                <Modal isOpen={modalIsOpen} onRequestClose={() => setModalIsOpen(false)} style={customStyles}>
+                    <h2 className="text-xl font-black mb-6 text-blue-400 uppercase border-b border-gray-700 pb-2">
+                        {modalType === "convertToClient" ? "💎 Convertir a Cliente" : (modalType === "createProspect" ? "📝 Nuevo Prospecto" : "✏️ Editar Prospecto")}
+                    </h2>
+                    
+                    <form onSubmit={modalType === "convertToClient" ? handleClientSave : handleSubmit} className="space-y-6">
+                        {modalType === "convertToClient" ? (
+                            <div className="space-y-8">
+                                <section>
+                                    <h3 className="text-[10px] font-black text-blue-500 mb-4 tracking-widest uppercase">1. Información de Empresa</h3>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[10px] text-gray-500 font-bold ml-1 uppercase">Razón Social</label>
+                                            <input type="text" value={newClient.fullName} onChange={(e) => setNewClient({ ...newClient, fullName: e.target.value })} className="bg-[#0e1624] p-3 rounded-xl border border-gray-700 text-sm text-white outline-none focus:border-blue-500" required />
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[10px] text-gray-500 font-bold ml-1 uppercase">Giro</label>
+                                            <input type="text" value={newClient.businessTurn} onChange={(e) => setNewClient({ ...newClient, businessTurn: e.target.value })} className="bg-[#0e1624] p-3 rounded-xl border border-gray-700 text-sm text-white outline-none focus:border-blue-500" required />
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[10px] text-gray-500 font-bold ml-1 uppercase">Producto</label>
+                                            <input type="text" value={newClient.producto} onChange={(e) => setNewClient({ ...newClient, producto: e.target.value })} className="bg-[#0e1624] p-3 rounded-xl border border-gray-700 text-sm text-white outline-none focus:border-blue-500" required />
+                                        </div>
+                                        <div className="flex flex-col gap-1 sm:col-span-2">
+                                            <label className="text-[10px] text-gray-500 font-bold ml-1 uppercase">Dirección</label>
+                                            <input type="text" value={newClient.address} onChange={(e) => setNewClient({ ...newClient, address: e.target.value })} className="bg-[#0e1624] p-3 rounded-xl border border-gray-700 text-sm text-white outline-none focus:border-blue-500" required />
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[10px] text-gray-500 font-bold ml-1 uppercase">Asesor Asignado</label>
+                                            <select value={newClient.assignedUser} onChange={(e) => setNewClient({ ...newClient, assignedUser: e.target.value })} className="bg-[#0e1624] p-3 rounded-xl border border-gray-700 text-sm text-white outline-none focus:border-blue-500" required>
+                                                <option value="">Seleccionar...</option>
+                                                {activeUsers.map(u => <option key={u.id} value={u.email}>{u.name}</option>)}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </section>
+                                <section className="bg-[#0e1624]/50 p-4 rounded-2xl border border-gray-800">
+                                    <h3 className="text-[10px] font-black text-yellow-500 mb-4 tracking-widest uppercase">2. Datos de Facturación</h3>
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                        <input type="text" placeholder="Uso CFDI" value={newClient.usoCFDI} onChange={(e) => setNewClient({ ...newClient, usoCFDI: e.target.value })} className="bg-[#1f2937] p-3 rounded-xl border border-gray-700 text-sm text-white" />
+                                        <input type="text" placeholder="Método Pago" value={newClient.paymentMethod} onChange={(e) => setNewClient({ ...newClient, paymentMethod: e.target.value })} className="bg-[#1f2937] p-3 rounded-xl border border-gray-700 text-sm text-white" />
+                                        <input type="text" placeholder="Condiciones" value={newClient.paymentConditions} onChange={(e) => setNewClient({ ...newClient, paymentConditions: e.target.value })} className="bg-[#1f2937] p-3 rounded-xl border border-gray-700 text-sm text-white" />
+                                    </div>
+                                </section>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-[10px] text-gray-500 font-bold uppercase ml-1">Proceso de Venta</label>
+                                    <select name="saleProcess" value={formData.saleProcess} onChange={handleInputChange} className="bg-[#0e1624] p-3 rounded-xl border border-gray-700 text-sm text-white outline-none focus:border-blue-500" required>
+                                        <option value="" disabled>Seleccionar...</option>
+                                        <option value="Contacto inicial">Contacto inicial</option>
+                                        <option value="Seguimiento">Seguimiento</option>
+                                        <option value="Propuesta enviada">Propuesta enviada</option>
+                                        <option value="Cerrado">Cerrado</option>
+                                    </select>
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-[10px] text-gray-500 font-bold uppercase ml-1">Contacto</label>
+                                    <input type="text" name="contactName" value={formData.contactName} onChange={handleInputChange} className="bg-[#0e1624] p-3 rounded-xl border border-gray-700 text-sm text-white outline-none focus:border-blue-500" required />
+                                </div>
+                                <div className="flex flex-col gap-1 md:col-span-2">
+                                    <label className="text-[10px] text-gray-500 font-bold uppercase ml-1">Empresa</label>
+                                    <input type="text" name="company" value={formData.company} onChange={handleInputChange} className="bg-[#0e1624] p-3 rounded-xl border border-gray-700 text-sm text-white outline-none focus:border-blue-500" required />
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-[10px] text-gray-500 font-bold uppercase ml-1">Teléfono</label>
+                                    <input type="text" name="phone" value={formData.phone} onChange={handleInputChange} className="bg-[#0e1624] p-3 rounded-xl border border-gray-700 text-sm text-white outline-none focus:border-blue-500" required />
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-[10px] text-gray-500 font-bold uppercase ml-1">Email</label>
+                                    <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="bg-[#0e1624] p-3 rounded-xl border border-gray-700 text-sm text-white outline-none focus:border-blue-500" required />
+                                </div>
+                            </div>
+                        )}
 
+                        <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-700">
+                            <button type="submit" className="flex-1 bg-blue-600 p-4 rounded-xl font-black text-xs uppercase tracking-widest transition-all hover:bg-blue-700">Confirmar y Guardar</button>
+                            <button type="button" onClick={() => setModalIsOpen(false)} className="px-8 bg-gray-800 text-gray-400 p-4 rounded-xl font-black text-xs uppercase hover:bg-gray-700">Cancelar</button>
+                        </div>
+                    </form>
+                </Modal>
+            )}
 
-  
-       {/* Modal reutilizado para crear o editar prospecto */}
-       {modalType && (
-        <Modal
-          isOpen={modalIsOpen}
-          onRequestClose={() => setModalIsOpen(false)}
-          style={customStyles}
-          contentLabel={
-            modalType === "createProspect"
-              ? "Crear Prospecto"
-              : "Editar Prospecto"
-          }
-        >
-          <h2 className="text-2xl font-bold mb-4">
-            {modalType === "createProspect"
-              ? "Crear Prospecto"
-              : "Editar Prospecto"}
-          </h2>
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label className="block text-white">Proceso de Venta</label>
-              <select
-                name="saleProcess"
-                value={formData.saleProcess}
-                onChange={handleInputChange}
-                className="w-full p-2 border rounded bg-[#374151] text-white"
-                required
-              >
-                <option value="" disabled>
-                  Selecciona un proceso
-                </option>
-                <option value="Contacto inicial">Contacto inicial</option>
-                <option value="Seguimiento">Seguimiento</option>
-                <option value="Propuesta enviada">Propuesta enviada</option>
-                <option value="Cerrado">Cerrado</option>
-              </select>
-            </div>
-            <div className="mb-4">
-              <label className="block text-white">Nombre de Contacto</label>
-              <input
-                type="text"
-                name="contactName"
-                value={formData.contactName}
-                onChange={handleInputChange}
-                className="w-full p-2 border rounded bg-[#374151] text-white"
-                required
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-white">Empresa</label>
-              <input
-                type="text"
-                name="company"
-                value={formData.company}
-                onChange={handleInputChange}
-                className="w-full p-2 border rounded bg-[#374151] text-white"
-                required
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-white">Teléfono</label>
-              <input
-                type="text"
-                name="phone"
-                value={formData.phone}
-                onChange={handleInputChange}
-                className="w-full p-2 border rounded bg-[#374151] text-white"
-                required
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-white">Email</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                className="w-full p-2 border rounded bg-[#374151] text-white"
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
-            >
-              {modalType === "createProspect" ? "Crear" : "Actualizar"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setModalIsOpen(false)}
-              className="ml-4 bg-gray-500 text-white p-2 rounded hover:bg-gray-600"
-            >
-              Cancelar
-            </button>
-          </form>
-        </Modal>
-      )}
-  
-     {/* Modal de convertir a cliente */}
-      {modalType === "convertToClient" && (
-        <Modal
-          isOpen={modalIsOpen}
-          onRequestClose={() => setModalIsOpen(false)}
-          style={customStyles}
-          contentLabel="Convertir a Cliente"
-        >
-          <h2 className="text-2xl font-bold mb-4">Convertir a Cliente</h2>
-          <form onSubmit={handleClientSave}>
-      <div className="grid grid-cols-5 gap-4">
-        <div>
-          <label className="block text-white">Razón Social</label>
-          <input
-            type="text"
-            value={newClient.fullName}
-            onChange={(e) => setNewClient({ ...newClient, fullName: e.target.value })}
-            className="w-full p-2 rounded bg-[#1f2937] text-white"
-            required
-          />
+            <ToastContainer theme="dark" position="bottom-center" />
         </div>
-        <div>
-          <label className="block text-white">Nombre de Empresa</label>
-          <input
-            type="text"
-            value={newClient.companyName}
-            onChange={(e) => setNewClient({ ...newClient, companyName: e.target.value })}
-            className="w-full p-2 rounded bg-[#1f2937] text-white"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-white">Teléfono de Empresa</label>
-          <input
-            type="text"
-            value={newClient.companyPhone}
-            onChange={(e) => setNewClient({ ...newClient, companyPhone: e.target.value })}
-            className="w-full p-2 rounded bg-[#1f2937] text-white"
-          />
-        </div>
-        <div>
-          <label className="block text-white">Giro de Negocios</label>
-          <input
-            type="text"
-            value={newClient.businessTurn}
-            onChange={(e) => setNewClient({ ...newClient, businessTurn: e.target.value })}
-            className="w-full p-2 rounded bg-[#1f2937] text-white"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-white">Dirección</label>
-          <input
-            type="text"
-            value={newClient.address}
-            onChange={(e) => setNewClient({ ...newClient, address: e.target.value })}
-            className="w-full p-2 rounded bg-[#1f2937] text-white"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-white">Nombre de Contacto</label>
-          <input
-            type="text"
-            value={newClient.contactName}
-            onChange={(e) => setNewClient({ ...newClient, contactName: e.target.value })}
-            className="w-full p-2 rounded bg-[#1f2937] text-white"
-          />
-        </div>
-        <div>
-          <label className="block text-white">Teléfono de Contacto</label>
-          <input
-            type="text"
-            value={newClient.contactPhone}
-            onChange={(e) => setNewClient({ ...newClient, contactPhone: e.target.value })}
-            className="w-full p-2 rounded bg-[#1f2937] text-white"
-          />
-        </div>
-        <div>
-          <label className="block text-white">Email</label>
-          <input
-            type="email"
-            value={newClient.email}
-            onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
-            className="w-full p-2 rounded bg-[#1f2937] text-white"
-          />
-        </div>
-        <div>
-          <label className="block text-white">Departamento</label>
-          <input
-            type="text"
-            value={newClient.position}
-            onChange={(e) => setNewClient({ ...newClient, position: e.target.value })}
-            className="w-full p-2 rounded bg-[#1f2937] text-white"
-          />
-        </div>
-        <div>
-          <label className="block text-white">Planta</label>
-          <input
-            type="text"
-            value={newClient.planta}
-            onChange={(e) => setNewClient({ ...newClient, planta: e.target.value })}
-            className="w-full p-2 rounded bg-[#1f2937] text-white"
-          />
-        </div>
-        <div>
-          <label className="block text-white">Producto</label>
-          <input
-            type="text"
-            value={newClient.producto}
-            onChange={(e) => setNewClient({ ...newClient, producto: e.target.value })}
-            className="w-full p-2 rounded bg-[#1f2937] text-white"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-white">Usuario Asignado</label>
-          <select
-            value={newClient.assignedUser}
-            onChange={(e) => setNewClient({ ...newClient, assignedUser: e.target.value })}
-            className="w-full p-2 rounded bg-[#1f2937] text-white"
-            required
-          >
-            <option value="">Selecciona un usuario</option>
-            {activeUsers.map((user) => (
-              <option key={user.id} value={user.email}>
-                {user.name} ({user.email})
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-white">Nombre de contacto de facturación</label>
-          <input
-            type="text"
-            value={newClient.billingContactName}
-            onChange={(e) => setNewClient({ ...newClient, billingContactName: e.target.value })}
-            className="w-full p-2 rounded bg-[#1f2937] text-white"
-          />
-        </div>
-        <div>
-          <label className="block text-white">Teléfono de facturación</label>
-          <input
-            type="text"
-            value={newClient.billingPhone}
-            onChange={(e) => setNewClient({ ...newClient, billingPhone: e.target.value })}
-            className="w-full p-2 rounded bg-[#1f2937] text-white"
-          />
-        </div>
-        <div>
-          <label className="block text-white">Email de facturación</label>
-          <input
-            type="email"
-            value={newClient.billingEmail}
-            onChange={(e) => setNewClient({ ...newClient, billingEmail: e.target.value })}
-            className="w-full p-2 rounded bg-[#1f2937] text-white"
-          />
-        </div>
-        <div>
-          <label className="block text-white">Uso CFDI</label>
-          <input
-            type="text"
-            value={newClient.usoCFDI}
-            onChange={(e) => setNewClient({ ...newClient, usoCFDI: e.target.value })}
-            className="w-full p-2 rounded bg-[#1f2937] text-white"
-          />
-        </div>
-        <div>
-              <label className="block text-white mb-2">Método de pago</label>
-              <input
-                type="text"
-                value={newClient.paymentMethod}
-                onChange={(e) => setNewClient({ ...newClient, paymentMethod: e.target.value })}
-                className="w-full p-2 rounded bg-[#1f2937] text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-white mb-2">Condiciones de pago</label>
-              <input
-                type="text"
-                value={newClient.paymentConditions}
-                onChange={(e) => setNewClient({ ...newClient, paymentConditions: e.target.value })}
-                className="w-full p-2 rounded bg-[#1f2937] text-white"
-              />
-            </div>
-        </div>
-            <button type="submit" className="bg-blue-500 text-white p-2 rounded mt-4">
-              Guardar
-            </button>
-          </form>
-        </Modal>
-      )}
-    </div>
-  );
+    );
 }

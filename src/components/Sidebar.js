@@ -74,17 +74,39 @@ export default function Sidebar() {
       </div>
       <nav className="mt-10">
         <ul className="mt-4">
-        {(canViewAsesores || hasTotalAccess) && (
-        <li className="mb-4">
-              <Link href="/user" className="flex items-center p-2 rounded hover:bg-[#374151]">
-                {!isCollapsed && 'Asesores Comerciales'}
-              </Link>
-            </li>
-          )}
+        
         {(hasTotalAccess) && (
         <li className="mb-4">
               <Link href="/reportes-unidad-negocio" className="flex items-center p-2 rounded hover:bg-[#374151]">
                 {!isCollapsed && 'Unidad de Negocio'}
+              </Link>
+            </li>
+          )}
+              {(hasTotalAccess) && (
+        <li className="mb-4">
+              <Link href="/productos" className="flex items-center p-2 rounded hover:bg-[#374151]">
+                {!isCollapsed && 'Productos'}
+              </Link>
+            </li>
+          )}
+            {(hasTotalAccess) && (
+        <li className="mb-4">
+              <Link href="/proveedores" className="flex items-center p-2 rounded hover:bg-[#374151]">
+                {!isCollapsed && 'Proveedores'}
+              </Link>
+            </li>
+          )}
+           {(canViewClientes || hasTotalAccess) && (
+            <li className="mb-4">
+              <Link href="/clientes" className="flex items-center p-2 rounded hover:bg-[#374151]">
+                {!isCollapsed && 'Clientes'}
+              </Link>
+            </li>
+          )}
+             {(canViewCalendario || hasTotalAccess) && (
+            <li className="mb-4">
+              <Link href="/calendario" className="flex items-center p-2 rounded hover:bg-[#374151]">
+                {!isCollapsed && 'Calendario'}
               </Link>
             </li>
           )}
@@ -103,31 +125,53 @@ export default function Sidebar() {
               </Link>
             </li>
           )}
-          {(canViewCalendario || hasTotalAccess) && (
-            <li className="mb-4">
-              <Link href="/calendario" className="flex items-center p-2 rounded hover:bg-[#374151]">
-                {!isCollapsed && 'Calendario'}
+       
+          {(canViewAsesores || hasTotalAccess) && (
+        <li className="mb-4">
+              <Link href="/user" className="flex items-center p-2 rounded hover:bg-[#374151]">
+                {!isCollapsed && 'Asesores Comerciales'}
               </Link>
             </li>
           )}
-          {(canViewClientes || hasTotalAccess) && (
-            <li className="mb-4">
-              <Link href="/clientes" className="flex items-center p-2 rounded hover:bg-[#374151]">
-                {!isCollapsed && 'Clientes'}
-              </Link>
-            </li>
-          )}
-             {(hasTotalAccess) && (
+              {(hasTotalAccess) && (
             <li className="mb-4">
               <Link href="/prospectos" className="flex items-center p-2 rounded hover:bg-[#374151]">
                 {!isCollapsed && 'Prospectos'}
               </Link>
             </li>
           )}
-             {(hasTotalAccess) && (
+              {(canViewCotizaciones || hasTotalAccess) && (
+            <li className="mb-4">
+              <Link href="/cotizacion" className="flex items-center p-2 rounded hover:bg-[#374151]">
+                {!isCollapsed && 'Cotización'}
+              </Link>
+            </li>
+          )}
+           {(canViewCreditos || hasTotalAccess) && (
+            <li className="mb-4">
+              <Link href="/creditos" className="flex items-center p-2 rounded hover:bg-[#374151]">
+                {!isCollapsed && 'Créditos'}
+              </Link>
+            </li>
+          )}
+         {(hasTotalAccess) && (
             <li className="mb-4">
               <Link href="/cartera-disponible" className="flex items-center p-2 rounded hover:bg-[#374151]">
-                {!isCollapsed && 'Cartera Disponible'}
+                {!isCollapsed && 'Cobranza - Cartera Disponible'}
+              </Link>
+            </li>
+          )}
+            {(canViewIncidencias || hasTotalAccess) && (
+            <li className="mb-4">
+              <Link href="/incidencias" className="flex items-center p-2 rounded hover:bg-[#374151]">
+                {!isCollapsed && 'Incidencias'}
+              </Link>
+            </li>
+          )}
+                {(canViewCotizaciones || hasTotalAccess) && (
+            <li className="mb-4">
+              <Link href="/reportes" className="flex items-center p-2 rounded hover:bg-[#374151]">
+                {!isCollapsed && 'Reportes'}
               </Link>
             </li>
           )}
@@ -138,29 +182,7 @@ export default function Sidebar() {
               </Link>
             </li>
           )}
-          {(canViewCreditos || hasTotalAccess) && (
-            <li className="mb-4">
-              <Link href="/creditos" className="flex items-center p-2 rounded hover:bg-[#374151]">
-                {!isCollapsed && 'Créditos'}
-              </Link>
-            </li>
-          )}
-          {(canViewCreditos || hasTotalAccess) && (
-            <li className="mb-4">
-              <Link href="/cotizacionsano" className="flex items-center p-2 rounded hover:bg-[#374151]">
-                {!isCollapsed && 'cotización-sano'}
-              </Link>
-            </li>
-          )}
-          
-          {(canViewCotizaciones || hasTotalAccess) && (
-            <li className="mb-4">
-              <Link href="/cotizacion" className="flex items-center p-2 rounded hover:bg-[#374151]">
-                {!isCollapsed && 'Cotización'}
-              </Link>
-            </li>
-          )}
-            {(canViewCotizaciones || hasTotalAccess || hasPDF) && (
+         {(canViewCotizaciones || hasTotalAccess || hasPDF) && (
             <li className="mb-4">
               <Link href="/archivos" className="flex items-center p-2 rounded hover:bg-[#374151]">
                 {!isCollapsed && 'PDF'}
@@ -174,27 +196,9 @@ export default function Sidebar() {
               </Link>
             </li>
           )}
-              {(canViewCotizaciones || hasTotalAccess) && (
-            <li className="mb-4">
-              <Link href="/reportes" className="flex items-center p-2 rounded hover:bg-[#374151]">
-                {!isCollapsed && 'Reportes'}
-              </Link>
-            </li>
-          )}
-          {(canViewIncidencias || hasTotalAccess) && (
-            <li className="mb-4">
-              <Link href="/incidencias" className="flex items-center p-2 rounded hover:bg-[#374151]">
-                {!isCollapsed && 'Incidencias'}
-              </Link>
-            </li>
-          )}
-          {(canViewChat || hasTotalAccess) && (
-            <li className="mb-4">
-              <Link href="/chat" className="flex items-center p-2 rounded hover:bg-[#374151]">
-                {!isCollapsed && 'Chat'}
-              </Link>
-            </li>
-          )}
+        
+        
+          
         </ul>
       </nav>
       <div className="mt-auto">

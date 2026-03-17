@@ -31,10 +31,20 @@ const Sales = db.define('Sales', {
       unitName: {
         type: DataTypes.STRING,
         allowNull: true,     
-      }
-
+      },
+     userId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: Users,
+            key: 'id'
+        }
+    }
 }, {
     freezeTableName: true 
 });
+
+Users.hasMany(Sales, { foreignKey: 'userId' });
+Sales.belongsTo(Users, { foreignKey: 'userId' });
 
 export default Sales;
