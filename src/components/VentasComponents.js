@@ -6,17 +6,33 @@ const SalesPage = () => {
     const [clients, setClients] = useState([]);
     const [selectedClient, setSelectedClient] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [activeTab, setActiveTab] = useState('Servicios');
+    const [selectedCategory, setSelectedCategory] = useState(null);
 
     const categories = ["Servicios", "Empaques", "Tarimas", "Alimentos", "Plasticos", "Composta"];
 
+    // Opciones para la unidad de "Servicios"
+    const conceptosServicios = ["Renta de equipo", "Recolección", "Disposición final", "Destrucción"];
+    const equiposServicios = [
+        "Ruta 3 mts cúbicos", "Ruta 6 mts cúbicos", 
+        "Contenedor 30 mts cúbicos", "Contenedor 15 mts cúbicos", 
+        "Contenedor 8 mts cúbicos", "Compactador", "Jaula"
+    ];
+
+    // Opciones generales
+    const opcionesTransporte = ["Entrega a domicilio sin costo", "Entrega a domicilio con costo", "Recolección por el cliente"];
+    const opcionesPago = ["Anticipado", "Contado", "Crédito", "Pago parcial", "Sin costo"];
+
     useEffect(() => {
         const fetchClients = async () => {
-            const token = localStorage.getItem('token');
-            const res = await axios.get('/api/clients', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setClients(res.data);
+            try {
+                const token = localStorage.getItem('token');
+                const res = await axios.get('/api/clients', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setClients(res.data);
+            } catch (err) {
+                toast.error("Error al cargar clientes");
+            }
         };
         fetchClients();
     }, []);
@@ -25,136 +41,191 @@ const SalesPage = () => {
         c.fullName.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    // FUNCIÓN PARA VOLVER AL INICIO (SELECCIÓN DE UNIDAD)
+    const handleReturnToUnits = () => {
+        setSelectedCategory(null);
+        setSelectedClient(null);
+        setSearchTerm('');
+    };
+
     return (
-        <div className="flex flex-col lg:flex-row min-h-screen bg-[#0e1624] text-white p-4 gap-6">
-            
-            {/* PANEL IZQUIERDO: LISTADO DE CLIENTES */}
-            <div className="w-full lg:w-1/4 bg-[#1f2937] rounded-xl border border-gray-700 p-4 flex flex-col shadow-2xl">
-                <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-blue-400">
-                    👥 Clientes
-                </h2>
-                <input 
-                    type="text"
-                    placeholder="Buscar cliente..."
-                    className="bg-[#374151] border border-gray-600 rounded-lg p-2 mb-4 outline-none focus:ring-2 focus:ring-blue-500"
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <div className="overflow-y-auto flex-1 space-y-2 custom-scrollbar pr-2">
-                    {filteredClients.map(client => (
-                        <div 
-                            key={client.id}
-                            onClick={() => setSelectedClient(client)}
-                            className={`p-3 rounded-lg cursor-pointer transition-all border ${
-                                selectedClient?.id === client.id 
-                                ? 'bg-blue-600 border-blue-400 shadow-lg scale-105' 
-                                : 'bg-[#2d3748] border-transparent hover:border-gray-500'
-                            }`}
-                        >
-                            <p className="font-bold text-sm uppercase">{client.fullName}</p>
-                            <p className="text-xs text-gray-400">{client.companyName}</p>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* PANEL DERECHO: FORMULARIOS */}
-            <div className="flex-1 space-y-6">
-                {!selectedClient ? (
-                    <div className="h-full flex items-center justify-center bg-[#1f2937]/50 rounded-xl border border-dashed border-gray-600">
-                        <p className="text-gray-500 italic">Selecciona un cliente para comenzar el registro de venta</p>
-                    </div>
-                ) : (
-                    <>
-                        {/* HEADER DEL CLIENTE SELECCIONADO */}
-                        <div className="bg-[#1f2937] p-6 rounded-xl border border-gray-700 flex justify-between items-center shadow-lg">
-                            <div>
-                                <h1 className="text-2xl font-black text-blue-400 uppercase">{selectedClient.fullName}</h1>
-                                <p className="text-gray-400 text-sm">📍 {selectedClient.address}</p>
-                            </div>
-                            <div className="text-right">
-                                <span className="bg-green-900 text-green-300 px-3 py-1 rounded-full text-xs font-bold border border-green-700">
-                                    CLIENTE ACTIVO
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* TABS DE CATEGORÍAS */}
-                        <div className="flex flex-wrap gap-2 overflow-x-auto pb-2">
-                            {categories.map(cat => (
-                                <button
+        <div className="min-h-screen bg-[#0e1624] text-white p-4 md:p-8 font-sans">
+            <div className="max-w-7xl mx-auto">
+                
+                {/* PASO 1: SELECCIÓN DE UNIDAD DE NEGOCIO */}
+                {!selectedCategory ? (
+                    <div className="animate-fadeIn">
+                        <h1 className="text-3xl font-black mb-2 uppercase tracking-tighter text-blue-500">Registrar Venta</h1>
+                        <p className="text-gray-500 mb-8 uppercase text-xs tracking-widest">Paso 1: Selecciona la Unidad de Negocio</p>
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {categories.map((cat) => (
+                                <div 
                                     key={cat}
-                                    onClick={() => setActiveTab(cat)}
-                                    className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
-                                        activeTab === cat 
-                                        ? 'bg-blue-600 text-white shadow-lg ring-2 ring-blue-400' 
-                                        : 'bg-[#1f2937] text-gray-400 hover:bg-[#2d3748]'
-                                    }`}
+                                    onClick={() => setSelectedCategory(cat)}
+                                    className="bg-[#1f2937] p-8 rounded-3xl border border-gray-700 hover:border-blue-500 cursor-pointer transition-all hover:scale-[1.02] group shadow-xl flex flex-col items-center justify-center text-center"
                                 >
-                                    {cat}
-                                </button>
+                                    <div className="w-16 h-16 bg-blue-600/10 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-blue-600 transition-colors">
+                                        <span className="text-2xl">{cat === "Servicios" ? "🛠️" : "📦"}</span>
+                                    </div>
+                                    <h3 className="text-xl font-black uppercase tracking-tight">{cat}</h3>
+                                    <p className="text-gray-500 text-[10px] mt-2 uppercase tracking-widest">Abrir Unidad</p>
+                                </div>
                             ))}
                         </div>
-
-                        {/* FORMULARIO DINÁMICO */}
-                        <div className="bg-[#1f2937] p-8 rounded-xl border border-gray-700 shadow-2xl animate-fadeIn">
-                            <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-                                📝 Registrar Venta: <span className="text-blue-400 underline">{activeTab}</span>
-                            </h3>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {/* Campos Genéricos Visuales */}
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-xs text-gray-400 uppercase font-bold">Concepto</label>
-                                    <input type="text" className="bg-[#374151] border border-gray-600 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ej: Servicio de recolección" />
+                    </div>
+                ) : (
+                    <div className="flex flex-col lg:flex-row gap-6 animate-fadeIn">
+                        
+                        {/* PANEL IZQUIERDO: SELECCIÓN DE CLIENTE */}
+                        <div className="w-full lg:w-1/3 space-y-6">
+                            <div className="bg-[#1f2937] p-6 rounded-3xl border border-gray-700 shadow-2xl">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h2 className="text-lg font-black text-blue-500 uppercase tracking-tighter">👥 Paso 2: Cliente</h2>
+                                    {/* BOTÓN PARA REGRESAR A LAS UNIDADES */}
+                                    <button 
+                                        onClick={handleReturnToUnits} 
+                                        className="text-[10px] bg-gray-800 px-2 py-1 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition-all font-bold uppercase"
+                                    >
+                                        ⬅ Cambiar Unidad
+                                    </button>
                                 </div>
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-xs text-gray-400 uppercase font-bold">Cantidad / Peso</label>
-                                    <input type="number" className="bg-[#374151] border border-gray-600 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500" placeholder="0.00" />
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-xs text-gray-400 uppercase font-bold">Precio Unitario</label>
-                                    <input type="number" className="bg-[#374151] border border-gray-600 rounded-lg p-3 outline-none focus:ring-2 focus:ring-green-500" placeholder="$0.00" />
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-xs text-gray-400 uppercase font-bold">Fecha de Operación</label>
-                                    <input type="date" className="bg-[#374151] border border-gray-600 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500" />
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-xs text-gray-400 uppercase font-bold">Unidad / Transporte</label>
-                                    <select className="bg-[#374151] border border-gray-600 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500">
-                                        <option>Unidad 01</option>
-                                        <option>Unidad 02</option>
-                                        <option>Externo</option>
-                                    </select>
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-xs text-gray-400 uppercase font-bold">Estado de Pago</label>
-                                    <select className="bg-[#374151] border border-gray-600 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500">
-                                        <option>Pendiente</option>
-                                        <option>Pagado</option>
-                                        <option>Crédito</option>
-                                    </select>
+                                
+                                <div className="relative mb-4">
+                                    <input 
+                                        type="text"
+                                        placeholder="Buscar cliente..."
+                                        className="w-full bg-[#0e1624] border border-gray-700 rounded-xl p-3 pl-10 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
+                                    <span className="absolute left-3 top-3.5 opacity-30">🔍</span>
                                 </div>
 
-                                <div className="md:col-span-2 lg:col-span-3 flex flex-col gap-1">
-                                    <label className="text-xs text-gray-400 uppercase font-bold">Observaciones Adicionales</label>
-                                    <textarea rows="3" className="bg-[#374151] border border-gray-600 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500" placeholder="Detalles específicos de la venta de {activeTab}..."></textarea>
+                                <div className="max-h-[400px] overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+                                    {filteredClients.map(client => (
+                                        <div 
+                                            key={client.id}
+                                            onClick={() => setSelectedClient(client)}
+                                            className={`p-4 rounded-2xl cursor-pointer transition-all border ${
+                                                selectedClient?.id === client.id 
+                                                ? 'bg-blue-600 border-blue-400 shadow-lg scale-[1.02]' 
+                                                : 'bg-[#2d3748]/50 border-transparent hover:border-gray-600'
+                                            }`}
+                                        >
+                                            <p className="font-black text-xs uppercase">{client.fullName}</p>
+                                            <p className="text-[10px] text-gray-400 mt-1 italic">{client.companyName}</p>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
 
-                            <div className="mt-8 flex justify-end gap-4">
-                                <button className="px-6 py-3 rounded-lg border border-gray-600 text-gray-400 hover:bg-gray-800 transition-all font-bold">
-                                    Cancelar
-                                </button>
-                                <button className="px-10 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-lg shadow-blue-900/40 transition-all transform active:scale-95">
-                                    Guardar Registro
-                                </button>
+                            {/* RESUMEN DE ESTADOS */}
+                            <div className="bg-blue-600/10 p-6 rounded-3xl border border-blue-500/30">
+                                <p className="text-[10px] text-blue-400 font-black uppercase mb-2 tracking-widest">Selección actual</p>
+                                <p className="text-sm font-bold uppercase tracking-tight">Unidad: <span className="text-white">{selectedCategory}</span></p>
+                                <p className="text-sm font-bold uppercase tracking-tight mt-1">Cliente: <span className="text-white">{selectedClient?.fullName || '---'}</span></p>
                             </div>
                         </div>
-                    </>
+
+                        {/* PANEL DERECHO: FORMULARIO */}
+                        <div className="flex-1">
+                            {!selectedClient ? (
+                                <div className="h-full min-h-[400px] flex flex-col items-center justify-center bg-[#1f2937]/30 rounded-3xl border border-dashed border-gray-700">
+                                    <p className="text-gray-600 uppercase font-black text-xs tracking-widest mb-4">Selecciona un cliente de la lista izquierda</p>
+                                    <button onClick={handleReturnToUnits} className="text-[10px] text-blue-500 font-bold border border-blue-500/20 px-4 py-2 rounded-xl hover:bg-blue-500/10 transition-all uppercase">
+                                        O volver a selección de Unidad
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="bg-[#1f2937] p-8 rounded-3xl border border-gray-700 shadow-2xl animate-slideUp">
+                                    <h3 className="text-xl font-black mb-8 uppercase tracking-tighter">
+                                        📝 Paso 3: <span className="text-blue-500">Detalles {selectedCategory}</span>
+                                    </h3>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[10px] text-gray-500 uppercase font-black ml-1">Concepto</label>
+                                            {selectedCategory === "Servicios" ? (
+                                                <select className="bg-[#0e1624] border border-gray-700 rounded-xl p-3 text-sm outline-none focus:border-blue-500">
+                                                    <option value="">Seleccionar...</option>
+                                                    {conceptosServicios.map(c => <option key={c} value={c}>{c}</option>)}
+                                                </select>
+                                            ) : (
+                                                <input type="text" className="bg-[#0e1624] border border-gray-700 rounded-xl p-3 text-sm outline-none focus:border-blue-500" placeholder="Nombre del producto..." />
+                                            )}
+                                        </div>
+
+                                        {selectedCategory === "Servicios" && (
+                                            <div className="flex flex-col gap-1">
+                                                <label className="text-[10px] text-gray-500 uppercase font-black ml-1">Unidad / Equipo</label>
+                                                <select className="bg-[#0e1624] border border-gray-700 rounded-xl p-3 text-sm outline-none focus:border-blue-500">
+                                                    <option value="">Seleccionar...</option>
+                                                    {equiposServicios.map(e => <option key={e} value={e}>{e}</option>)}
+                                                </select>
+                                            </div>
+                                        )}
+
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[10px] text-gray-500 uppercase font-black ml-1">Cantidad / Peso</label>
+                                            <input type="number" className="bg-[#0e1624] border border-gray-700 rounded-xl p-3 text-sm outline-none focus:border-blue-500" placeholder="0.00" />
+                                        </div>
+
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[10px] text-gray-500 uppercase font-black ml-1">Precio Unitario</label>
+                                            <input type="number" className="bg-[#0e1624] border border-gray-700 rounded-xl p-3 text-sm outline-none focus:border-green-500 text-green-400 font-bold" placeholder="$0.00" />
+                                        </div>
+
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[10px] text-gray-500 uppercase font-black ml-1">Unidad / Transporte</label>
+                                            <select className="bg-[#0e1624] border border-gray-700 rounded-xl p-3 text-sm outline-none focus:border-blue-500">
+                                                <option value="">Seleccionar...</option>
+                                                {opcionesTransporte.map(t => <option key={t} value={t}>{t}</option>)}
+                                            </select>
+                                        </div>
+
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[10px] text-gray-500 uppercase font-black ml-1">Estado de Pago</label>
+                                            <select className="bg-[#0e1624] border border-gray-700 rounded-xl p-3 text-sm outline-none focus:border-blue-500">
+                                                <option value="">Seleccionar...</option>
+                                                {opcionesPago.map(p => <option key={p} value={p}>{p}</option>)}
+                                            </select>
+                                        </div>
+
+                                        <div className="flex flex-col gap-1">
+                                            <label className="text-[10px] text-gray-500 uppercase font-black ml-1">Fecha Operación</label>
+                                            <input type="date" className="bg-[#0e1624] border border-gray-700 rounded-xl p-3 text-sm outline-none focus:border-blue-500 text-white" />
+                                        </div>
+                                        
+                                        <div className="md:col-span-2 flex flex-col gap-1">
+                                            <label className="text-[10px] text-gray-500 uppercase font-black ml-1">Observaciones</label>
+                                            <textarea rows="2" className="bg-[#0e1624] border border-gray-700 rounded-xl p-4 text-sm outline-none focus:border-blue-500" placeholder="Detalles de la operación..."></textarea>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-8 pt-6 border-t border-gray-800 flex justify-end gap-3">
+                                        {/* ESTE BOTÓN REGRESA AL PASO DE SELECCIÓN DE CLIENTE */}
+                                        <button 
+                                            type="button"
+                                            onClick={() => setSelectedClient(null)} 
+                                            className="px-6 py-3 rounded-xl bg-gray-800 text-gray-400 hover:text-white font-bold text-[10px] uppercase tracking-widest transition-all"
+                                        >
+                                            ⬅ Regresar a Clientes
+                                        </button>
+                                        
+                                        <button 
+                                            type="submit"
+                                            className="px-10 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black shadow-lg shadow-blue-900/40 transition-all text-[10px] uppercase tracking-widest"
+                                        >
+                                            Finalizar Venta
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 )}
             </div>
-            <ToastContainer theme="dark" />
+            <ToastContainer theme="dark" position="bottom-right" />
         </div>
     );
 };
