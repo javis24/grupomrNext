@@ -2,7 +2,6 @@ import { authenticateToken } from '../../../lib/auth';
 import Appointments from '../../../models/AppointmentModel';
 import Users from '../../../models/UserModel';
 import Clients from '../../../models/ClientModel';
-
 export default async function handler(req, res) {
   const { method } = req;
 
@@ -13,17 +12,16 @@ export default async function handler(req, res) {
       switch (method) {
         case 'GET': {
           const queryOptions = {
-              attributes: ['id', 'date', 'clientName', 'clientStatus', 'assignedTo', 'userId'],
-              
-                  include: [
-                    { model: Users, attributes: ['id', 'name', 'email'] },
-                    { model: Users, as: 'assignedUser', attributes: ['id', 'name', 'email'] },
-                    { 
-                      model: Clients, 
-                      as: 'datosCliente', 
-                      attributes: ['contactPhone'] 
-                    }               
-],           
+            attributes: ['id', 'date', 'clientName', 'clientStatus', 'assignedTo', 'userId', 'appointmentTime', 'comments'],
+            include: [
+              { model: Users, attributes: ['id', 'name', 'email'] },
+              { model: Users, as: 'assignedUser', attributes: ['id', 'name', 'email'] },
+              { 
+                model: Clients, 
+                as: 'datosCliente', 
+                attributes: ['contactPhone'] 
+              }               
+            ],           
           };
 
           if (role !== 'admin' && role !== 'gerencia') {
@@ -35,33 +33,28 @@ export default async function handler(req, res) {
         }
 
         case 'POST': {
-          const { date, clientName, clientStatus, assignedTo } = req.body;
+          const { date, clientName, clientStatus, assignedTo, appointmentTime, comments } = req.body;
         
-          // Validación: assignedTo puede venir como string del select, hay que convertirlo
-          if (!date || !clientName || !clientStatus || !assignedTo) {
-            return res.status(400).json({ message: 'Todos los campos son requeridos' });
+          // CORRECCIÓN: Quitamos 'comments' de la validación obligatoria
+          if (!date || !clientName || !clientStatus || !assignedTo || !appointmentTime) {
+            return res.status(400).json({ message: 'Todos los campos (excepto comentarios) son requeridos' });
           }
         
           const newAppointment = await Appointments.create({
-            date: new Date(date), // Aseguramos formato Date
+            date: new Date(date),
             clientName,
             clientStatus,
-            assignedTo: parseInt(assignedTo), // Forzamos número para MySQL
+            assignedTo: parseInt(assignedTo),
             userId: loggedUserId,
+            appointmentTime,
+            comments: comments || "" // Si no hay comentario, guardamos string vacío
           });
         
-          // Recargar con relaciones para devolver al frontend el objeto completo
           const fullAppointment = await Appointments.findByPk(newAppointment.id, {
             include: [
-              {
-                model: Users,
-                attributes: ['id', 'name', 'email'],
-              },
-              {
-                model: Users,
-                as: 'assignedUser',
-                attributes: ['id', 'name', 'email'],
-              },
+              { model: Users, attributes: ['id', 'name', 'email'] },
+              { model: Users, as: 'assignedUser', attributes: ['id', 'name', 'email'] },
+              { model: Clients, as: 'datosCliente', attributes: ['contactPhone'] } // Incluimos esto para el frontend
             ],
           });
         
@@ -73,7 +66,6 @@ export default async function handler(req, res) {
           return res.status(405).end(`Method ${method} Not Allowed`);
       }
     } catch (error) {
-      // ESTO ES CLAVE: Ver el error real en los logs de Vercel
       console.error('DETALLE DEL ERROR EN APPOINTMENTS:', error);
       return res.status(500).json({ 
         message: 'Error al procesar la cita', 

@@ -106,7 +106,7 @@ export default function Sidebar() {
                {(hasTotalAccess) && (
         <li className="mb-4">
               <Link href="/vendedor" className="flex items-center p-2 rounded hover:bg-[#374151]">
-                {!isCollapsed && 'Vendedores'}
+                {!isCollapsed && 'Reporte de Rendimiento'}
               </Link>
             </li>
           )}

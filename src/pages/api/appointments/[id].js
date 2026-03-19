@@ -15,31 +15,37 @@ export default async function handler(req, res) {
           res.status(200).json(appointment);
         } catch (error) {
           console.error('Error fetching appointment:', error);
-          res.status(500).json({ message: 'Error fetching appointment' });
+          res.status(500).json({ message: 'Error al obtener la cita' });
         }
         break;
 
       case 'PUT':
-        const { date, clientName, clientStatus, assignedTo } = req.body;
+        // 1. Incluimos los nuevos campos en la desestructuración
+        const { date, clientName, clientStatus, assignedTo, appointmentTime, comments } = req.body;
 
-        if (!date || !clientName || !clientStatus || !assignedTo) {
-          return res.status(400).json({ message: "Todos los campos son necesarios" });
+        // 2. Validación corregida (comments no es obligatorio)
+        if (!date || !clientName || !clientStatus || !assignedTo || !appointmentTime) {
+          return res.status(400).json({ message: "Todos los campos obligatorios son necesarios" });
         }
 
         try {
           const appointment = await Appointments.findByPk(id);
           if (!appointment) return res.status(404).json({ message: "Cita no encontrada" });
 
-          appointment.date = date;
-          appointment.clientName = clientName;
-          appointment.clientStatus = clientStatus;
-          appointment.assignedTo = assignedTo;
+          // 3. Actualizamos todos los campos
+          await appointment.update({
+            date: new Date(date),
+            clientName,
+            clientStatus,
+            assignedTo: parseInt(assignedTo),
+            appointmentTime,
+            comments: comments || "" // Si viene null o undefined, ponemos vacío
+          });
 
-          await appointment.save();
           res.status(200).json({ message: "Cita actualizada con éxito", appointment });
         } catch (error) {
           console.error('Error actualizando la cita:', error);
-          res.status(500).json({ message: 'Error actualizando la cita' });
+          res.status(500).json({ message: 'Error interno al actualizar la cita', error: error.message });
         }
         break;
 
@@ -58,7 +64,7 @@ export default async function handler(req, res) {
 
       default:
         res.setHeader('Allow', ['GET', 'PUT', 'DELETE']);
-        res.status(405).end(`Method ${req.method} Not Allowed`);
+        res.status(405).end(`Method ${method} Not Allowed`);
     }
   });
 }

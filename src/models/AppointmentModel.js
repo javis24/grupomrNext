@@ -15,6 +15,8 @@ const Appointments = db.define('appointments', {
     clientName: { type: DataTypes.STRING, allowNull: false },
     clientStatus: { type: DataTypes.STRING, allowNull: false },
     assignedTo: { type: DataTypes.INTEGER, allowNull: true },
+    appointmentTime: { type: DataTypes.STRING, allowNull: false },
+    comments: { type: DataTypes.TEXT, allowNull: true },
     userId: { type: DataTypes.INTEGER, allowNull: false }
 }, {
     freezeTableName: true,

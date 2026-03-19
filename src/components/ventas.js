@@ -19,7 +19,7 @@ const SalesDashboard = () => {
     return (
         <div className="p-6 bg-[#0e1624] text-white">
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold italic">REPORTE DE RENDIMIENTO</h2>
+                <h2 className="text-2xl font-bold italic">REPORTE DE RENDIMIENTO POR ASESOR</h2>
                 <select 
                     value={range} 
                     onChange={(e) => setRange(e.target.value)}
