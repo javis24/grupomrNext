@@ -1,600 +1,322 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Modal from 'react-modal';
 import jwt from 'jsonwebtoken';
-import jsPDF from 'jspdf'; // Importamos jsPDF
-import 'jspdf-autotable'; // Para la tabla
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import { 
+    FiSearch, FiPlus, FiDownload, FiEdit2, FiTrash2, 
+    FiFileText, FiChevronLeft, FiChevronRight, FiUser, FiMapPin, FiBriefcase 
+} from 'react-icons/fi';
+import { toast, ToastContainer } from 'react-toastify';
 
 const customStyles = {
-  content: {
-    top: '50%',
-    left: '50%',
-    right: 'auto',
-    bottom: 'auto',
-    marginRight: '-50%',
-    transform: 'translate(-50%, -50%)',
-    backgroundColor: '#1f2937',
-    border: 'none',
-    borderRadius: '8px',
-    padding: '20px',
-  },
+    content: {
+        top: '50%',
+        left: '50%',
+        right: 'auto',
+        bottom: 'auto',
+        marginRight: '-50%',
+        transform: 'translate(-50%, -50%)',
+        backgroundColor: '#1f2937',
+        border: '1px solid #374151',
+        borderRadius: '1.5rem',
+        padding: '20px',
+        width: '95%',
+        maxWidth: '1100px',
+        maxHeight: '90vh',
+    },
+    overlay: { backgroundColor: 'rgba(0, 0, 0, 0.8)', zIndex: 1000 }
 };
 
 export default function ClientList() {
-  const [clients, setClients] = useState([]);
-  const [search, setSearch] = useState('');
-  const [filterField, setFilterField] = useState('address'); // Campo de filtro seleccionado
-  const [modalIsOpen, setModalIsOpen] = useState(false);
-  const [selectedClient, setSelectedClient] = useState(null);
-  const [error, setError] = useState('');
-  const [userEmail, setUserEmail] = useState('');
-  const [activeUsers, setActiveUsers] = useState([]);
-  const [newClient, setNewClient] = useState({
-    fullName: '',
-    companyName: '',
-    companyPhone: '',
-    businessTurn: '',
-    address: '',
-    contactName: '',
-    contactPhone: '',
-    email: '',
-    position: '',
-    planta: '',
-    producto: '',
-    assignedUser: '',
-  });
-
-        useEffect(() => {
-          const token = localStorage.getItem('token');
-          if (token) {
-            const decoded = jwt.decode(token);
-            setUserEmail(decoded.email); // Guardamos el correo del usuario
-          }
-        }, []);
-
-        useEffect(() => {
-          if (userEmail) {
-            fetchClients();
-          }
-        }, [userEmail]);
-
-        const fetchClients = async () => {
-          try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get('/api/clients', {
-              headers: { 'Authorization': `Bearer ${token}` },
-            });
-      
-            let fetchedClients = response.data;
-      
-            // Filtrar los clientes si el usuario es "tarimas@grupomrlaguna.com"
-            if (userEmail === 'tarimas@grupomrlaguna.com') {
-              fetchedClients = fetchedClients.filter(
-                (client) => client.planta && client.planta.toLowerCase() === 'tarimas'
-              );
-            }
-      
-            setClients(fetchedClients);
-          } catch (error) {
-            console.error('Error fetching clients:', error);
-            setError('Failed to load clients. Please try again later.');
-          }
-        };
-
-        const fetchUsers = async () => {
-          try {
-            const token = localStorage.getItem('token');
-            const response = await axios.get('/api/users', {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            setActiveUsers(response.data); // Almacena todos los usuarios en `activeUsers`
-          } catch (error) {
-            console.error('Error fetching users:', error.response?.data || error.message);
-          }
-        };
+    const [clients, setClients] = useState([]);
+    const [search, setSearch] = useState('');
+    const [filterField, setFilterField] = useState('companyName');
+    const [modalIsOpen, setModalIsOpen] = useState(false);
+    const [selectedClient, setSelectedClient] = useState(null);
+    const [userEmail, setUserEmail] = useState('');
+    const [activeUsers, setActiveUsers] = useState([]);
     
-  const handleDelete = async (clientId) => {
-    try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`/api/clients/${clientId}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-      fetchClients(); // Revalidar la lista de clientes después de eliminar
-    } catch (error) {
-      console.error('Error deleting client:', error);
-      setError('Failed to delete client. Please try again.');
-    }
-  };
+    // Paginación
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(6);
 
-  const openModal = (client = null) => {
-    setSelectedClient(client);
-    if (client) {
-      setNewClient(client); // Si está editando, precargar los datos
-    } else {
-      setNewClient({
-        fullName: '',
-        companyName: '',
-        companyPhone: '',
-        businessTurn: '',
-        address: '',
-        contactName: '',
-        contactPhone: '',
-        email: '',
-        position: '',
-        planta: '',
-        producto: '',
-        assignedUser: '',
-        billingContactName: '',
-        billingPhone: '',
-        billingEmail: '',
-        usoCFDI: '',
-        paymentMethod: '',
-        paymentConditions: '',
-        billingDepartment: '',
-      });
-    }
-    setModalIsOpen(true);
-    fetchUsers();
-  };
-
-  const closeModal = () => {
-    setModalIsOpen(false);
-    setSelectedClient(null);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const token = localStorage.getItem('token');
-    const decoded = jwt.decode(token);
-    const userId = decoded.id; // Obtén el userId del token decodificado
-
-    try {
-      const clientData = { ...newClient, userId }; // Agregar el userId al objeto del cliente
-
-      if (selectedClient) {
-        // Editar cliente existente
-        await axios.put(`/api/clients/${selectedClient.id}`, clientData, {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
-      } else {
-        // Crear nuevo cliente
-        await axios.post('/api/clients', clientData, {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
-      }
-
-      fetchClients();
-      closeModal();
-    } catch (error) {
-      console.error('Error saving client:', error);
-      setError('Failed to save client. Please try again.');
-    }
-  };
-
-  const filteredClients = clients.filter((client) => {
-    const fieldValue = client[filterField] ? client[filterField].toString().toLowerCase() : '';
-    console.log(`Filtering by ${filterField}: checking "${fieldValue}" against "${search.toLowerCase()}"`);
-    return fieldValue.includes(search.toLowerCase());
-  });
-  
-
-  // Función para exportar un solo cliente a PDF con estilo
-const exportClientToPDF = (client) => {
-  const doc = new jsPDF();
-  const imgUrl = '/logo_mr.png';  // Ruta de tu logo
-
-  const image = new Image();
-  image.src = imgUrl;
-
-  image.onload = () => {
-    doc.addImage(image, 'PNG', 20, 10, 20, 20);
-
-    // Información de la empresa
-    doc.setFontSize(12);
-    doc.text("Materiales Reutilizables S.A. de C.V.", 105, 20, { align: 'center' });
-    doc.text("Benito Juarez 112 SUR, Col. 1ro de Mayo", 105, 27, { align: 'center' });
-    doc.text("Cd. Lerdo, Dgo. C.P. 35169", 105, 32, { align: 'center' });
-    doc.text("MRE040121UBA", 105, 37, { align: 'center' });
-
-    // Sección de datos del cliente
-    doc.setFillColor(255, 204, 0); // Color amarillo
-    doc.rect(160, 20, 40, 10, 'F');
-    doc.setFontSize(14);
-    doc.setTextColor(0, 0, 0);
-    doc.text("CLIENTE", 180, 27, null, 'center'); 
-
-    // Información del cliente
-    const clientDetails = [
-      ["NOMBRE", client.fullName],
-      ["EMPRESA", client.companyName],
-      ["TELÉFONO EMPRESA", client.companyPhone],
-      ["GIRO COMERCIAL", client.businessTurn],
-      ["DIRECCIÓN", client.address],
-      ["NOMBRE DE CONTACTO", client.contactName],
-      ["TELÉFONO DE CONTACTO", client.contactPhone],
-      ["CORREO ELECTRÓNICO", client.email],
-      ["CARGO", client.position],
-      ["PLANTA", client.planta],
-      ["PRODUCTO", client.producto],
-      ["USUARIO ASIGNADO", client.assignedUser],
-      ["DEPARTAMENTO DE FACTURACIÓN", client.billingDepartment],
-      ["NOMBRE DE CONTACTO DE FACTURACIÓN", client.billingContactName],
-      ["TELÉFONO DE FACTURACIÓN", client.billingPhone],
-      ["CORREO ELECTRÓNICO DE FACTURACIÓN", client.billingEmail],
-      ["USO CFDI", client.usoCFDI],
-      ["MÉTODO DE PAGO", client.paymentMethod],
-      ["CONDICIONES DE PAGO", client.paymentConditions],
-    ];
-
-    // Ajustar la tabla para que sea más compacta
-    doc.autoTable({
-      body: clientDetails,
-      startY: 50,
-      theme: 'plain',
-      styles: {
-        cellPadding: 1,  // Reduce el padding para que el contenido esté más junto
-        fontSize: 10,  // Tamaño de fuente más pequeño para que todo quepa bien
-        lineWidth: 0.1, // Hace las líneas de la tabla más delgadas
-      },
-      columnStyles: {
-        0: { halign: 'left', textColor: [0, 0, 0], cellWidth: 60 },  // Ajustar ancho de la primera columna
-        1: { halign: 'left', textColor: [0, 0, 0], cellWidth: 100 },  // Ajustar ancho de la segunda columna
-      }
-    });
-        doc.save(`${client.fullName}_details.pdf`);
-      };
+    const initialClientState = {
+        fullName: '', companyName: '', companyPhone: '', businessTurn: '',
+        address: '', contactName: '', contactPhone: '', email: '',
+        position: '', planta: '', producto: '', assignedUser: '',
+        billingContactName: '', billingPhone: '', billingEmail: '',
+        usoCFDI: '', paymentMethod: '', paymentConditions: '', billingDepartment: '',
     };
 
+    const [newClient, setNewClient] = useState(initialClientState);
 
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            const decoded = jwt.decode(token);
+            setUserEmail(decoded.email);
+        }
+        fetchUsers();
+    }, []);
 
-// Función para exportar todos los clientes a PDF con estilo
-const exportAllClientsToPDF = () => {
-  const doc = new jsPDF();
-  const imgUrl = '/logo_mr.png';  // Ruta de tu logo
+    useEffect(() => {
+        if (userEmail) fetchClients();
+    }, [userEmail]);
 
-  const image = new Image();
-  image.src = imgUrl;
+    const fetchClients = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get('/api/clients', {
+                headers: { 'Authorization': `Bearer ${token}` },
+            });
+            let data = response.data;
+            if (userEmail === 'tarimas@grupomrlaguna.com') {
+                data = data.filter(c => c.planta?.toLowerCase() === 'tarimas');
+            }
+            setClients(data);
+        } catch (error) { toast.error('Error al cargar clientes'); }
+    };
 
-  image.onload = () => {
-    doc.addImage(image, 'PNG', 20, 10, 40, 40);
+    const fetchUsers = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.get('/api/users', { headers: { Authorization: `Bearer ${token}` } });
+            setActiveUsers(res.data);
+        } catch (e) { console.error("Error users"); }
+    };
 
-    // Información de la empresa
-    doc.setFontSize(12);
-    doc.text("Materiales Reutilizables S.A. de C.V.", 105, 20, { align: 'center' });
-    doc.text("Benito Juarez 112 SUR, Col. 1ro de Mayo", 105, 27, { align: 'center' });
-    doc.text("Cd. Lerdo, Dgo. C.P. 35169", 105, 32, { align: 'center' });
-    doc.text("MRE040121UBA", 105, 37, { align: 'center' });
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const token = localStorage.getItem('token');
+        const decoded = jwt.decode(token);
+        const userId = decoded.id;
 
-    // Título del documento
-    doc.setFontSize(14);
-    doc.setFillColor(255, 204, 0); // Color amarillo
-    doc.rect(14, 50, 182, 10, 'F');
-    doc.setTextColor(0, 0, 0);
-    doc.text("LISTA DE CLIENTES", 105, 57, null, 'center');
+        try {
+            const clientData = { ...newClient, userId };
+            if (selectedClient) {
+                await axios.put(`/api/clients/${selectedClient.id}`, clientData, {
+                    headers: { 'Authorization': `Bearer ${token}` },
+                });
+                toast.success("Cliente actualizado");
+            } else {
+                await axios.post('/api/clients', clientData, {
+                    headers: { 'Authorization': `Bearer ${token}` },
+                });
+                toast.success("Cliente creado");
+            }
+            fetchClients();
+            closeModal();
+        } catch (error) { toast.error("Error al guardar"); }
+    };
 
-    // Preparar datos para la tabla
-    const tableColumn = ['NOMBRE', 'COMPAÑÍA', 'GIRO COMERCIAL', 'DIRECCIÓN', 'CONTACTO', 'TELÉFONO'];
-    const tableRows = [];
+    const handleDelete = async (id) => {
+        if (!window.confirm("¿Eliminar cliente?")) return;
+        try {
+            const token = localStorage.getItem('token');
+            await axios.delete(`/api/clients/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+            fetchClients();
+            toast.success("Eliminado");
+        } catch (e) { toast.error("Error al eliminar"); }
+    };
 
-    clients.forEach(client => {
-      const clientData = [
-        client.fullName,
-        client.companyName,
-        client.companyPhone,
-        client.businessTurn,
-        client.address,
-        client.contactName,
-        client.contactPhone,
-        client.assignedUser,
-        client.billingContactName,
-        client.billingPhone,
-        client.billingEmail,
-        client.usoCFDI,
-        client.paymentMethod,
-        client.paymentConditions,
-        client.billingDepartment,
-      ];
-      tableRows.push(clientData);
+    const openModal = (client = null) => {
+        setSelectedClient(client);
+        setNewClient(client || initialClientState);
+        setModalIsOpen(true);
+    };
+
+    const closeModal = () => { setModalIsOpen(false); setSelectedClient(null); };
+
+    // Lógica de Filtrado y Paginación
+    const filteredClients = clients.filter((c) => {
+        const val = c[filterField] ? c[filterField].toString().toLowerCase() : '';
+        return val.includes(search.toLowerCase());
     });
 
-    // Generar la tabla con todos los clientes
-    doc.autoTable({
-      head: [tableColumn],
-      body: tableRows,
-      startY: 65,
-      theme: 'grid',
-      headStyles: {
-        fillColor: [255, 204, 0],  // Color amarillo para la cabecera
-        textColor: 0,
-      },
-      styles: {
-        fontSize: 10,  // Tamaño de fuente más compacto para la tabla
-        halign: 'center',
-      },
-      columnStyles: {
-        0: { cellWidth: 30 },
-        1: { cellWidth: 30 },
-        2: { cellWidth: 30 },
-        3: { cellWidth: 40 },
-        4: { cellWidth: 30 },
-        5: { cellWidth: 30 },
-      }
-    });
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentClients = filteredClients.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
 
-    
-    doc.save('clientes.pdf');
-  };
-};
+    const exportClientToPDF = (client) => {
+        const doc = new jsPDF();
+        doc.setFillColor(255, 204, 0);
+        doc.rect(0, 0, 210, 20, 'F');
+        doc.setFontSize(14);
+        doc.text("EXPEDIENTE DE CLIENTE - GRUPO MR", 105, 13, { align: 'center' });
+        
+        const body = Object.entries(client)
+            .filter(([key]) => key !== 'id' && key !== 'userId')
+            .map(([key, val]) => [key.toUpperCase(), val || 'N/A']);
 
+        doc.autoTable({
+            startY: 25,
+            head: [['CAMPO', 'VALOR']],
+            body: body,
+            theme: 'grid',
+            headStyles: { fillColor: [31, 41, 55] }
+        });
+        doc.save(`Cliente_${client.companyName}.pdf`);
+    };
 
-  return (
-    <div className="p-1 bg-[#0e1624] text-white min-h-screen">
-      <div className="flex justify-between items-center mb-2">
-        <h1 className="text-3xl font-bold">Clientes</h1>
-        <div className="flex">
-          <button onClick={() => openModal()} className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600 mr-2">
-            Añadir 
-          </button>
-          <button onClick={exportAllClientsToPDF} className="bg-red-500 text-white p-2 rounded hover:bg-red-600">
-            Descargar todo a PDF
-          </button>
-        </div>
-      </div>
-
-      <div className="relative mb-4 ">
-        <select
-          value={filterField}
-          onChange={(e) => setFilterField(e.target.value)}
-          className="p-2 rounded bg-[#1f2937] text-white mr-4"
-        >
-          <option value="address">Dirección</option>
-          <option value="contactName">Nombre del Cliente</option>
-          <option value="contactPhone">Teléfono del Cliente</option>
-          <option value="planta">Planta</option>
-          <option value="email">Email</option>
-        </select>
-
-        <input
-          type="text"
-          placeholder={`Buscar por ${filterField}`}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full p-2 rounded bg-[#1f2937] text-white"
-        />
-      </div>
-
-      {error && <p className="text-red-500">{error}</p>}
-
-      {/* Mostrar mensaje si no hay clientes */}
-      {clients.length === 0 ? (
-        <p className="text-center">No se encontraron clientes. Por favor, agregue nuevos clientes.</p>
-      ) : (
-        <div className="">
-      <table className="min-w-full table-auto bg-[#1f2937] text-left rounded-lg">
-        <thead>
-          <tr className="bg-[#2d3748]">
-            <th className="px-4 py-2 w-1/4">Nombre</th>
-            <th className="px-4 py-2 w-1/4">Compañía</th>
-            <th className="px-4 py-2 w-1/4">Acciones</th>
-          </tr>
-        </thead>
-            <tbody>
-              {filteredClients.map((client) => (
-                <tr key={client.id} className="hover:bg-[#374151]">
-                  <td className="px-4 py-2">{client.fullName}</td>
-                  <td className="px-4 py-2">{client.companyName}</td>
-                  <td className="px-4 py-2">
-                    <button onClick={() => openModal(client)} className="bg-green-500 text-white p-2 rounded hover:bg-green-600 mr-2">Ver Cliente</button>
-                    <button onClick={() => exportClientToPDF(client)} className="bg-yellow-500 text-white p-2 rounded hover:bg-yellow-600 mr-2">Exportar a PDF</button>
-                    <button
-                      onClick={() => handleDelete(client.id)}
-                      className="bg-red-500 text-white p-2 rounded hover:bg-red-600"
-                    >
-                      Eliminar Cliente
+    return (
+        <div className="p-4 md:p-8 bg-[#0e1624] min-h-screen text-white font-sans">
+            <ToastContainer theme="dark" />
+            
+            {/* HEADER */}
+            <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+                <div>
+                    <h1 className="text-3xl md:text-4xl font-black tracking-tighter uppercase italic text-blue-500">Clientes</h1>
+                    <p className="text-gray-500 text-xs font-bold tracking-widest uppercase">Gestión de cartera Grupo MR</p>
+                </div>
+                <div className="flex gap-2 w-full md:w-auto">
+                    <button onClick={() => openModal()} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-blue-900/20">
+                        <FiPlus /> Añadir
                     </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-        <Modal
-          isOpen={modalIsOpen}
-          onRequestClose={closeModal}
-          style={customStyles}
-          contentLabel="Add/Edit Client"
-        >
-          <h2 className="text-2xl font-bold mb-4 text-white">{selectedClient ? 'Editar Cliente' : 'Añadir Cliente'}</h2>
-          <form onSubmit={handleSubmit}>
-           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              {/* Primera columna de inputs */}
-              <div>
-                <label className="block text-white mb-2">Razon Social</label>
-                <input
-                  type="text"
-                  value={newClient.fullName}
-                  onChange={(e) => setNewClient({ ...newClient, fullName: e.target.value })}
-                  className="w-full p-2 rounded bg-[#1f2937] text-white"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-white mb-2">Nombre de Empresa</label>
-                <input
-                  type="text"
-                  value={newClient.companyName}
-                  onChange={(e) => setNewClient({ ...newClient, companyName: e.target.value })}
-                  className="w-full p-2 rounded bg-[#1f2937] text-white"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-white mb-2">Teléfono de Empresa</label>
-                <input
-                  type="text"
-                  value={newClient.companyPhone}
-                  onChange={(e) => setNewClient({ ...newClient, companyPhone: e.target.value })}
-                  className="w-full p-2 rounded bg-[#1f2937] text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-white mb-2">Giro de Negocios</label>
-                <input
-                  type="text"
-                  value={newClient.businessTurn}
-                  onChange={(e) => setNewClient({ ...newClient, businessTurn: e.target.value })}
-                  className="w-full p-2 rounded bg-[#1f2937] text-white"
-                  required
-                />
-              </div>
-
-              {/* Segunda columna de inputs */}
-              <div>
-                <label className="block text-white mb-2">Dirección</label>
-                <input
-                  type="text"
-                  value={newClient.address}
-                  onChange={(e) => setNewClient({ ...newClient, address: e.target.value })}
-                  className="w-full p-2 rounded bg-[#1f2937] text-white"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-white mb-2">Nombre de contacto</label>
-                <input
-                  type="text"
-                  value={newClient.contactName}
-                  onChange={(e) => setNewClient({ ...newClient, contactName: e.target.value })}
-                  className="w-full p-2 rounded bg-[#1f2937] text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-white mb-2">Teléfono de contacto</label>
-                <input
-                  type="text"
-                  value={newClient.contactPhone}
-                  onChange={(e) => setNewClient({ ...newClient, contactPhone: e.target.value })}
-                  className="w-full p-2 rounded bg-[#1f2937] text-white"
-                />
-              </div>
-
-              {/* Tercera columna de inputs */}
-              <div>
-                <label className="block text-white mb-2">Email</label>
-                <input
-                  type="email"
-                  value={newClient.email}
-                  onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
-                  className="w-full p-2 rounded bg-[#1f2937] text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-white mb-2">Departamento</label>
-                <input
-                  type="text"
-                  value={newClient.position}
-                  onChange={(e) => setNewClient({ ...newClient, position: e.target.value })}
-                  className="w-full p-2 rounded bg-[#1f2937] text-white"
-                />
-              </div>
-              <div>
-              <label className="block text-white mb-2">Planta</label>
-              <input
-                type="text"
-                value={newClient.planta}
-                onChange={(e) => setNewClient({ ...newClient, planta: e.target.value })}
-                className="w-full p-2 rounded bg-[#1f2937] text-white"
-              />
+                </div>
             </div>
-            <div>
-              <label className="block text-white mb-2">Producto</label>
-              <input
-                type="text"
-                value={newClient.producto}
-                onChange={(e) => setNewClient({ ...newClient, producto: e.target.value })}
-                className="w-full p-2 rounded bg-[#1f2937] text-white"
-                required
-              />
+
+            {/* FILTROS */}
+            <div className="max-w-7xl mx-auto bg-[#1f2937] p-4 rounded-3xl border border-gray-700 mb-8 flex flex-col md:flex-row gap-4 shadow-xl">
+                <div className="flex items-center bg-[#0e1624] rounded-2xl px-4 py-2 flex-1 border border-gray-800 focus-within:border-blue-500 transition-all">
+                    <FiSearch className="text-gray-500 mr-3" />
+                    <input 
+                        type="text" 
+                        placeholder={`Buscar por ${filterField}...`}
+                        className="bg-transparent w-full outline-none text-sm p-1"
+                        value={search}
+                        onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+                    />
+                </div>
+                <select 
+                    value={filterField} 
+                    onChange={(e) => setFilterField(e.target.value)}
+                    className="bg-[#0e1624] border border-gray-800 rounded-2xl px-4 py-2 text-sm outline-none focus:border-blue-500 text-white"
+                >
+                    <option value="companyName">Empresa</option>
+                    <option value="fullName">Razón Social</option>
+                    <option value="contactName">Contacto</option>
+                    <option value="planta">Planta</option>
+                </select>
             </div>
-            <div>
-              <select
-                value={newClient.assignedUser}
-                onChange={(e) => setNewClient({ ...newClient, assignedUser: e.target.value })}
-                className="w-full p-2 rounded bg-[#1f2937] text-white"
-              >
-                <option value="">Seleccione un usuario</option>
-                {activeUsers.map((user) => (
-                  <option key={user.id} value={user.email}>
-                    {user.name} ({user.email})
-                  </option>
+
+            {/* GRID DE CARDS */}
+            <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {currentClients.map((client) => (
+                    <div key={client.id} className="bg-[#1f2937] rounded-3xl border border-gray-700 p-6 hover:border-blue-500/50 transition-all group shadow-lg flex flex-col justify-between">
+                        <div>
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="bg-blue-500/10 p-3 rounded-2xl text-blue-500 text-2xl group-hover:scale-110 transition-transform">
+                                    🏢
+                                </div>
+                                <span className="text-[10px] font-black bg-gray-800 text-blue-400 px-3 py-1 rounded-full uppercase border border-gray-700">
+                                    {client.planta || 'Gral'}
+                                </span>
+                            </div>
+                            <h3 className="text-lg font-black uppercase truncate text-white">{client.companyName}</h3>
+                            <p className="text-gray-500 text-[10px] font-bold mb-4 truncate uppercase tracking-widest">{client.fullName}</p>
+                            
+                            <div className="space-y-3 mb-6">
+                                <div className="flex items-center gap-2 text-xs text-gray-400">
+                                    <FiUser className="text-blue-500" /> <span className="truncate">{client.contactName}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-gray-400">
+                                    <FiMapPin className="text-blue-500" /> <span className="truncate">{client.address}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-gray-400">
+                                    <FiBriefcase className="text-blue-500" /> <span className="truncate">{client.businessTurn}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 pt-4 border-t border-gray-800">
+                            <button onClick={() => openModal(client)} className="bg-gray-800 hover:bg-green-600 p-3 rounded-xl transition-all flex justify-center text-white" title="Editar">
+                                <FiEdit2 />
+                            </button>
+                            <button onClick={() => exportClientToPDF(client)} className="bg-gray-800 hover:bg-yellow-600 p-3 rounded-xl transition-all flex justify-center text-white" title="PDF">
+                                <FiFileText />
+                            </button>
+                            <button onClick={() => handleDelete(client.id)} className="bg-gray-800 hover:bg-red-600 p-3 rounded-xl transition-all flex justify-center text-white" title="Eliminar">
+                                <FiTrash2 />
+                            </button>
+                        </div>
+                    </div>
                 ))}
-              </select>
             </div>
-            <div>
-              <label className="block text-white mb-2">Nombre contacto pago</label>
-              <input
-                type="text"
-                value={newClient.billingContactName}
-                onChange={(e) => setNewClient({ ...newClient, billingContactName: e.target.value })}
-                className="w-full p-2 rounded bg-[#1f2937] text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-white mb-2">Teléfono de facturación</label>
-              <input
-                type="text"
-                value={newClient.billingPhone}
-                onChange={(e) => setNewClient({ ...newClient, billingPhone: e.target.value })}
-                className="w-full p-2 rounded bg-[#1f2937] text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-white mb-2">Email de facturación</label>
-              <input
-                type="email"
-                value={newClient.billingEmail}
-                onChange={(e) => setNewClient({ ...newClient, billingEmail: e.target.value })}
-                className="w-full p-2 rounded bg-[#1f2937] text-white"
-              />
-              </div>
-            <div>
-              <label className="block text-white mb-2">Uso CFDI</label>
-              <input
-                type="text"
-                value={newClient.usoCFDI}
-                onChange={(e) => setNewClient({ ...newClient, usoCFDI: e.target.value })}
-                className="w-full p-2 rounded bg-[#1f2937] text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-white mb-2">Método de pago</label>
-              <input
-                type="text"
-                value={newClient.paymentMethod}
-                onChange={(e) => setNewClient({ ...newClient, paymentMethod: e.target.value })}
-                className="w-full p-2 rounded bg-[#1f2937] text-white"
-              />
-            </div>
-            <div>
-              <label className="block text-white mb-2">Condiciones de pago</label>
-              <input
-                type="text"
-                value={newClient.paymentConditions}
-                onChange={(e) => setNewClient({ ...newClient, paymentConditions: e.target.value })}
-                className="w-full p-2 rounded bg-[#1f2937] text-white"
-              />
-            </div>
-          </div>
-           <button type="submit" className="bg-blue-500 text-white p-2 rounded mt-4">
-              {selectedClient ? 'Guardar Cliente' : 'Añadir Cliente'}
-            </button>
-          </form>
-        </Modal>      
-    </div>
-  );
+
+            {/* PAGINACIÓN */}
+            {totalPages > 1 && (
+                <div className="max-w-7xl mx-auto mt-12 flex justify-center items-center gap-2">
+                    <button disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)} className="p-2 rounded-lg bg-gray-800 disabled:opacity-30"><FiChevronLeft/></button>
+                    {[...Array(totalPages)].map((_, i) => (
+                        <button key={i} onClick={() => setCurrentPage(i + 1)} className={`w-8 h-8 rounded-lg text-xs font-bold ${currentPage === i + 1 ? 'bg-blue-600' : 'bg-gray-800'}`}>
+                            {i + 1}
+                        </button>
+                    ))}
+                    <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => prev + 1)} className="p-2 rounded-lg bg-gray-800 disabled:opacity-30"><FiChevronRight/></button>
+                </div>
+            )}
+
+            {/* MODAL COMPLETO */}
+            <Modal isOpen={modalIsOpen} onRequestClose={closeModal} style={customStyles}>
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-xl font-black uppercase italic text-white">{selectedClient ? '✏️ Editar Cliente' : '🚀 Nuevo Cliente'}</h2>
+                    <button onClick={closeModal} className="text-gray-400 hover:text-white transition-colors text-2xl">✕</button>
+                </div>
+                
+                <form onSubmit={handleSubmit} className="overflow-y-auto max-h-[75vh] pr-2 custom-scrollbar">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <ModalInput label="Razón Social" value={newClient.fullName} onChange={(v) => setNewClient({...newClient, fullName: v})} required />
+                        <ModalInput label="Nombre Comercial" value={newClient.companyName} onChange={(v) => setNewClient({...newClient, companyName: v})} required />
+                        <ModalInput label="Tel. Empresa" value={newClient.companyPhone} onChange={(v) => setNewClient({...newClient, companyPhone: v})} />
+                        <ModalInput label="Giro" value={newClient.businessTurn} onChange={(v) => setNewClient({...newClient, businessTurn: v})} />
+                        <ModalInput label="Dirección" value={newClient.address} onChange={(v) => setNewClient({...newClient, address: v})} />
+                        <ModalInput label="Contacto" value={newClient.contactName} onChange={(v) => setNewClient({...newClient, contactName: v})} />
+                        <ModalInput label="Tel. Contacto" value={newClient.contactPhone} onChange={(v) => setNewClient({...newClient, contactPhone: v})} />
+                        <ModalInput label="Email" type="email" value={newClient.email} onChange={(v) => setNewClient({...newClient, email: v})} />
+                        <ModalInput label="Departamento" value={newClient.position} onChange={(v) => setNewClient({...newClient, position: v})} />
+                        <ModalInput label="Planta" value={newClient.planta} onChange={(v) => setNewClient({...newClient, planta: v})} />
+                        <ModalInput label="Producto" value={newClient.producto} onChange={(v) => setNewClient({...newClient, producto: v})} />
+                        
+                        <div className="flex flex-col gap-1">
+                            <label className="text-[10px] font-black text-gray-500 uppercase ml-1">Vendedor Asignado</label>
+                            <select 
+                                value={newClient.assignedUser} 
+                                onChange={(e) => setNewClient({...newClient, assignedUser: e.target.value})}
+                                className="bg-[#0e1624] border border-gray-700 rounded-xl p-3 text-sm text-white outline-none focus:border-blue-500"
+                            >
+                                <option value="">Seleccionar...</option>
+                                {activeUsers.map(u => <option key={u.id} value={u.email}>{u.name}</option>)}
+                            </select>
+                        </div>
+
+                        {/* Campos de Facturación */}
+                        <ModalInput label="Contacto Pago" value={newClient.billingContactName} onChange={(v) => setNewClient({...newClient, billingContactName: v})} />
+                        <ModalInput label="Uso CFDI" value={newClient.usoCFDI} onChange={(v) => setNewClient({...newClient, usoCFDI: v})} />
+                        <ModalInput label="Método de Pago" value={newClient.paymentMethod} onChange={(v) => setNewClient({...newClient, paymentMethod: v})} />
+                    </div>
+
+                    <button type="submit" className="w-full mt-8 bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl uppercase tracking-widest transition-all shadow-lg active:scale-[0.98]">
+                        {selectedClient ? 'Actualizar Registro' : 'Crear Cliente'}
+                    </button>
+                </form>
+            </Modal>
+        </div>
+    );
 }
+
+// Componente Interno para Inputs del Modal
+const ModalInput = ({ label, value, onChange, type = "text", required = false }) => (
+    <div className="flex flex-col gap-1">
+        <label className="text-[10px] font-black text-gray-500 uppercase ml-1 tracking-widest">{label}</label>
+        <input 
+            type={type}
+            value={value || ''}
+            onChange={(e) => onChange(e.target.value)}
+            required={required}
+            className="bg-[#0e1624] border border-gray-700 rounded-xl p-3 text-sm outline-none focus:border-blue-500 transition-all text-white hover:bg-[#162030]"
+        />
+    </div>
+);

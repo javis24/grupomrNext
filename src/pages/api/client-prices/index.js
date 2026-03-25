@@ -1,89 +1,52 @@
-// /pages/api/client-prices/index.js
 import ClientePriceModel from '../../../models/ClientPriceModel.js';
 
 export default async function handler(req, res) {
-  // GET: obtener todos
-  if (req.method === 'GET') {
-    try {
-      const allClients = await ClientePriceModel.findAll();
-      return res.status(200).json(allClients);
-    } catch (error) {
-      console.error('Error al obtener clientes:', error);
-      return res.status(500).json({ error: 'Error interno del servidor' });
+  const { method } = req;
+
+  // IMPORTANTE: Envolatamos todo en un try/catch global para evitar que la API muera
+  try {
+    switch (method) {
+      case 'GET':
+        const allClients = await ClientePriceModel.findAll();
+        return res.status(200).json(allClients);
+
+      case 'POST':
+        const { clients } = req.body;
+        if (!clients || !Array.isArray(clients)) {
+          return res.status(400).json({ error: 'Datos inválidos' });
+        }
+        await ClientePriceModel.bulkCreate(clients, {
+          updateOnDuplicate: ['contacto', 'puesto', 'telefono', 'email', 'ubicacion']
+        });
+        return res.status(201).json({ message: 'Sincronizado' });
+
+      case 'PUT':
+        const { uuid: uuidEdit, asesorcomercial } = req.body;
+        await ClientePriceModel.update({ asesorcomercial }, { where: { uuid: uuidEdit } });
+        return res.status(200).json({ message: 'Actualizado' });
+
+      case 'DELETE':
+        const { uuid } = req.body; // Asegúrate de que el frontend envíe { uuid: "..." }
+        if (!uuid) {
+          return res.status(400).json({ error: 'Falta el UUID' });
+        }
+        
+        const deleted = await ClientePriceModel.destroy({ where: { uuid } });
+        
+        if (deleted) {
+          return res.status(200).json({ message: 'Eliminado correctamente' });
+        } else {
+          return res.status(404).json({ error: 'No se encontró el registro' });
+        }
+
+      default:
+        // Si entra un método que no definimos (ej. PATCH), respondemos esto:
+        res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
+        return res.status(405).end(`Method ${method} Not Allowed`);
     }
+  } catch (error) {
+    console.error("API ERROR:", error);
+    // IMPORTANTE: Siempre enviar respuesta incluso en error
+    return res.status(500).json({ error: 'Error interno del servidor', details: error.message });
   }
-
-  // POST: crear varios (subida masiva de Excel)
-  if (req.method === 'POST') {
-    try {
-      const { clients } = req.body;
-      if (!Array.isArray(clients)) {
-        return res.status(400).json({ error: 'Los datos enviados no son válidos' });
-      }
-
-      // Crea todos de golpe
-      await ClientePriceModel.bulkCreate(clients);
-      return res.status(201).json({ message: 'Clientes creados correctamente' });
-    } catch (error) {
-      console.error('Error al crear clientes:', error);
-      return res.status(500).json({ error: 'Error interno al crear clientes' });
-    }
-  }
-
-  // DELETE: eliminar un registro por uuid
-  if (req.method === 'DELETE') {
-    try {
-      const { uuid } = req.body;
-      if (!uuid) {
-        return res.status(400).json({ error: 'Falta el UUID para eliminar' });
-      }
-
-      await ClientePriceModel.destroy({
-        where: { uuid },
-      });
-
-      return res.status(200).json({ message: 'Registro eliminado correctamente' });
-    } catch (error) {
-      console.error('Error al eliminar cliente:', error);
-      return res.status(500).json({ error: 'Error interno al eliminar cliente' });
-    }
-  }
-
-
-    // PUT: actualizar "asesorcomercial" en un registro existente
-  if (req.method === 'PUT') {
-    try {
-      const { uuid, asesorcomercial } = req.body;
-
-      // Validaciones mínimas
-      if (!uuid) {
-        return res
-          .status(400)
-          .json({ error: 'Falta el UUID para identificar al cliente' });
-      }
-      if (!asesorcomercial) {
-        return res
-          .status(400)
-          .json({ error: 'Falta el nuevo asesor comercial' });
-      }
-
-      // Actualizar en la base de datos
-      await ClientePriceModel.update(
-        { asesorcomercial },
-        { where: { uuid } }
-      );
-
-      return res.status(200).json({
-        message: 'Asesor comercial asignado/actualizado correctamente',
-      });
-    } catch (error) {
-      console.error('Error al asignar asesor:', error);
-      return res
-        .status(500)
-        .json({ error: 'Error interno al asignar asesor' });
-    }
-  }
-
-  // Si no es GET, POST o DELETE, no está permitido
-  return res.status(405).json({ error: 'Método no permitido' });
 }

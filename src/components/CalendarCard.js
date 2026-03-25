@@ -253,7 +253,7 @@ const CalendarCard = () => {
                   >+ Prospecto</button>
 
                   <button 
-                    onClick={() => router.push({ pathname: '/cotizaciones', query: { client: appo.clientName, phone: appo.datosCliente?.contactPhone || '' } })}
+                    onClick={() => router.push({ pathname: '/cotizacion', query: { client: appo.clientName, phone: appo.datosCliente?.contactPhone || '' } })}
                     className="text-[10px] bg-orange-600/20 text-orange-400 border border-orange-500/30 px-2 py-0.5 rounded hover:bg-orange-600 hover:text-white transition-all font-bold uppercase"
                   >+ Cotizar</button>
                 </div>
