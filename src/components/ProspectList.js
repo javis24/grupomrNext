@@ -6,6 +6,8 @@ import "react-toastify/dist/ReactToastify.css";
 import { useRouter } from 'next/router';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+// Importamos un icono para el botón de PDF (asegúrate de tener react-icons instalado)
+import { FiFileText, FiEdit, FiUserCheck } from "react-icons/fi";
 
 const customStyles = {
     content: {
@@ -69,6 +71,51 @@ export default function ProspectList() {
     const [searchTerm, setSearchTerm] = useState("");
     const [searchProcess, setSearchProcess] = useState("");
 
+    // --- LÓGICA PARA EXPORTAR PDF ---
+    const exportToPDF = (prospect) => {
+        const doc = new jsPDF();
+
+        // Configuración de encabezado
+        doc.setFillColor(31, 41, 55);
+        doc.rect(0, 0, 210, 25, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(18);
+        doc.text("FICHA DE PROSPECTO", 105, 16, { align: 'center' });
+
+        // Información General
+        doc.setTextColor(40);
+        doc.setFontSize(12);
+        doc.text(`Fecha de creación: ${new Date(prospect.createdAt).toLocaleDateString()}`, 14, 35);
+        doc.text(`Estado actual: ${prospect.saleProcess}`, 14, 42);
+
+        // Tabla de datos
+        const tableBody = [
+            ["Nombre del Contacto", prospect.contactName],
+            ["Empresa / Negocio", prospect.company],
+            ["Teléfono", prospect.phone],
+            ["Correo Electrónico", prospect.email],
+            ["Proceso de Venta", prospect.saleProcess]
+        ];
+
+        doc.autoTable({
+            startY: 50,
+            head: [['Campo', 'Valor']],
+            body: tableBody,
+            theme: 'grid',
+            headStyles: { fillColor: [59, 130, 246] },
+            styles: { fontSize: 11, cellPadding: 5 }
+        });
+
+        // Pie de página
+        const finalY = doc.lastAutoTable.finalY + 10;
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text("Documento generado automáticamente por Sistema CRM Grupo MR", 14, finalY);
+
+        doc.save(`Prospecto_${prospect.contactName.replace(/\s+/g, '_')}.pdf`);
+        toast.info("PDF generado correctamente");
+    };
+
     // --- LÓGICA PARA RECIBIR DATOS DEL CALENDARIO ---
     useEffect(() => {
         if (router.isReady) {
@@ -77,7 +124,7 @@ export default function ProspectList() {
                 setFormData({
                     saleProcess: "Contacto inicial",
                     contactName: name,
-                    company: name, // Asumimos que el nombre del cliente es la empresa
+                    company: name, 
                     phone: phone || "",
                     email: ""
                 });
@@ -94,7 +141,7 @@ export default function ProspectList() {
 
     const fetchProspects = async () => {
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem('token');
             const response = await axios.get("/api/prospects", {
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -106,7 +153,7 @@ export default function ProspectList() {
 
     const fetchUsers = async () => {
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem('token');
             const response = await axios.get("/api/users", {
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -124,7 +171,7 @@ export default function ProspectList() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem('token');
             if (modalType === "editProspect") {
                 await axios.put(`/api/prospects/${editingProspect.id}`, formData, {
                     headers: { Authorization: `Bearer ${token}` },
@@ -175,7 +222,7 @@ export default function ProspectList() {
     const handleClientSave = async (e) => {
         e.preventDefault();
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem('token');
             await axios.post("/api/clients", newClient, {
                 headers: { Authorization: `Bearer ${token}` },
             });
@@ -209,7 +256,7 @@ export default function ProspectList() {
     });
 
     return (
-        <div className="p-2 md:p-6 bg-[#0e1624] text-white min-h-screen flex flex-col items-center">
+        <div className="p-2 md:p-6 bg-[#0e1624] text-white min-h-screen flex flex-col items-center font-sans">
             <h1 className="text-2xl md:text-3xl font-black mb-6 uppercase tracking-tight text-center">
                 Avances de <span className="text-blue-500">Prospectos</span>
             </h1>
@@ -220,14 +267,14 @@ export default function ProspectList() {
                     <div className="md:col-span-4">
                         <input
                             type="text" placeholder="Buscar por nombre..."
-                            className="w-full p-3 rounded-xl bg-[#0e1624] border border-gray-700 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="w-full p-3 rounded-xl bg-[#0e1624] border border-gray-700 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                             value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
                     <div className="md:col-span-4">
                         <input
                             type="text" placeholder="Filtrar proceso..."
-                            className="w-full p-3 rounded-xl bg-[#0e1624] border border-gray-700 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="w-full p-3 rounded-xl bg-[#0e1624] border border-gray-700 text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                             value={searchProcess} onChange={(e) => setSearchProcess(e.target.value)}
                         />
                     </div>
@@ -242,7 +289,7 @@ export default function ProspectList() {
             {/* LISTADO DE TARJETAS */}
             <div className="w-full max-w-5xl space-y-4">
                 {filteredProspects.map((prospect) => (
-                    <div key={prospect.id} className="relative bg-[#1f2937] p-5 rounded-2xl border border-gray-700 flex flex-col md:flex-row justify-between gap-4 transition-all hover:border-gray-500 shadow-lg">
+                    <div key={prospect.id} className="relative bg-[#1f2937] p-5 rounded-2xl border border-gray-700 flex flex-col md:flex-row justify-between gap-4 transition-all hover:border-gray-500 shadow-lg group">
                         <div className={`absolute left-0 top-4 bottom-4 w-1 rounded-r-full ${getProspectStatusColor(prospect.createdAt)}`}></div>
                         <div className="flex flex-col">
                             <h3 className="text-lg font-black text-blue-400 uppercase tracking-tight">{prospect.contactName}</h3>
@@ -252,22 +299,49 @@ export default function ProspectList() {
                                 <p className="text-[10px] font-mono mt-1 opacity-60">📅 {new Date(prospect.createdAt).toLocaleDateString('es-MX')}</p>
                             </div>
                         </div>
+                        
+                        {/* BOTONES DE ACCIÓN MEJORADOS */}
                         <div className="grid grid-cols-2 sm:flex items-center gap-2 pt-3 md:pt-0 border-t border-gray-700 md:border-none">
-                            <button onClick={() => handleEdit(prospect)} className="p-2 bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 rounded-lg font-bold text-[10px] uppercase hover:bg-yellow-500 hover:text-black transition-all">Editar</button>
+                            <button 
+                                onClick={() => exportToPDF(prospect)} 
+                                className="flex items-center justify-center gap-2 p-2 bg-red-600/10 text-red-500 border border-red-500/20 rounded-lg font-bold text-[10px] uppercase hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                                title="Exportar a PDF"
+                            >
+                                <FiFileText size={14} /> PDF
+                            </button>
+                            <button 
+                                onClick={() => handleEdit(prospect)} 
+                                className="flex items-center justify-center gap-2 p-2 bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 rounded-lg font-bold text-[10px] uppercase hover:bg-yellow-500 hover:text-black transition-all shadow-sm"
+                            >
+                                <FiEdit size={14} /> Editar
+                            </button>
                             {prospect.saleProcess === "Cerrado" && (
-                                <button onClick={() => handleConvertClick(prospect)} className="col-span-2 md:col-auto p-2 bg-green-600 text-white rounded-lg font-black text-[10px] uppercase animate-pulse tracking-wider shadow-lg">Convertir a Cliente</button>
+                                <button 
+                                    onClick={() => handleConvertClick(prospect)} 
+                                    className="col-span-2 md:col-auto flex items-center justify-center gap-2 p-2 bg-green-600 text-white rounded-lg font-black text-[10px] uppercase animate-pulse tracking-wider shadow-lg"
+                                >
+                                    <FiUserCheck size={14} /> Convertir a Cliente
+                                </button>
                             )}
                         </div>
                     </div>
                 ))}
+                {filteredProspects.length === 0 && (
+                    <div className="text-center py-20 bg-[#1f2937] rounded-2xl border border-dashed border-gray-700 opacity-50 uppercase font-black tracking-widest text-xs">
+                        No se encontraron prospectos
+                    </div>
+                )}
             </div>
 
             {/* MODAL GLOBAL */}
             {modalType && (
                 <Modal isOpen={modalIsOpen} onRequestClose={() => setModalIsOpen(false)} style={customStyles}>
-                    <h2 className="text-xl font-black mb-6 text-blue-400 uppercase border-b border-gray-700 pb-2 flex items-center gap-2">
-                        {modalType === "convertToClient" ? "💎 Alta de Nuevo Cliente" : (modalType === "createProspect" ? "📝 Registro de Prospecto" : "✏️ Editar Información")}
-                    </h2>
+                    <div className="flex justify-between items-center mb-6 border-b border-gray-700 pb-4">
+                        <h2 className="text-xl font-black text-blue-400 uppercase flex items-center gap-2">
+                            {modalType === "convertToClient" ? "💎 Alta de Nuevo Cliente" : (modalType === "createProspect" ? "📝 Registro de Prospecto" : "✏️ Editar Información")}
+                        </h2>
+                        <button onClick={() => setModalIsOpen(false)} className="text-gray-500 hover:text-white text-2xl">&times;</button>
+                    </div>
                     
                     <form onSubmit={modalType === "convertToClient" ? handleClientSave : handleSubmit} className="space-y-6">
                         {modalType === "convertToClient" ? (
@@ -293,7 +367,7 @@ export default function ProspectList() {
                                         </div>
                                         <div className="flex flex-col gap-1">
                                             <label className="text-[10px] text-gray-500 font-bold ml-1 uppercase">Asesor Asignado</label>
-                                            <select value={newClient.assignedUser} onChange={(e) => setNewClient({ ...newClient, assignedUser: e.target.value })} className="bg-[#0e1624] p-3 rounded-xl border border-gray-700 text-sm text-white outline-none focus:border-blue-500" required>
+                                            <select value={newClient.assignedUser} onChange={(e) => setNewClient({ ...newClient, assignedUser: e.target.value })} className="bg-[#0e1624] p-3 rounded-xl border border-gray-700 text-sm text-white outline-none focus:border-blue-500 transition-all" required>
                                                 <option value="">Seleccionar...</option>
                                                 {activeUsers.map(u => <option key={u.id} value={u.email}>{u.name}</option>)}
                                             </select>
@@ -303,9 +377,9 @@ export default function ProspectList() {
                                 <section className="bg-[#0e1624]/50 p-4 rounded-2xl border border-gray-800">
                                     <h3 className="text-[10px] font-black text-yellow-500 mb-4 tracking-widest uppercase border-l-4 border-yellow-500 pl-2">2. Datos Fiscales y Pago</h3>
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                        <input type="text" placeholder="Uso CFDI" value={newClient.usoCFDI} onChange={(e) => setNewClient({ ...newClient, usoCFDI: e.target.value })} className="bg-[#1f2937] p-3 rounded-xl border border-gray-700 text-sm text-white focus:border-yellow-500 outline-none" />
-                                        <input type="text" placeholder="Método Pago" value={newClient.paymentMethod} onChange={(e) => setNewClient({ ...newClient, paymentMethod: e.target.value })} className="bg-[#1f2937] p-3 rounded-xl border border-gray-700 text-sm text-white focus:border-yellow-500 outline-none" />
-                                        <input type="text" placeholder="Condiciones" value={newClient.paymentConditions} onChange={(e) => setNewClient({ ...newClient, paymentConditions: e.target.value })} className="bg-[#1f2937] p-3 rounded-xl border border-gray-700 text-sm text-white focus:border-yellow-500 outline-none" />
+                                        <input type="text" placeholder="Uso CFDI" value={newClient.usoCFDI} onChange={(e) => setNewClient({ ...newClient, usoCFDI: e.target.value })} className="bg-[#1f2937] p-3 rounded-xl border border-gray-700 text-sm text-white focus:border-yellow-500 outline-none transition-all" />
+                                        <input type="text" placeholder="Método Pago" value={newClient.paymentMethod} onChange={(e) => setNewClient({ ...newClient, paymentMethod: e.target.value })} className="bg-[#1f2937] p-3 rounded-xl border border-gray-700 text-sm text-white focus:border-yellow-500 outline-none transition-all" />
+                                        <input type="text" placeholder="Condiciones" value={newClient.paymentConditions} onChange={(e) => setNewClient({ ...newClient, paymentConditions: e.target.value })} className="bg-[#1f2937] p-3 rounded-xl border border-gray-700 text-sm text-white focus:border-yellow-500 outline-none transition-all" />
                                     </div>
                                 </section>
                             </div>
@@ -313,7 +387,7 @@ export default function ProspectList() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="flex flex-col gap-1">
                                     <label className="text-[10px] text-gray-500 font-bold uppercase ml-1">Etapa de Venta</label>
-                                    <select name="saleProcess" value={formData.saleProcess} onChange={handleInputChange} className="bg-[#0e1624] p-3 rounded-xl border border-gray-700 text-sm text-white outline-none focus:border-blue-500" required>
+                                    <select name="saleProcess" value={formData.saleProcess} onChange={handleInputChange} className="bg-[#0e1624] p-3 rounded-xl border border-gray-700 text-sm text-white outline-none focus:border-blue-500 transition-all" required>
                                         <option value="" disabled>Seleccionar...</option>
                                         <option value="Contacto inicial">Contacto inicial</option>
                                         <option value="Seguimiento">Seguimiento</option>
@@ -323,19 +397,19 @@ export default function ProspectList() {
                                 </div>
                                 <div className="flex flex-col gap-1">
                                     <label className="text-[10px] text-gray-500 font-bold uppercase ml-1">Nombre Contacto</label>
-                                    <input type="text" name="contactName" value={formData.contactName} onChange={handleInputChange} className="bg-[#0e1624] p-3 rounded-xl border border-gray-700 text-sm text-white outline-none focus:border-blue-500" required />
+                                    <input type="text" name="contactName" value={formData.contactName} onChange={handleInputChange} className="bg-[#0e1624] p-3 rounded-xl border border-gray-700 text-sm text-white outline-none focus:border-blue-500 transition-all" required />
                                 </div>
                                 <div className="flex flex-col gap-1 md:col-span-2">
                                     <label className="text-[10px] text-gray-500 font-bold uppercase ml-1">Empresa / Negocio</label>
-                                    <input type="text" name="company" value={formData.company} onChange={handleInputChange} className="bg-[#0e1624] p-3 rounded-xl border border-gray-700 text-sm text-white outline-none focus:border-blue-500" required />
+                                    <input type="text" name="company" value={formData.company} onChange={handleInputChange} className="bg-[#0e1624] p-3 rounded-xl border border-gray-700 text-sm text-white outline-none focus:border-blue-500 transition-all" required />
                                 </div>
                                 <div className="flex flex-col gap-1">
                                     <label className="text-[10px] text-gray-500 font-bold uppercase ml-1">Teléfono</label>
-                                    <input type="text" name="phone" value={formData.phone} onChange={handleInputChange} className="bg-[#0e1624] p-3 rounded-xl border border-gray-700 text-sm text-white outline-none focus:border-blue-500" required />
+                                    <input type="text" name="phone" value={formData.phone} onChange={handleInputChange} className="bg-[#0e1624] p-3 rounded-xl border border-gray-700 text-sm text-white outline-none focus:border-blue-500 transition-all" required />
                                 </div>
                                 <div className="flex flex-col gap-1">
                                     <label className="text-[10px] text-gray-500 font-bold uppercase ml-1">Email</label>
-                                    <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="bg-[#0e1624] p-3 rounded-xl border border-gray-700 text-sm text-white outline-none focus:border-blue-500" required />
+                                    <input type="email" name="email" value={formData.email} onChange={handleInputChange} className="bg-[#0e1624] p-3 rounded-xl border border-gray-700 text-sm text-white outline-none focus:border-blue-500 transition-all" required />
                                 </div>
                             </div>
                         )}

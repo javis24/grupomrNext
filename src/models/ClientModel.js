@@ -80,11 +80,11 @@ const Clients = db.define('clients', {
             len: [0, 100]
         }
     },
-    planta: {  
+   planta: {  
         type: DataTypes.STRING,
         allowNull: true,
-        validate: {
-            len: [0, 100]
+        set(val) {
+            this.setDataValue('planta', val ? val.trim() : null);
         }
     },
     producto: { 

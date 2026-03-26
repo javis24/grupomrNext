@@ -2,68 +2,76 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Modal from 'react-modal';
 import jwt from 'jsonwebtoken';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 import { 
-    FiSearch, FiPlus, FiDownload, FiEdit2, FiTrash2, 
-    FiFileText, FiChevronLeft, FiChevronRight, FiUser, FiMapPin, FiBriefcase 
+    FiSearch, FiPlus, FiEdit2, FiTrash2, FiArrowLeft,
+    FiChevronRight, FiUser, FiMapPin, FiBriefcase, FiX, FiFileText, FiChevronLeft 
 } from 'react-icons/fi';
 import { toast, ToastContainer } from 'react-toastify';
 
 const customStyles = {
     content: {
-        top: '50%',
-        left: '50%',
-        right: 'auto',
-        bottom: 'auto',
-        marginRight: '-50%',
-        transform: 'translate(-50%, -50%)',
-        backgroundColor: '#1f2937',
-        border: '1px solid #374151',
-        borderRadius: '1.5rem',
-        padding: '20px',
-        width: '95%',
-        maxWidth: '1100px',
-        maxHeight: '90vh',
+        top: '50%', left: '50%', right: 'auto', bottom: 'auto',
+        marginRight: '-50%', transform: 'translate(-50%, -50%)',
+        backgroundColor: '#1f2937', border: '1px solid #374151',
+        borderRadius: '1.5rem', padding: '20px', width: '95%',
+        maxWidth: '1100px', maxHeight: '90vh',
     },
-    overlay: { backgroundColor: 'rgba(0, 0, 0, 0.8)', zIndex: 1000 }
+    overlay: { backgroundColor: 'rgba(0, 0, 0, 0.85)', zIndex: 1000 }
 };
 
 export default function ClientList() {
     const [clients, setClients] = useState([]);
+    const [view, setView] = useState('unidades'); 
+    const [selectedUnit, setSelectedUnit] = useState(null);
     const [search, setSearch] = useState('');
-    const [filterField, setFilterField] = useState('companyName');
     const [modalIsOpen, setModalIsOpen] = useState(false);
     const [selectedClient, setSelectedClient] = useState(null);
-    const [userEmail, setUserEmail] = useState('');
     const [activeUsers, setActiveUsers] = useState([]);
-    
-    // Paginación
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage] = useState(6);
+    const [isLoading, setIsLoading] = useState(true);
+    const itemsPerPage = 6;
 
-    const initialClientState = {
-        fullName: '', companyName: '', companyPhone: '', businessTurn: '',
-        address: '', contactName: '', contactPhone: '', email: '',
-        position: '', planta: '', producto: '', assignedUser: '',
-        billingContactName: '', billingPhone: '', billingEmail: '',
-        usoCFDI: '', paymentMethod: '', paymentConditions: '', billingDepartment: '',
-    };
+    const unidadesNegocio = [
+        { name: 'Servicios', icon: '🛠️', color: 'from-blue-500 to-indigo-600' },
+        { name: 'Empaques', icon: '📦', color: 'from-orange-400 to-red-500' },
+        { name: 'Tarimas', icon: '🪵', color: 'from-amber-600 to-yellow-700' },
+        { name: 'Alimentos', icon: '🍎', color: 'from-green-400 to-emerald-600' },
+        { name: 'Plasticos', icon: '♻️', color: 'from-cyan-500 to-blue-600' },
+        { name: 'Composta', icon: '🌱', color: 'from-lime-500 to-green-700' }
+    ];
+
+  const initialClientState = {
+    fullName: '',
+    companyName: '',
+    businessTurn: '',
+    address: '',
+    contactName: '',
+    companyPhone: '',
+    contactPhone: '',
+    email: '',
+    position: '',
+    planta: '',
+    producto: '',
+    assignedUser: '',
+    billingContactName: '',
+    billingPhone: '',
+    billingEmail: '',
+    usoCFDI: '',
+    paymentMethod: '',
+    paymentConditions: '',
+    billingDepartment: '',
+};
 
     const [newClient, setNewClient] = useState(initialClientState);
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            const decoded = jwt.decode(token);
-            setUserEmail(decoded.email);
-        }
-        fetchUsers();
+        const loadData = async () => {
+            setIsLoading(true);
+            await Promise.all([fetchClients(), fetchUsers()]);
+            setIsLoading(false);
+        };
+        loadData();
     }, []);
-
-    useEffect(() => {
-        if (userEmail) fetchClients();
-    }, [userEmail]);
 
     const fetchClients = async () => {
         try {
@@ -71,12 +79,11 @@ export default function ClientList() {
             const response = await axios.get('/api/clients', {
                 headers: { 'Authorization': `Bearer ${token}` },
             });
-            let data = response.data;
-            if (userEmail === 'tarimas@grupomrlaguna.com') {
-                data = data.filter(c => c.planta?.toLowerCase() === 'tarimas');
-            }
-            setClients(data);
-        } catch (error) { toast.error('Error al cargar clientes'); }
+            setClients(Array.isArray(response.data) ? response.data : []);
+        } catch (error) { 
+            console.error(error);
+            toast.error('Error al cargar clientes'); 
+        }
     };
 
     const fetchUsers = async () => {
@@ -84,239 +91,268 @@ export default function ClientList() {
             const token = localStorage.getItem('token');
             const res = await axios.get('/api/users', { headers: { Authorization: `Bearer ${token}` } });
             setActiveUsers(res.data);
-        } catch (e) { console.error("Error users"); }
+        } catch (e) { console.error("Error usuarios", e); }
     };
 
+    // --- FUNCIÓN FALTANTE: handleSubmit ---
     const handleSubmit = async (e) => {
         e.preventDefault();
         const token = localStorage.getItem('token');
-        const decoded = jwt.decode(token);
-        const userId = decoded.id;
-
         try {
-            const clientData = { ...newClient, userId };
             if (selectedClient) {
-                await axios.put(`/api/clients/${selectedClient.id}`, clientData, {
+                // EDITAR CLIENTE
+                await axios.put(`/api/clients/${selectedClient.id}`, newClient, {
                     headers: { 'Authorization': `Bearer ${token}` },
                 });
-                toast.success("Cliente actualizado");
+                toast.success("Cliente actualizado con éxito");
             } else {
-                await axios.post('/api/clients', clientData, {
+                // CREAR CLIENTE NUEVO
+                await axios.post('/api/clients', newClient, {
                     headers: { 'Authorization': `Bearer ${token}` },
                 });
-                toast.success("Cliente creado");
+                toast.success("Nuevo cliente registrado");
             }
             fetchClients();
             closeModal();
-        } catch (error) { toast.error("Error al guardar"); }
+        } catch (error) {
+            console.error(error);
+            toast.error("Error al procesar la solicitud");
+        }
     };
 
     const handleDelete = async (id) => {
-        if (!window.confirm("¿Eliminar cliente?")) return;
+        if (!window.confirm("¿Confirmas la eliminación definitiva de este cliente?")) return;
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`/api/clients/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
-            fetchClients();
-            toast.success("Eliminado");
+            await axios.delete(`/api/clients/${id}`, {
+                headers: { 'Authorization': `Bearer ${token}` },
+            });
+            setClients(clients.filter(c => c.id !== id));
+            toast.success("Registro eliminado");
         } catch (e) { toast.error("Error al eliminar"); }
     };
 
     const openModal = (client = null) => {
-        setSelectedClient(client);
-        setNewClient(client || initialClientState);
+        if (client) {
+            setSelectedClient(client);
+            setNewClient(client);
+        } else {
+            setSelectedClient(null);
+            setNewClient({ ...initialClientState, planta: selectedUnit || '' });
+        }
         setModalIsOpen(true);
     };
 
-    const closeModal = () => { setModalIsOpen(false); setSelectedClient(null); };
+    const closeModal = () => {
+        setModalIsOpen(false);
+        setSelectedClient(null);
+        setNewClient(initialClientState);
+    };
 
-    // Lógica de Filtrado y Paginación
+    const selectUnit = (unitName) => {
+        setSelectedUnit(unitName);
+        setView('listado');
+        setCurrentPage(1);
+    };
+
     const filteredClients = clients.filter((c) => {
-        const val = c[filterField] ? c[filterField].toString().toLowerCase() : '';
-        return val.includes(search.toLowerCase());
+        const clientUnit = (c.planta || '').trim().toLowerCase();
+        const targetUnit = (selectedUnit || '').trim().toLowerCase();
+        const matchUnit = clientUnit === targetUnit;
+        const matchSearch = (c.companyName || '').toLowerCase().includes(search.toLowerCase()) || 
+                          (c.fullName || '').toLowerCase().includes(search.toLowerCase());
+        return matchUnit && matchSearch;
     });
 
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentClients = filteredClients.slice(indexOfFirstItem, indexOfLastItem);
     const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
+    const currentClients = filteredClients.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-    const exportClientToPDF = (client) => {
-        const doc = new jsPDF();
-        doc.setFillColor(255, 204, 0);
-        doc.rect(0, 0, 210, 20, 'F');
-        doc.setFontSize(14);
-        doc.text("EXPEDIENTE DE CLIENTE - GRUPO MR", 105, 13, { align: 'center' });
-        
-        const body = Object.entries(client)
-            .filter(([key]) => key !== 'id' && key !== 'userId')
-            .map(([key, val]) => [key.toUpperCase(), val || 'N/A']);
-
-        doc.autoTable({
-            startY: 25,
-            head: [['CAMPO', 'VALOR']],
-            body: body,
-            theme: 'grid',
-            headStyles: { fillColor: [31, 41, 55] }
-        });
-        doc.save(`Cliente_${client.companyName}.pdf`);
-    };
+    if (isLoading) return (
+        <div className="min-h-screen bg-[#0e1624] flex items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+    );
 
     return (
         <div className="p-4 md:p-8 bg-[#0e1624] min-h-screen text-white font-sans">
             <ToastContainer theme="dark" />
             
-            {/* HEADER */}
-            <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-                <div>
-                    <h1 className="text-3xl md:text-4xl font-black tracking-tighter uppercase italic text-blue-500">Clientes</h1>
-                    <p className="text-gray-500 text-xs font-bold tracking-widest uppercase">Gestión de cartera Grupo MR</p>
-                </div>
-                <div className="flex gap-2 w-full md:w-auto">
-                    <button onClick={() => openModal()} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-2xl font-bold transition-all shadow-lg shadow-blue-900/20">
-                        <FiPlus /> Añadir
-                    </button>
-                </div>
-            </div>
-
-            {/* FILTROS */}
-            <div className="max-w-7xl mx-auto bg-[#1f2937] p-4 rounded-3xl border border-gray-700 mb-8 flex flex-col md:flex-row gap-4 shadow-xl">
-                <div className="flex items-center bg-[#0e1624] rounded-2xl px-4 py-2 flex-1 border border-gray-800 focus-within:border-blue-500 transition-all">
-                    <FiSearch className="text-gray-500 mr-3" />
-                    <input 
-                        type="text" 
-                        placeholder={`Buscar por ${filterField}...`}
-                        className="bg-transparent w-full outline-none text-sm p-1"
-                        value={search}
-                        onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-                    />
-                </div>
-                <select 
-                    value={filterField} 
-                    onChange={(e) => setFilterField(e.target.value)}
-                    className="bg-[#0e1624] border border-gray-800 rounded-2xl px-4 py-2 text-sm outline-none focus:border-blue-500 text-white"
-                >
-                    <option value="companyName">Empresa</option>
-                    <option value="fullName">Razón Social</option>
-                    <option value="contactName">Contacto</option>
-                    <option value="planta">Planta</option>
-                </select>
-            </div>
-
-            {/* GRID DE CARDS */}
-            <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {currentClients.map((client) => (
-                    <div key={client.id} className="bg-[#1f2937] rounded-3xl border border-gray-700 p-6 hover:border-blue-500/50 transition-all group shadow-lg flex flex-col justify-between">
-                        <div>
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="bg-blue-500/10 p-3 rounded-2xl text-blue-500 text-2xl group-hover:scale-110 transition-transform">
-                                    🏢
-                                </div>
-                                <span className="text-[10px] font-black bg-gray-800 text-blue-400 px-3 py-1 rounded-full uppercase border border-gray-700">
-                                    {client.planta || 'Gral'}
-                                </span>
-                            </div>
-                            <h3 className="text-lg font-black uppercase truncate text-white">{client.companyName}</h3>
-                            <p className="text-gray-500 text-[10px] font-bold mb-4 truncate uppercase tracking-widest">{client.fullName}</p>
-                            
-                            <div className="space-y-3 mb-6">
-                                <div className="flex items-center gap-2 text-xs text-gray-400">
-                                    <FiUser className="text-blue-500" /> <span className="truncate">{client.contactName}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-xs text-gray-400">
-                                    <FiMapPin className="text-blue-500" /> <span className="truncate">{client.address}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-xs text-gray-400">
-                                    <FiBriefcase className="text-blue-500" /> <span className="truncate">{client.businessTurn}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-2 pt-4 border-t border-gray-800">
-                            <button onClick={() => openModal(client)} className="bg-gray-800 hover:bg-green-600 p-3 rounded-xl transition-all flex justify-center text-white" title="Editar">
-                                <FiEdit2 />
-                            </button>
-                            <button onClick={() => exportClientToPDF(client)} className="bg-gray-800 hover:bg-yellow-600 p-3 rounded-xl transition-all flex justify-center text-white" title="PDF">
-                                <FiFileText />
-                            </button>
-                            <button onClick={() => handleDelete(client.id)} className="bg-gray-800 hover:bg-red-600 p-3 rounded-xl transition-all flex justify-center text-white" title="Eliminar">
-                                <FiTrash2 />
-                            </button>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            {/* PAGINACIÓN */}
-            {totalPages > 1 && (
-                <div className="max-w-7xl mx-auto mt-12 flex justify-center items-center gap-2">
-                    <button disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)} className="p-2 rounded-lg bg-gray-800 disabled:opacity-30"><FiChevronLeft/></button>
-                    {[...Array(totalPages)].map((_, i) => (
-                        <button key={i} onClick={() => setCurrentPage(i + 1)} className={`w-8 h-8 rounded-lg text-xs font-bold ${currentPage === i + 1 ? 'bg-blue-600' : 'bg-gray-800'}`}>
-                            {i + 1}
+            <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
+                <div className="flex items-center gap-4">
+                    {view === 'listado' && (
+                        <button onClick={() => setView('unidades')} className="bg-[#1f2937] p-3 rounded-2xl hover:bg-blue-600 transition-all text-white border border-gray-700">
+                            <FiArrowLeft size={20} />
                         </button>
-                    ))}
-                    <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(prev => prev + 1)} className="p-2 rounded-lg bg-gray-800 disabled:opacity-30"><FiChevronRight/></button>
+                    )}
+                    <div>
+                        <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase italic">
+                            {view === 'unidades' ? 'Grupo MR' : selectedUnit}
+                        </h1>
+                    </div>
+                </div>
+                <button onClick={() => openModal()} className="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-2xl font-bold transition-all shadow-lg">
+                    <FiPlus className="inline mr-2"/> Registrar Cliente
+                </button>
+            </div>
+
+            {view === 'unidades' ? (
+                <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {unidadesNegocio.map((u) => {
+                        const count = clients.filter(c => (c.planta || '').trim().toLowerCase() === u.name.toLowerCase()).length;
+                        return (
+                            <div key={u.name} onClick={() => selectUnit(u.name)}
+                                className="bg-[#1f2937] p-8 rounded-[2.5rem] border border-gray-700 hover:border-blue-500 cursor-pointer transition-all hover:bg-[#252f3f] group shadow-2xl relative overflow-hidden"
+                            >
+                                <div className={`absolute -right-10 -top-10 w-40 h-40 bg-gradient-to-br ${u.color} opacity-10 rounded-full group-hover:scale-150 transition-transform duration-700`}></div>
+                                <div className="relative z-10">
+                                    <div className="text-6xl mb-6 group-hover:scale-110 transition-transform duration-300">{u.icon}</div>
+                                    <h2 className="text-3xl font-black uppercase tracking-tight mb-2">{u.name}</h2>
+                                    <span className="text-blue-400 font-bold text-xs uppercase tracking-widest">{count} Clientes</span>
+                                </div>
+                                <FiChevronRight className="absolute right-8 bottom-8 text-gray-700 group-hover:text-blue-500 group-hover:translate-x-2 transition-all" size={30} />
+                            </div>
+                        );
+                    })}
+                </div>
+            ) : (
+                <div className="max-w-7xl mx-auto space-y-6">
+                    <div className="bg-[#1f2937] p-4 rounded-3xl border border-gray-700 flex items-center shadow-xl">
+                        <FiSearch className="text-gray-500 mx-4" size={20} />
+                        <input type="text" placeholder={`Buscar en ${selectedUnit}...`} className="bg-transparent w-full outline-none text-white font-medium" value={search} onChange={(e) => setSearch(e.target.value)} />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {currentClients.map((client) => (
+                            <div key={client.id} className="bg-[#1f2937] rounded-3xl border border-gray-700 p-6 hover:border-blue-500/50 transition-all shadow-lg flex flex-col justify-between group">
+                                <div>
+                                    <h3 className="text-xl font-black uppercase truncate text-white mb-1">{client.companyName}</h3>
+                                    <p className="text-blue-400 text-[10px] font-bold mb-4 uppercase tracking-[0.2em]">{client.fullName}</p>
+                                    <div className="space-y-3 mb-6 text-xs text-gray-400 border-t border-gray-800 pt-4">
+                                        <div className="flex items-center gap-2"><FiUser className="text-blue-500" /> {client.contactName}</div>
+                                        <div className="flex items-center gap-2"><FiMapPin className="text-blue-500" /> {client.address}</div>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-3 gap-2 pt-4 border-t border-gray-800">
+                                    <button onClick={() => openModal(client)} className="bg-gray-800 hover:bg-blue-600 p-3 rounded-xl transition-all flex justify-center text-white"><FiEdit2 /></button>
+                                    <button className="bg-gray-800 hover:bg-yellow-600 p-3 rounded-xl transition-all flex justify-center text-white"><FiFileText /></button>
+                                    <button onClick={() => handleDelete(client.id)} className="bg-gray-800 hover:bg-red-600 p-3 rounded-xl transition-all flex justify-center text-white"><FiTrash2 /></button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {totalPages > 1 && (
+                        <div className="flex justify-center items-center gap-4 mt-10">
+                            <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="bg-[#1f2937] p-3 rounded-xl disabled:opacity-20 border border-gray-700"><FiChevronLeft /></button>
+                            <span className="text-xs font-black uppercase tracking-[0.3em] text-gray-500">Página {currentPage} / {totalPages}</span>
+                            <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} className="bg-[#1f2937] p-3 rounded-xl disabled:opacity-20 border border-gray-700"><FiChevronRight /></button>
+                        </div>
+                    )}
                 </div>
             )}
 
-            {/* MODAL COMPLETO */}
-            <Modal isOpen={modalIsOpen} onRequestClose={closeModal} style={customStyles}>
-                <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-black uppercase italic text-white">{selectedClient ? '✏️ Editar Cliente' : '🚀 Nuevo Cliente'}</h2>
-                    <button onClick={closeModal} className="text-gray-400 hover:text-white transition-colors text-2xl">✕</button>
-                </div>
+          <Modal isOpen={modalIsOpen} onRequestClose={closeModal} style={customStyles}>
+    <div className="flex justify-between items-center mb-6 border-b border-gray-800 pb-4">
+        <div>
+            <h2 className="text-2xl font-black uppercase italic text-white">
+                {selectedClient ? '✏️ Editar Cliente' : '🚀 Nuevo Registro'}
+            </h2>
+            <p className="text-blue-500 text-[10px] font-bold uppercase tracking-widest">
+                Unidad: {newClient.planta || 'Sin asignar'}
+            </p>
+        </div>
+        <button onClick={closeModal} className="text-gray-400 hover:text-white transition-colors">
+            <FiX size={28} />
+        </button>
+    </div>
+
+    <form onSubmit={handleSubmit} className="overflow-y-auto max-h-[75vh] pr-4 custom-scrollbar">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            {/* COLUMNA 1: DATOS FISCALES Y EMPRESA */}
+            <div className="space-y-4">
+                <h3 className="text-blue-500 text-[11px] font-black uppercase tracking-widest border-l-4 border-blue-500 pl-2">Información de Empresa</h3>
+                <ModalInput label="Razón Social (Nombre Completo)" value={newClient.fullName} onChange={(v) => setNewClient({...newClient, fullName: v})} required />
+                <ModalInput label="Nombre Comercial" value={newClient.companyName} onChange={(v) => setNewClient({...newClient, companyName: v})} required />
+                <ModalInput label="Giro Comercial" value={newClient.businessTurn} onChange={(v) => setNewClient({...newClient, businessTurn: v})} required />
+                <ModalInput label="Dirección Fiscal" value={newClient.address} onChange={(v) => setNewClient({...newClient, address: v})} required />
+                <ModalInput label="Teléfono de Empresa" value={newClient.companyPhone} onChange={(v) => setNewClient({...newClient, companyPhone: v})} />
+            </div>
+
+            {/* COLUMNA 2: CONTACTO Y OPERACIÓN */}
+            <div className="space-y-4">
+                <h3 className="text-green-500 text-[11px] font-black uppercase tracking-widest border-l-4 border-green-500 pl-2">Contacto y Logística</h3>
+                <ModalInput label="Nombre de Contacto Directo" value={newClient.contactName} onChange={(v) => setNewClient({...newClient, contactName: v})} />
+                <ModalInput label="Cargo / Puesto" value={newClient.position} onChange={(v) => setNewClient({...newClient, position: v})} />
+                <ModalInput label="Teléfono Directo" value={newClient.contactPhone} onChange={(v) => setNewClient({...newClient, contactPhone: v})} />
+                <ModalInput label="Email de Contacto" type="email" value={newClient.email} onChange={(v) => setNewClient({...newClient, email: v})} />
+                <ModalInput label="Producto de Interés" value={newClient.producto} onChange={(v) => setNewClient({...newClient, producto: v})} />
                 
-                <form onSubmit={handleSubmit} className="overflow-y-auto max-h-[75vh] pr-2 custom-scrollbar">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <ModalInput label="Razón Social" value={newClient.fullName} onChange={(v) => setNewClient({...newClient, fullName: v})} required />
-                        <ModalInput label="Nombre Comercial" value={newClient.companyName} onChange={(v) => setNewClient({...newClient, companyName: v})} required />
-                        <ModalInput label="Tel. Empresa" value={newClient.companyPhone} onChange={(v) => setNewClient({...newClient, companyPhone: v})} />
-                        <ModalInput label="Giro" value={newClient.businessTurn} onChange={(v) => setNewClient({...newClient, businessTurn: v})} />
-                        <ModalInput label="Dirección" value={newClient.address} onChange={(v) => setNewClient({...newClient, address: v})} />
-                        <ModalInput label="Contacto" value={newClient.contactName} onChange={(v) => setNewClient({...newClient, contactName: v})} />
-                        <ModalInput label="Tel. Contacto" value={newClient.contactPhone} onChange={(v) => setNewClient({...newClient, contactPhone: v})} />
-                        <ModalInput label="Email" type="email" value={newClient.email} onChange={(v) => setNewClient({...newClient, email: v})} />
-                        <ModalInput label="Departamento" value={newClient.position} onChange={(v) => setNewClient({...newClient, position: v})} />
-                        <ModalInput label="Planta" value={newClient.planta} onChange={(v) => setNewClient({...newClient, planta: v})} />
-                        <ModalInput label="Producto" value={newClient.producto} onChange={(v) => setNewClient({...newClient, producto: v})} />
-                        
-                        <div className="flex flex-col gap-1">
-                            <label className="text-[10px] font-black text-gray-500 uppercase ml-1">Vendedor Asignado</label>
-                            <select 
-                                value={newClient.assignedUser} 
-                                onChange={(e) => setNewClient({...newClient, assignedUser: e.target.value})}
-                                className="bg-[#0e1624] border border-gray-700 rounded-xl p-3 text-sm text-white outline-none focus:border-blue-500"
-                            >
-                                <option value="">Seleccionar...</option>
-                                {activeUsers.map(u => <option key={u.id} value={u.email}>{u.name}</option>)}
-                            </select>
-                        </div>
-
-                        {/* Campos de Facturación */}
-                        <ModalInput label="Contacto Pago" value={newClient.billingContactName} onChange={(v) => setNewClient({...newClient, billingContactName: v})} />
-                        <ModalInput label="Uso CFDI" value={newClient.usoCFDI} onChange={(v) => setNewClient({...newClient, usoCFDI: v})} />
-                        <ModalInput label="Método de Pago" value={newClient.paymentMethod} onChange={(v) => setNewClient({...newClient, paymentMethod: v})} />
+                <div className="grid grid-cols-2 gap-2">
+                    <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-black text-gray-500 uppercase ml-1">Planta</label>
+                        <select 
+                            value={newClient.planta} 
+                            onChange={(e) => setNewClient({...newClient, planta: e.target.value})}
+                            className="bg-[#0e1624] border border-gray-700 rounded-xl p-3 text-sm text-white outline-none focus:border-blue-500"
+                        >
+                            <option value="">Seleccionar...</option>
+                            {unidadesNegocio.map(u => <option key={u.name} value={u.name}>{u.name}</option>)}
+                        </select>
                     </div>
+                    <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-black text-gray-500 uppercase ml-1">Vendedor</label>
+                        <select 
+                            value={newClient.assignedUser} 
+                            onChange={(e) => setNewClient({...newClient, assignedUser: e.target.value})}
+                            className="bg-[#0e1624] border border-gray-700 rounded-xl p-3 text-sm text-white outline-none focus:border-blue-500"
+                        >
+                            <option value="">Asignar...</option>
+                            {activeUsers.map(u => <option key={u.id} value={u.email}>{u.name}</option>)}
+                        </select>
+                    </div>
+                </div>
+            </div>
 
-                    <button type="submit" className="w-full mt-8 bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl uppercase tracking-widest transition-all shadow-lg active:scale-[0.98]">
-                        {selectedClient ? 'Actualizar Registro' : 'Crear Cliente'}
-                    </button>
-                </form>
-            </Modal>
+            {/* COLUMNA 3: DATOS DE FACTURACIÓN */}
+            <div className="space-y-4 bg-gray-800/30 p-4 rounded-2xl border border-gray-700">
+                <h3 className="text-yellow-500 text-[11px] font-black uppercase tracking-widest border-l-4 border-yellow-500 pl-2">Departamento de Pagos</h3>
+                <ModalInput label="Depto. Facturación" value={newClient.billingDepartment} onChange={(v) => setNewClient({...newClient, billingDepartment: v})} />
+                <ModalInput label="Contacto de Pagos" value={newClient.billingContactName} onChange={(v) => setNewClient({...newClient, billingContactName: v})} />
+                <ModalInput label="Teléfono de Pagos" value={newClient.billingPhone} onChange={(v) => setNewClient({...newClient, billingPhone: v})} />
+                <ModalInput label="Email de Facturas" type="email" value={newClient.billingEmail} onChange={(v) => setNewClient({...newClient, billingEmail: v})} />
+                <ModalInput label="Uso de CFDI" value={newClient.usoCFDI} onChange={(v) => setNewClient({...newClient, usoCFDI: v})} />
+                <ModalInput label="Método de Pago" value={newClient.paymentMethod} onChange={(v) => setNewClient({...newClient, paymentMethod: v})} />
+                <ModalInput label="Condiciones (Días Crédito)" value={newClient.paymentConditions} onChange={(v) => setNewClient({...newClient, paymentConditions: v})} />
+            </div>
+        </div>
+
+        {/* BOTONES */}
+        <div className="mt-10 flex gap-4 sticky bottom-0 bg-[#1f2937] pt-4 border-t border-gray-800">
+            <button type="button" onClick={closeModal} className="flex-1 bg-gray-800 hover:bg-gray-700 text-white font-bold py-4 rounded-2xl uppercase text-xs tracking-widest transition-all">
+                Cancelar
+            </button>
+            <button type="submit" className="flex-[2] bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl uppercase text-xs tracking-widest transition-all shadow-lg active:scale-95">
+                {selectedClient ? '💾 Guardar Cambios' : '🚀 Registrar Cliente'}
+            </button>
+        </div>
+    </form>
+</Modal>
         </div>
     );
 }
-
-// Componente Interno para Inputs del Modal
 const ModalInput = ({ label, value, onChange, type = "text", required = false }) => (
     <div className="flex flex-col gap-1">
-        <label className="text-[10px] font-black text-gray-500 uppercase ml-1 tracking-widest">{label}</label>
+        <label className="text-[10px] font-black text-gray-400 uppercase ml-1 tracking-widest">
+            {label} {required && <span className="text-red-500">*</span>}
+        </label>
         <input 
             type={type}
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
             required={required}
-            className="bg-[#0e1624] border border-gray-700 rounded-xl p-3 text-sm outline-none focus:border-blue-500 transition-all text-white hover:bg-[#162030]"
+            autoComplete="off"
+            className="bg-[#0e1624] border border-gray-700 rounded-xl p-3 text-sm outline-none focus:border-blue-500 transition-all text-white placeholder-gray-600 hover:bg-[#162030]"
         />
     </div>
 );

@@ -1,113 +1,111 @@
-// /pages/api/incidents/index.js
 import formidable from 'formidable';
 import { v2 as cloudinary } from 'cloudinary';
 import Incident from '../../../models/IncidentModel';
 import jwt from 'jsonwebtoken';
 
-// Configura Cloudinary (o usa un archivo /lib/cloudinary.js)
+// Configura Cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Desactivar bodyParser para usar formidable
 export const config = {
   api: { bodyParser: false },
 };
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
-    // 1) Parsear con formidable
     const form = formidable({
-      maxFileSize: 10 * 1024 * 1024, // 10 MB
+      maxFileSize: 10 * 1024 * 1024,
       keepExtensions: true,
-      multiples: false, // solo una imagen
+      multiples: false,
     });
 
-    form.parse(req, async (err, fields, files) => {
-      if (err) {
-        console.error('Error parsing form:', err);
-        return res.status(500).json({ message: 'Error al procesar el formulario' });
-      }
-
-      try {
-        // 2) Extraer campos de texto
-        const { title, description } = fields;
-
-        // 3) Obtener token y userId
-        const token = req.headers.authorization?.split(' ')[1];
-        if (!token) {
-          return res.status(401).json({ message: 'Token no proporcionado' });
-        }
-        const decoded = jwt.decode(token);
-        const userId = decoded?.id;
-        if (!userId) {
-          return res.status(400).json({ message: 'No se pudo obtener el userId del token' });
+    // Usamos una promesa para manejar el parseo de formidable en Next.js correctamente
+    return new Promise((resolve) => {
+      form.parse(req, async (err, fields, files) => {
+        if (err) {
+          res.status(500).json({ message: 'Error al procesar el formulario' });
+          return resolve();
         }
 
-        // 4) Manejo del archivo subido (puede ser arreglo)
-        let fileUploaded = files.image;
-        if (Array.isArray(fileUploaded)) {
-          fileUploaded = fileUploaded[0]; // Tomar el primer elemento
-        }
+        try {
+          // 1) Extraer todos los campos (incluyendo los nuevos)
+          // Formidable a veces devuelve los campos como arrays, los normalizamos
+          const title = Array.isArray(fields.title) ? fields.title[0] : fields.title;
+          const description = Array.isArray(fields.description) ? fields.description[0] : fields.description;
+          const incidentDate = Array.isArray(fields.incidentDate) ? fields.incidentDate[0] : fields.incidentDate;
+          const entityName = Array.isArray(fields.entityName) ? fields.entityName[0] : fields.entityName;
+          const correctivePlan = Array.isArray(fields.correctivePlan) ? fields.correctivePlan[0] : fields.correctivePlan;
 
-        let imageUrl = null;
-        if (fileUploaded) {
-          // Subir a Cloudinary
-          const uploadResult = await cloudinary.uploader.upload(fileUploaded.filepath, {
-            folder: 'incidents_images',
-            resource_type: 'auto', // 'auto' permite PDF, imágenes, etc.
+          // 2) Obtener userId del Token
+          const token = req.headers.authorization?.split(' ')[1];
+          if (!token) {
+            res.status(401).json({ message: 'Token no proporcionado' });
+            return resolve();
+          }
+          const decoded = jwt.decode(token);
+          const userId = decoded?.id;
+
+          if (!userId) {
+            res.status(400).json({ message: 'Usuario no identificado' });
+            return resolve();
+          }
+
+          // 3) Manejo de imagen en Cloudinary
+          let fileUploaded = files.image;
+          if (Array.isArray(fileUploaded)) fileUploaded = fileUploaded[0];
+
+          let imageUrl = '';
+          if (fileUploaded && fileUploaded.filepath) {
+            const uploadResult = await cloudinary.uploader.upload(fileUploaded.filepath, {
+              folder: 'incidents_images',
+              resource_type: 'auto',
+            });
+            imageUrl = uploadResult.secure_url;
+          }
+
+          // 4) Guardar en Base de Datos con los NUEVOS CAMPOS
+          await Incident.create({
+            title,
+            description,
+            incidentDate,    // Campo nuevo
+            entityName,      // Campo nuevo
+            correctivePlan,  // Campo nuevo
+            userId,
+            imageUrl,
           });
-          imageUrl = uploadResult.secure_url;
+
+          res.status(200).json({ message: 'Incidencia guardada exitosamente' });
+          resolve();
+        } catch (error) {
+          console.error(error);
+          res.status(500).json({ message: 'Error al guardar la incidencia' });
+          resolve();
         }
-
-        // 5) Crear la incidencia en BD
-        await Incident.create({
-          title,
-          description,
-          userId,
-          imageUrl, // será null si no se subió nada
-        });
-
-        return res.status(200).json({ message: 'Incidencia guardada exitosamente' });
-      } catch (error) {
-        console.error('Error al guardar la incidencia:', error);
-        return res.status(500).json({ message: 'Error al guardar la incidencia' });
-      }
+      });
     });
 
   } else if (req.method === 'GET') {
-    // Listar incidencias
     try {
-      const incidents = await Incident.findAll();
+      // Ordenamos por los más recientes
+      const incidents = await Incident.findAll({ order: [['createdAt', 'DESC']] });
       return res.status(200).json(incidents);
     } catch (error) {
-      console.error('Error al obtener las incidencias:', error);
       return res.status(500).json({ message: 'Error al obtener las incidencias' });
     }
 
   } else if (req.method === 'DELETE') {
-    // Eliminar incidencia
     const { id } = req.query;
     try {
-      if (!id) {
-        return res.status(400).json({ message: 'ID no proporcionado' });
-      }
       const incident = await Incident.findByPk(id);
-      if (!incident) {
-        return res.status(404).json({ message: 'Incidencia no encontrada' });
-      }
+      if (!incident) return res.status(404).json({ message: 'No encontrada' });
+      
       await incident.destroy();
-      return res.status(200).json({ message: 'Incidencia eliminada correctamente' });
+      return res.status(200).json({ message: 'Incidencia eliminada' });
     } catch (error) {
-      console.error('Error al eliminar la incidencia:', error);
-      return res.status(500).json({ message: 'Error al eliminar la incidencia' });
+      return res.status(500).json({ message: 'Error al eliminar' });
     }
-
-  } else {
-    // Método no permitido
-    res.setHeader('Allow', ['POST', 'GET', 'DELETE']);
-    return res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
