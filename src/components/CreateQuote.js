@@ -9,11 +9,9 @@ const CreateQuote = () => {
   const [quoteNumber, setQuoteNumber] = useState(1);
   const [currentDate, setCurrentDate] = useState("");
   
-  // ESTADOS PARA LOS NUEVOS CAMPOS
   const [descripcionGeneral, setDescripcionGeneral] = useState("");
   const [observacionesSeleccionadas, setObservacionesSeleccionadas] = useState([]);
 
-  // OPCIONES OFICIALES PARA OBSERVACIONES (MULTISELECCIÓN)
   const opcionesObservaciones = [
     "PRECIO DURANTE EL PRESENTE AÑO",
     "PRECIOS MAS IVA",
@@ -44,11 +42,11 @@ const CreateQuote = () => {
     assigned: '',
   });
 
+  // Estructura de fila con Subtotal, IVA y Total
   const [serviceRows, setServiceRows] = useState([
-    { description: '', cantidad: 1, um: 'Pieza', pu: 0, total: 0, comments: '' }
+    { description: '', cantidad: 1, um: 'Pieza', pu: 0, subtotal: 0, iva: 0, total: 0, comments: '' }
   ]);
 
-  // LÓGICA DE SELECCIÓN MÚLTIPLE
   const toggleObservacion = (opcion) => {
     if (observacionesSeleccionadas.includes(opcion)) {
       setObservacionesSeleccionadas(observacionesSeleccionadas.filter(item => item !== opcion));
@@ -93,13 +91,20 @@ const CreateQuote = () => {
     if (name === 'cantidad' || name === 'pu') {
       const cant = parseFloat(updatedRows[index].cantidad) || 0;
       const precio = parseFloat(updatedRows[index].pu) || 0;
-      updatedRows[index].total = (cant * precio).toFixed(2);
+      
+      const subtotal = cant * precio;
+      const iva = subtotal * 0.16; // Cálculo de IVA 16%
+      const total = subtotal + iva;
+
+      updatedRows[index].subtotal = subtotal.toFixed(2);
+      updatedRows[index].iva = iva.toFixed(2);
+      updatedRows[index].total = total.toFixed(2);
     }
     setServiceRows(updatedRows);
   };
 
   const addRow = () => {
-    setServiceRows([...serviceRows, { description: '', cantidad: 1, um: 'Pieza', pu: 0, total: 0, comments: '' }]);
+    setServiceRows([...serviceRows, { description: '', cantidad: 1, um: 'Pieza', pu: 0, subtotal: 0, iva: 0, total: 0, comments: '' }]);
   };
 
   const removeRow = (index) => {
@@ -108,7 +113,10 @@ const CreateQuote = () => {
     }
   };
 
-  const grandTotal = serviceRows.reduce((acc, row) => acc + parseFloat(row.total || 0), 0).toFixed(2);
+  // Cálculos globales
+  const globalSubtotal = serviceRows.reduce((acc, row) => acc + parseFloat(row.subtotal || 0), 0).toFixed(2);
+  const globalIva = serviceRows.reduce((acc, row) => acc + parseFloat(row.iva || 0), 0).toFixed(2);
+  const globalTotal = serviceRows.reduce((acc, row) => acc + parseFloat(row.total || 0), 0).toFixed(2);
 
   const generatePDF = () => {
     const doc = new jsPDF();
@@ -142,20 +150,23 @@ const CreateQuote = () => {
       });
 
       const tableData = serviceRows.map((row, i) => [
-        i + 1, row.description, row.cantidad, row.um, `$${row.pu}`, `$${row.total}`
+        i + 1, row.description, row.cantidad, `$${row.pu}`, `$${row.subtotal}`, `$${row.iva}`, `$${row.total}`
       ]);
 
       doc.autoTable({
         startY: doc.lastAutoTable.finalY + 10,
-        head: [['NO', 'DESCRIPCIÓN', 'CANT', 'UM', 'P.U.', 'TOTAL']],
-        body: [...tableData, ['', '', '', '', 'TOTAL:', `$${grandTotal}`]],
+        head: [['NO', 'DESCRIPCIÓN', 'CANT', 'P.U.', 'SUBTOTAL', 'IVA', 'TOTAL']],
+        body: [
+            ...tableData,
+            ['', '', '', '', '', 'SUBTOTAL:', `$${globalSubtotal}`],
+            ['', '', '', '', '', 'IVA (16%):', `$${globalIva}`],
+            ['', '', '', '', '', 'TOTAL:', `$${globalTotal}`]
+        ],
         theme: 'striped',
         headStyles: { fillColor: [30, 41, 59] }
       });
 
-      // SECCIÓN FINAL DEL PDF: DESCRIPCIÓN Y OBSERVACIONES MÚLTIPLES
       let currentY = doc.lastAutoTable.finalY + 15;
-      
       doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
       doc.text("DETALLES DEL SERVICIO:", 14, currentY);
@@ -178,12 +189,11 @@ const CreateQuote = () => {
 
   return (
     <div className="min-h-screen bg-[#0e1624] text-white p-4 md:p-8 font-sans">
-      <div className="max-w-6xl mx-auto bg-[#1f2937] p-6 rounded-3xl border border-gray-700 shadow-2xl">
+      <div className="max-w-7xl mx-auto bg-[#1f2937] p-6 rounded-3xl border border-gray-700 shadow-2xl">
         <h1 className="text-2xl font-black text-blue-400 uppercase mb-8 border-b border-gray-700 pb-4 flex justify-between items-center">
           Generador de Cotización <span className="text-yellow-500 font-mono">#{quoteNumber}</span>
         </h1>
 
-        {/* SECCIÓN CLIENTE Y DESCRIPCIÓN GENERAL */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
           <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
@@ -208,20 +218,62 @@ const CreateQuote = () => {
           </div>
           
           <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-black text-blue-400 uppercase ml-1 tracking-widest">Descripción del Servicio (PDF)</label>
+            <label className="text-[10px] font-black text-blue-400 uppercase ml-1 tracking-widest">Descripción del Producto / Servicio </label>
             <textarea 
               value={descripcionGeneral}
               onChange={(e) => setDescripcionGeneral(e.target.value)}
-              placeholder="Escriba la descripción general que aparecerá al pie del PDF..."
+              placeholder="Escriba la descripción..."
               className="bg-[#0e1624] p-4 rounded-2xl border border-gray-700 text-sm text-white outline-none focus:border-blue-500 transition-all h-full min-h-[150px] resize-none"
             />
           </div>
         </div>
 
-        {/* SELECTOR MÚLTIPLE DE OBSERVACIONES */}
-        <div className="mb-10 bg-[#0e1624]/30 p-6 rounded-[2rem] border border-gray-800">
+      
+
+        <div className="space-y-4 mb-8">
+          <h2 className="text-sm font-black text-white uppercase tracking-widest">Producto/Servicio de la Cotización</h2>
+          {serviceRows.map((row, index) => (
+            <div key={index} className="bg-[#0e1624]/50 p-4 rounded-2xl border border-gray-800 grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+              <div className="md:col-span-3 flex flex-col gap-1">
+                <label className="text-[9px] font-bold text-gray-600 uppercase">Descripción</label>
+                <input type="text" name="description" value={row.description} onChange={(e) => handleRowChange(index, e)} className="bg-[#1f2937] p-2 rounded-lg border border-gray-700 text-sm" />
+              </div>
+              <div className="md:col-span-1 flex flex-col gap-1">
+                <label className="text-[9px] font-bold text-gray-600 uppercase">Cant.</label>
+                <input type="number" name="cantidad" value={row.cantidad} onChange={(e) => handleRowChange(index, e)} className="bg-[#1f2937] p-2 rounded-lg border border-gray-700 text-sm text-center" />
+              </div>
+              <div className="md:col-span-1 flex flex-col gap-1">
+                <label className="text-[9px] font-bold text-gray-600 uppercase">P.U.</label>
+                <input type="number" name="pu" value={row.pu} onChange={(e) => handleRowChange(index, e)} className="bg-[#1f2937] p-2 rounded-lg border border-gray-700 text-sm text-green-400 font-bold" />
+              </div>
+              <div className="md:col-span-2 flex flex-col gap-1">
+                <label className="text-[9px] font-bold text-gray-600 uppercase">Subtotal</label>
+                <div className="bg-[#1f2937]/30 p-2 rounded-lg text-sm font-black text-blue-400">$ {row.subtotal}</div>
+              </div>
+              <div className="md:col-span-1 flex flex-col gap-1">
+                <label className="text-[9px] font-bold text-gray-600 uppercase">IVA (16%)</label>
+                <div className="bg-[#1f2937]/30 p-2 rounded-lg text-sm font-bold text-yellow-600">$ {row.iva}</div>
+              </div>
+              <div className="md:col-span-2 flex flex-col gap-1">
+                <label className="text-[9px] font-bold text-gray-600 uppercase">Total</label>
+                <div className="bg-[#1f2937]/50 p-2 rounded-lg text-sm font-black text-green-500 border border-green-900/30">$ {row.total}</div>
+              </div>
+              <div className="md:col-span-1 flex flex-col gap-1">
+                <label className="text-[9px] font-bold text-gray-600 uppercase">Notas</label>
+                <input type="text" name="comments" value={row.comments} onChange={(e) => handleRowChange(index, e)} className="bg-[#1f2937] p-2 rounded-lg border border-gray-700 text-xs opacity-60" />
+              </div>
+              <div className="md:col-span-1">
+                <button type="button" onClick={() => removeRow(index)} className="w-full bg-red-600/10 text-red-500 p-2 rounded-lg hover:bg-red-600 hover:text-white transition-all"><FiTrash2 size={16}/></button>
+              </div>
+            </div>
+          ))}
+          <button type="button" onClick={addRow} className="flex items-center gap-2 text-[10px] font-black text-blue-500 uppercase hover:text-blue-400 transition-colors">
+            <FiPlus /> Agregar Producto/Servicio
+          </button>
+        </div>
+          <div className="mb-10 bg-[#0e1624]/30 p-6 rounded-[2rem] border border-gray-800">
           <h2 className="text-sm font-black text-yellow-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-            <FiFileText /> Términos y Observaciones (Selección Múltiple)
+            <FiFileText /> Términos y Observaciones
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {opcionesObservaciones.map((opcion, i) => (
@@ -243,54 +295,22 @@ const CreateQuote = () => {
           </div>
         </div>
 
-        {/* TABLA DE CONCEPTOS */}
-        <div className="space-y-4 mb-8">
-          <h2 className="text-sm font-black text-white uppercase tracking-widest">Partidas de la Cotización</h2>
-          {serviceRows.map((row, index) => (
-            <div key={index} className="bg-[#0e1624]/50 p-4 rounded-2xl border border-gray-800 grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-              <div className="md:col-span-4 flex flex-col gap-1">
-                <label className="text-[9px] font-bold text-gray-600 uppercase">Descripción de la partida</label>
-                <input type="text" name="description" value={row.description} onChange={(e) => handleRowChange(index, e)} className="bg-[#1f2937] p-2 rounded-lg border border-gray-700 text-sm" />
-              </div>
-              <div className="md:col-span-1 flex flex-col gap-1">
-                <label className="text-[9px] font-bold text-gray-600 uppercase">Cant.</label>
-                <input type="number" name="cantidad" value={row.cantidad} onChange={(e) => handleRowChange(index, e)} className="bg-[#1f2937] p-2 rounded-lg border border-gray-700 text-sm" />
-              </div>
-              <div className="md:col-span-2 flex flex-col gap-1">
-                <label className="text-[9px] font-bold text-gray-600 uppercase">P. Unitario</label>
-                <input type="number" name="pu" value={row.pu} onChange={(e) => handleRowChange(index, e)} className="bg-[#1f2937] p-2 rounded-lg border border-gray-700 text-sm text-green-400 font-bold" />
-              </div>
-              <div className="md:col-span-2 flex flex-col gap-1">
-                <label className="text-[9px] font-bold text-gray-600 uppercase">Subtotal</label>
-                <div className="bg-[#1f2937]/30 p-2 rounded-lg text-sm font-black text-blue-400">$ {row.total}</div>
-              </div>
-              <div className="md:col-span-2 flex flex-col gap-1">
-                <label className="text-[9px] font-bold text-gray-600 uppercase">Notas partida</label>
-                <input type="text" name="comments" value={row.comments} onChange={(e) => handleRowChange(index, e)} className="bg-[#1f2937] p-2 rounded-lg border border-gray-700 text-sm opacity-60" />
-              </div>
-              <div className="md:col-span-1">
-                <button type="button" onClick={() => removeRow(index)} className="w-full bg-red-600/10 text-red-500 p-2 rounded-lg hover:bg-red-600 hover:text-white transition-all"><FiTrash2 size={16}/></button>
-              </div>
+        {/* RESUMEN DE TOTALES */}
+        <div className="mt-8 flex flex-col items-end gap-2 border-t border-gray-700 pt-8">
+            <div className="text-gray-400 text-sm uppercase font-bold">Subtotal: <span className="text-white ml-2">$ {globalSubtotal}</span></div>
+            <div className="text-gray-400 text-sm uppercase font-bold">IVA (16%): <span className="text-yellow-600 ml-2">$ {globalIva}</span></div>
+            <div className="text-4xl font-black text-white mt-2">
+                TOTAL: <span className="text-green-500 font-mono">${globalTotal}</span>
             </div>
-          ))}
-          <button type="button" onClick={addRow} className="flex items-center gap-2 text-[10px] font-black text-blue-500 uppercase hover:text-blue-400 transition-colors">
-            <FiPlus /> Agregar Partida
-          </button>
         </div>
 
-        {/* TOTAL Y ACCIONES */}
-        <div className="mt-8 flex flex-col md:flex-row justify-between items-center gap-6 border-t border-gray-700 pt-8">
-          <div className="text-3xl font-black text-white">
-            TOTAL: <span className="text-yellow-500 font-mono">${grandTotal}</span>
-          </div>
-          <div className="flex gap-4 w-full md:w-auto">
-            <button onClick={generatePDF} className="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700 p-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-blue-900/40">
-              Descargar Cotización PDF
+        <div className="mt-8 flex justify-end gap-4">
+            <button onClick={generatePDF} className="bg-blue-600 hover:bg-blue-700 px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-blue-900/40">
+                Descargar Cotización PDF
             </button>
-            <button onClick={() => router.back()} className="px-8 bg-gray-800 hover:bg-gray-700 p-4 rounded-2xl font-black text-xs uppercase text-gray-500">
-              Cerrar
+            <button onClick={() => router.back()} className="px-8 py-4 bg-gray-800 hover:bg-gray-700 rounded-2xl font-black text-xs uppercase text-gray-500">
+                Cerrar
             </button>
-          </div>
         </div>
       </div>
     </div>

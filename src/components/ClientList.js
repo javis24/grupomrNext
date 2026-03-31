@@ -31,14 +31,22 @@ export default function ClientList() {
     const [isLoading, setIsLoading] = useState(true);
     const itemsPerPage = 6;
 
-    const unidadesNegocio = [
-        { name: 'Servicios', icon: '🛠️', color: 'from-blue-500 to-indigo-600' },
-        { name: 'Empaques', icon: '📦', color: 'from-orange-400 to-red-500' },
-        { name: 'Tarimas', icon: '🪵', color: 'from-amber-600 to-yellow-700' },
-        { name: 'Alimentos', icon: '🍎', color: 'from-green-400 to-emerald-600' },
-        { name: 'Plasticos', icon: '♻️', color: 'from-cyan-500 to-blue-600' },
-        { name: 'Composta', icon: '🌱', color: 'from-lime-500 to-green-700' }
-    ];
+    const PalletIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10">
+    <path d="M2 20h20M2 16h20M2 12h20" />
+    <path d="M4 12v8M12 12v8M20 12v8" />
+    <path d="M2 12v8M22 12v8" />
+  </svg>
+);
+
+ const unidadesNegocio = [
+    { name: 'Servicios', icon: '🚛', color: 'from-blue-500 to-indigo-600' },
+    { name: 'Empaques', icon: '📦', color: 'from-orange-400 to-red-500' },
+    { name: 'Tarimas', icon: <PalletIcon />, color: 'from-amber-600 to-yellow-700' }, // <--- ICONO PALE
+    { name: 'Alimentos', icon: '🐖', color: 'from-green-400 to-emerald-600' },
+    { name: 'Plasticos', icon: '♻️', color: 'from-cyan-500 to-blue-600' },
+    { name: 'Composta', icon: '🌱', color: 'from-lime-500 to-green-700' }
+];
 
   const initialClientState = {
     fullName: '',
@@ -196,19 +204,32 @@ export default function ClientList() {
             </div>
 
             {view === 'unidades' ? (
-                <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {unidadesNegocio.map((u) => {
                         const count = clients.filter(c => (c.planta || '').trim().toLowerCase() === u.name.toLowerCase()).length;
                         return (
                             <div key={u.name} onClick={() => selectUnit(u.name)}
-                                className="bg-[#1f2937] p-8 rounded-[2.5rem] border border-gray-700 hover:border-blue-500 cursor-pointer transition-all hover:bg-[#252f3f] group shadow-2xl relative overflow-hidden"
+                                className="bg-[#1f2937] p-8 rounded-[2.5rem] border border-gray-700 hover:border-blue-500 cursor-pointer transition-all hover:bg-[#252f3f] group shadow-2xl relative overflow-hidden h-64 flex flex-col justify-center"
                             >
+                                {/* Gradiente de fondo sutil */}
                                 <div className={`absolute -right-10 -top-10 w-40 h-40 bg-gradient-to-br ${u.color} opacity-10 rounded-full group-hover:scale-150 transition-transform duration-700`}></div>
+                                
                                 <div className="relative z-10">
-                                    <div className="text-6xl mb-6 group-hover:scale-110 transition-transform duration-300">{u.icon}</div>
-                                    <h2 className="text-3xl font-black uppercase tracking-tight mb-2">{u.name}</h2>
-                                    <span className="text-blue-400 font-bold text-xs uppercase tracking-widest">{count} Clientes</span>
+                                    {/* CONTENEDOR DE ICONO UNIFICADO (Ajusta el Pale aquí) */}
+                                    <div className="w-16 h-16 mb-6 group-hover:scale-110 transition-transform duration-300 flex items-center justify-center text-6xl">
+                                        {typeof u.icon === 'string' 
+                                            ? u.icon 
+                                            : <div className="text-blue-500 p-2 scale-90">{u.icon}</div>
+                                        }
+                                    </div>
+                                    
+                                    <h2 className="text-3xl font-black uppercase tracking-tight mb-2 text-white">{u.name}</h2>
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-1 w-8 bg-blue-500 rounded-full"></div>
+                                        <span className="text-blue-400 font-bold text-xs uppercase tracking-widest">{count} Registros</span>
+                                    </div>
                                 </div>
+                                
                                 <FiChevronRight className="absolute right-8 bottom-8 text-gray-700 group-hover:text-blue-500 group-hover:translate-x-2 transition-all" size={30} />
                             </div>
                         );
@@ -221,25 +242,40 @@ export default function ClientList() {
                         <input type="text" placeholder={`Buscar en ${selectedUnit}...`} className="bg-transparent w-full outline-none text-white font-medium" value={search} onChange={(e) => setSearch(e.target.value)} />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {currentClients.map((client) => (
-                            <div key={client.id} className="bg-[#1f2937] rounded-3xl border border-gray-700 p-6 hover:border-blue-500/50 transition-all shadow-lg flex flex-col justify-between group">
-                                <div>
-                                    <h3 className="text-xl font-black uppercase truncate text-white mb-1">{client.companyName}</h3>
-                                    <p className="text-blue-400 text-[10px] font-bold mb-4 uppercase tracking-[0.2em]">{client.fullName}</p>
-                                    <div className="space-y-3 mb-6 text-xs text-gray-400 border-t border-gray-800 pt-4">
-                                        <div className="flex items-center gap-2"><FiUser className="text-blue-500" /> {client.contactName}</div>
-                                        <div className="flex items-center gap-2"><FiMapPin className="text-blue-500" /> {client.address}</div>
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-3 gap-2 pt-4 border-t border-gray-800">
-                                    <button onClick={() => openModal(client)} className="bg-gray-800 hover:bg-blue-600 p-3 rounded-xl transition-all flex justify-center text-white"><FiEdit2 /></button>
-                                    <button className="bg-gray-800 hover:bg-yellow-600 p-3 rounded-xl transition-all flex justify-center text-white"><FiFileText /></button>
-                                    <button onClick={() => handleDelete(client.id)} className="bg-gray-800 hover:bg-red-600 p-3 rounded-xl transition-all flex justify-center text-white"><FiTrash2 /></button>
-                                </div>
-                            </div>
-                        ))}
+                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    {currentClients.map((client) => (
+        <div key={client.id} className="bg-[#1f2937] rounded-[2.5rem] border border-gray-700 p-8 hover:border-blue-500/50 transition-all shadow-lg flex flex-col justify-between group relative overflow-hidden">
+            <div className="relative z-10">
+                <div className="flex justify-between items-start mb-6">
+                    {/* Icono de avatar con el mismo contenedor 16x16 */}
+                    <div className="w-16 h-16 bg-blue-600/10 rounded-2xl flex items-center justify-center text-4xl text-blue-500 group-hover:scale-110 transition-transform">
+                        👤
                     </div>
+                    <div className="flex flex-col text-right">
+                        <span className="text-[10px] font-black uppercase text-gray-500 tracking-widest italic">ID: {client.id}</span>
+                        <span className="text-blue-400 text-[10px] font-bold uppercase tracking-[0.2em]">{client.fullName}</span>
+                    </div>
+                </div>
+
+                <h3 className="text-2xl font-black uppercase truncate text-white mb-4 group-hover:text-blue-400 transition-colors">
+                    {client.companyName}
+                </h3>
+                
+                <div className="space-y-3 mb-8 text-xs text-gray-400 border-t border-gray-800 pt-6 font-medium">
+                    <div className="flex items-center gap-3"><FiUser className="text-blue-500" size={16}/> {client.contactName}</div>
+                    <div className="flex items-center gap-3"><FiMapPin className="text-blue-500" size={16}/> {client.address}</div>
+                </div>
+            </div>
+
+            {/* BOTONERA UNIFICADA */}
+            <div className="grid grid-cols-3 gap-3 pt-6 border-t border-gray-800 relative z-10">
+                <button onClick={() => openModal(client)} className="bg-gray-800 hover:bg-blue-600 p-4 rounded-2xl transition-all flex justify-center text-white shadow-md active:scale-95"><FiEdit2 size={18}/></button>
+                <button className="bg-gray-800 hover:bg-yellow-600 p-4 rounded-2xl transition-all flex justify-center text-white shadow-md active:scale-95"><FiFileText size={18}/></button>
+                <button onClick={() => handleDelete(client.id)} className="bg-gray-800 hover:bg-red-600 p-4 rounded-2xl transition-all flex justify-center text-white shadow-md active:scale-95"><FiTrash2 size={18}/></button>
+            </div>
+        </div>
+    ))}
+</div>
 
                     {totalPages > 1 && (
                         <div className="flex justify-center items-center gap-4 mt-10">
