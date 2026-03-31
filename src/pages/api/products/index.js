@@ -11,10 +11,11 @@ export default async function handler(req, res) {
             }
 
             if (method === 'POST') {
-                const { name, description, unitMeasure, leadTime, cost, price } = req.body;
+                const { code, name, description, unitMeasure, leadTime, cost, price, businessUnit } = req.body;
+    
                 const newProduct = await Products.create({
-                    name, description, unitMeasure, leadTime, 
-                    cost, price, userId: req.user.id
+                    code, name, description, unitMeasure, leadTime, 
+                    cost, price, businessUnit, userId: req.user.id
                 });
                 return res.status(201).json(newProduct);
             }

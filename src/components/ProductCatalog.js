@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
     FiSearch, FiPlus, FiEdit2, FiTrash2, FiArrowLeft, 
-    FiPackage, FiClock, FiDollarSign, FiLayers, FiChevronRight 
+    FiPackage,FiX, FiClock, FiDollarSign, FiLayers, FiChevronRight 
 } from 'react-icons/fi';
 import { toast, ToastContainer } from 'react-toastify';
 
@@ -16,7 +16,7 @@ const ProductCatalog = () => {
     const [isLoading, setIsLoading] = useState(true);
     
     const [formData, setFormData] = useState({
-        name: '', description: '', unitMeasure: 'Pieza', 
+        code: '', name: '', description: '', unitMeasure: 'Pieza', 
         leadTime: '', cost: '', price: '', businessUnit: ''
     });
 
@@ -100,16 +100,17 @@ const PalletIcon = () => (
     };
 
     const resetForm = () => {
-        setFormData({ name: '', description: '', unitMeasure: 'Pieza', leadTime: '', cost: '', price: '', businessUnit: selectedCategory });
+        setFormData({ code: '', name: '', description: '', unitMeasure: 'Pieza', leadTime: '', cost: '', price: '', businessUnit: selectedCategory });
         setIsEditing(false);
         setShowForm(false);
         setSelectedId(null);
     };
 
-    const filteredProducts = products.filter(p => 
-        p.businessUnit === selectedCategory && 
-        p.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+   const filteredProducts = products.filter(p => 
+    p.businessUnit === selectedCategory && 
+    (p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+     p.code?.toLowerCase().includes(searchTerm.toLowerCase())) // <-- Búsqueda dual
+);
 
     if (isLoading) return (
         <div className="min-h-screen bg-[#0e1624] flex items-center justify-center">
@@ -193,6 +194,17 @@ const PalletIcon = () => (
                             <form onSubmit={handleSubmit} className="bg-[#1f2937] p-8 rounded-[2.5rem] border border-gray-700 mb-10 shadow-2xl space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     <div className="flex flex-col gap-2">
+                                        <label className="text-[10px] font-black text-gray-500 uppercase ml-2 tracking-widest">Código / SKU</label>
+                                        <input 
+                                            type="text" 
+                                            placeholder="Ej: TARET-34X37"
+                                            required 
+                                            value={formData.code} 
+                                            onChange={(e)=>setFormData({...formData, code: e.target.value})} 
+                                            className="bg-[#0e1624] border border-gray-700 rounded-2xl p-4 text-sm outline-none focus:border-blue-500 transition-all text-blue-400 font-mono" 
+                                        />
+                                    </div>
+                                    <div className="flex flex-col gap-2">
                                         <label className="text-[10px] font-black text-gray-500 uppercase ml-2 tracking-widest">Nombre del Producto</label>
                                         <input type="text" required value={formData.name} onChange={(e)=>setFormData({...formData, name: e.target.value})} className="bg-[#0e1624] border border-gray-700 rounded-2xl p-4 text-sm outline-none focus:border-blue-500 transition-all" />
                                     </div>
@@ -249,6 +261,9 @@ const PalletIcon = () => (
                                             </div>
                                         </div>
                                         <h3 className="text-2xl font-black uppercase truncate text-white mb-1 group-hover:text-blue-400 transition-colors">{product.name}</h3>
+                                        <p className="text-blue-500 text-[11px] font-mono font-bold mb-2 uppercase tracking-wider">
+                                            ID: {product.code || 'SIN CÓDIGO'}
+                                        </p>
                                         <p className="text-gray-500 text-[10px] font-bold mb-6 uppercase tracking-[0.2em]">Medida: {product.unitMeasure}</p>
                                         
                                         <div className="space-y-4 border-t border-gray-800 pt-6">
