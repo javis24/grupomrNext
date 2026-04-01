@@ -211,9 +211,10 @@ const PalletIcon = () => (
                                     <div className="flex flex-col gap-2">
                                         <label className="text-[10px] font-black text-gray-500 uppercase ml-2 tracking-widest">Unidad de Medida</label>
                                         <select value={formData.unitMeasure} onChange={(e)=>setFormData({...formData, unitMeasure: e.target.value})} className="bg-[#0e1624] border border-gray-700 rounded-2xl p-4 text-sm outline-none focus:border-blue-500 transition-all appearance-none">
-                                            <option>Pieza</option><option>Kg</option><option>Metro</option><option>m3</option><option>Servicio</option>
+                                            <option>Mensualidad</option><option>Pieza</option><option>Kg</option><option>Metro</option><option>m3</option><option>Servicio</option>
                                         </select>
                                     </div>
+                                   
                                     <div className="flex flex-col gap-2">
                                         <label className="text-[10px] font-black text-gray-500 uppercase ml-2 tracking-widest">Tiempo de Entrega (Lead Time)</label>
                                         <input type="text" value={formData.leadTime} onChange={(e)=>setFormData({...formData, leadTime: e.target.value})} className="bg-[#0e1624] border border-gray-700 rounded-2xl p-4 text-sm outline-none focus:border-blue-500 transition-all" />
