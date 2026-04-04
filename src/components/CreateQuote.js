@@ -2,10 +2,13 @@ import { useEffect, useState } from 'react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useRouter } from 'next/router';
-import { FiCheckSquare, FiSquare, FiFileText, FiPlus, FiTrash2 } from 'react-icons/fi';
+import axios from 'axios'; 
+import { toast, ToastContainer } from 'react-toastify'; // Opcional pero recomendado para feedback
+import { FiCheckSquare, FiSquare, FiFileText, FiPlus, FiTrash2, } from 'react-icons/fi';
 
 const CreateQuote = () => {
   const router = useRouter();
+  const [isSaving, setIsSaving] = useState(false);
   const [quoteNumber, setQuoteNumber] = useState(1);
   const [currentDate, setCurrentDate] = useState("");
   
@@ -118,73 +121,105 @@ const CreateQuote = () => {
   const globalIva = serviceRows.reduce((acc, row) => acc + parseFloat(row.iva || 0), 0).toFixed(2);
   const globalTotal = serviceRows.reduce((acc, row) => acc + parseFloat(row.total || 0), 0).toFixed(2);
 
-  const generatePDF = () => {
-    const doc = new jsPDF();
-    localStorage.setItem('quoteNumber', quoteNumber);
-    const imgUrl = '/logo_mr.png';
-    const image = new Image();
-    image.src = imgUrl;
+  const generatePDF = async () => {
+    if (!clientData.companyName) {
+      alert("Por favor ingresa el nombre de la empresa");
+      return;
+    }
 
-    image.onload = () => {
-      doc.addImage(image, 'PNG', 20, 10, 30, 30);
-      doc.setFontSize(10);
-      doc.text("Materiales Reutilizables S.A. de C.V.", 105, 20, { align: 'center' });
+    setIsSaving(true);
+
+    try {
+      const token = localStorage.getItem('token');
       
-      doc.setFillColor(255, 204, 0);
-      doc.rect(160, 20, 40, 10, 'F');
-      doc.setTextColor(0, 0, 0);
-      doc.text("COTIZACIÓN", 180, 27, { align: 'center' });
-      doc.text(`Nº ${quoteNumber}`, 180, 35, { align: 'center' });
+      // 1. Guardar en Base de Datos primero (para asegurar el registro)
+      await axios.post('/api/quotes', {
+        quoteNumber,
+        companyName: clientData.companyName,
+        attentionTo: clientData.attentionTo,
+        email: clientData.email,
+        phone: clientData.phone,
+        total: globalTotal,
+      }, { headers: { Authorization: `Bearer ${token}` } });
 
-      doc.autoTable({
-        startY: 50,
-        head: [['CONCEPTO', 'DATOS DEL CLIENTE']],
-        body: [
-          ['EMPRESA', clientData.companyName],
-          ['TELÉFONO', clientData.phone],
-          ['ATENCIÓN', clientData.attentionTo],
-          ['FECHA', currentDate]
-        ],
-        theme: 'grid',
-        headStyles: { fillColor: [255, 204, 0], textColor: 0 }
-      });
+      // 2. Iniciar generación de PDF
+      const doc = new jsPDF();
+      const image = new Image();
+      image.src = '/logo_mr.png';
 
-      const tableData = serviceRows.map((row, i) => [
-        i + 1, row.description, row.cantidad, `$${row.pu}`, `$${row.subtotal}`, `$${row.iva}`, `$${row.total}`
-      ]);
+      image.onload = () => {
+        // Encabezados y Logo
+        doc.addImage(image, 'PNG', 20, 10, 30, 30);
+        doc.setFontSize(10);
+        doc.text("Materiales Reutilizables S.A. de C.V.", 105, 20, { align: 'center' });
+        
+        doc.setFillColor(255, 204, 0);
+        doc.rect(160, 20, 40, 10, 'F');
+        doc.setTextColor(0, 0, 0);
+        doc.text("COTIZACIÓN", 180, 27, { align: 'center' });
+        doc.text(`Nº ${quoteNumber}`, 180, 35, { align: 'center' });
 
-      doc.autoTable({
-        startY: doc.lastAutoTable.finalY + 10,
-        head: [['NO', 'DESCRIPCIÓN', 'CANT', 'P.U.', 'SUBTOTAL', 'IVA', 'TOTAL']],
-        body: [
-            ...tableData,
-            ['', '', '', '', '', 'SUBTOTAL:', `$${globalSubtotal}`],
-            ['', '', '', '', '', 'IVA (16%):', `$${globalIva}`],
-            ['', '', '', '', '', 'TOTAL:', `$${globalTotal}`]
-        ],
-        theme: 'striped',
-        headStyles: { fillColor: [30, 41, 59] }
-      });
+        // Tabla de Cliente
+        doc.autoTable({
+          startY: 50,
+          head: [['CONCEPTO', 'DATOS DEL CLIENTE']],
+          body: [
+            ['EMPRESA', clientData.companyName],
+            ['TELÉFONO', clientData.phone],
+            ['ATENCIÓN', clientData.attentionTo],
+            ['FECHA', currentDate]
+          ],
+          theme: 'grid',
+          headStyles: { fillColor: [255, 204, 0], textColor: 0 }
+        });
 
-      let currentY = doc.lastAutoTable.finalY + 15;
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "bold");
-      doc.text("DETALLES DEL SERVICIO:", 14, currentY);
-      doc.setFont("helvetica", "normal");
-      doc.text(descripcionGeneral || "Servicios generales descritos en tabla superior.", 14, currentY + 7);
+        // Tabla de Productos
+        const tableData = serviceRows.map((row, i) => [
+          i + 1, row.description, row.cantidad, `$${row.pu}`, `$${row.subtotal}`, `$${row.iva}`, `$${row.total}`
+        ]);
 
-      currentY += 20;
-      doc.setFont("helvetica", "bold");
-      doc.text("OBSERVACIONES Y CONDICIONES COMERCIALES:", 14, currentY);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      
-      observacionesSeleccionadas.forEach((obs, index) => {
-        doc.text(`- ${obs}`, 14, currentY + 7 + (index * 6));
-      });
+        doc.autoTable({
+          startY: doc.lastAutoTable.finalY + 10,
+          head: [['NO', 'DESCRIPCIÓN', 'CANT', 'P.U.', 'SUBTOTAL', 'IVA', 'TOTAL']],
+          body: [
+              ...tableData,
+              ['', '', '', '', '', 'SUBTOTAL:', `$${globalSubtotal}`],
+              ['', '', '', '', '', 'IVA (16%):', `$${globalIva}`],
+              ['', '', '', '', '', 'TOTAL:', `$${globalTotal}`]
+          ],
+          theme: 'striped',
+          headStyles: { fillColor: [30, 41, 59] }
+        });
 
-      doc.save(`Cotizacion_${clientData.companyName}.pdf`);
-    };
+        // Observaciones finales
+        let currentY = doc.lastAutoTable.finalY + 15;
+        doc.setFont("helvetica", "bold");
+        doc.text("OBSERVACIONES Y CONDICIONES COMERCIALES:", 14, currentY);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        observacionesSeleccionadas.forEach((obs, index) => {
+          doc.text(`- ${obs}`, 14, currentY + 7 + (index * 6));
+        });
+
+        // Guardar estado local y descargar
+        localStorage.setItem('quoteNumber', quoteNumber);
+        doc.save(`Cotizacion_${clientData.companyName}.pdf`);
+        setIsSaving(false);
+        alert("Cotización guardada y descargada con éxito");
+      };
+
+      image.onerror = () => {
+        console.error("No se pudo cargar el logo");
+        // Intentar guardar sin imagen si el logo falla
+        doc.save(`Cotizacion_${clientData.companyName}.pdf`);
+        setIsSaving(false);
+      };
+
+    } catch (error) {
+      console.error("Error en el proceso:", error);
+      alert("Error al guardar en la base de datos. El PDF no se generó.");
+      setIsSaving(false);
+    }
   };
 
   return (

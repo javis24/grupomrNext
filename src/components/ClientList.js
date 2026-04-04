@@ -353,7 +353,7 @@ export default function ClientList() {
             {/* COLUMNA 3: DATOS DE FACTURACIÓN */}
             <div className="space-y-4 bg-gray-800/30 p-4 rounded-2xl border border-gray-700">
                 <h3 className="text-yellow-500 text-[11px] font-black uppercase tracking-widest border-l-4 border-yellow-500 pl-2">Departamento de Pagos</h3>
-                <ModalInput label="Depto. Facturación" value={newClient.billingDepartment} onChange={(v) => setNewClient({...newClient, billingDepartment: v})} />
+                <ModalInput label="Dias de Crédito" value={newClient.billingDepartment} onChange={(v) => setNewClient({...newClient, billingDepartment: v})} />
                 <ModalInput label="Contacto de Pagos" value={newClient.billingContactName} onChange={(v) => setNewClient({...newClient, billingContactName: v})} />
                 <ModalInput label="Teléfono de Pagos" value={newClient.billingPhone} onChange={(v) => setNewClient({...newClient, billingPhone: v})} />
                 <ModalInput label="Email de Facturas" type="email" value={newClient.billingEmail} onChange={(v) => setNewClient({...newClient, billingEmail: v})} />

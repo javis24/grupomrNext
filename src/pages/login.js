@@ -10,27 +10,36 @@ export default function Login() {
     const [error, setError] = useState('');
     const router = useRouter();
 
-    const handleLogin = async (e) => {
-        e.preventDefault();
-        try {
-          const { data } = await axios.post('/api/login', { name, password });
-          
-          // Guardar el token en localStorage
-          localStorage.setItem('token', data.token);
-    
-          // Decodificar el token para obtener el nombre de usuario
-          const decodedToken = jwt.decode(data.token);
-          
-          // Verificar si el nombre contiene "Logistica" y redirigir en consecuencia
-          if (decodedToken.name && decodedToken.name.includes('Logistica')) {
-            router.push('/servicios');  // Redirige a 'Servicios'
-          } else {
-            router.push('/clientes');  // Redirige a 'Clientes' para otros usuarios
-          }
-        } catch (error) {
-          setError('Failed to login. Please check your credentials.');
-        }
-      };
+   const handleLogin = async (e) => {
+    e.preventDefault();
+    setError(''); // Limpiar errores previos
+    try {
+      const { data } = await axios.post('/api/login', { name, password });
+      
+      localStorage.setItem('token', data.token);
+
+      const decodedToken = jwt.decode(data.token);
+      
+      if (!decodedToken) throw new Error("Invalid Token");
+
+      
+      localStorage.setItem('userRole', decodedToken.role);
+      localStorage.setItem('userName', decodedToken.name);
+
+      if (decodedToken.role === 'admin' || decodedToken.role === 'gerencia') {
+        router.push('/calendario'); // Tu nuevo componente maestro
+      } else if (decodedToken.name.includes('Logistica')) {
+        router.push('/servicios');
+      } else {
+        router.push('/clientes');
+      }
+
+    } catch (error) {
+      console.error(error);
+      const msg = error.response?.data?.message || 'Error de conexión con el servidor';
+      setError(msg);
+    }
+};
     
       
     

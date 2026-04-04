@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import jwt from 'jsonwebtoken';
 import { 
     FiSearch, FiPlus, FiEdit2, FiTrash2, FiArrowLeft, 
     FiPackage,FiX, FiClock, FiDollarSign, FiLayers, FiChevronRight 
@@ -14,6 +15,8 @@ const ProductCatalog = () => {
     const [selectedId, setSelectedId] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [isLoading, setIsLoading] = useState(true);
+
+    const [userRole, setUserRole] = useState('');
     
     const [formData, setFormData] = useState({
         code: '', name: '', description: '', unitMeasure: 'Pieza', 
@@ -46,10 +49,15 @@ const PalletIcon = () => (
 ];
 
     useEffect(() => { 
+        const token = localStorage.getItem('token');
+        if (token) {
+            const decoded = jwt.decode(token);
+            setUserRole(decoded.role);
+        }
         fetchProducts(); 
     }, []);
 
-    const fetchProducts = async () => {
+   const fetchProducts = async () => {
         setIsLoading(true);
         try {
             const token = localStorage.getItem('token');
@@ -65,6 +73,7 @@ const PalletIcon = () => (
     };
 
     const handleEdit = (product) => {
+        if (userRole !== 'admin') return; // Bloqueo extra en UI
         setFormData({ ...product });
         setSelectedId(product.id);
         setIsEditing(true);
@@ -73,6 +82,7 @@ const PalletIcon = () => (
     };
 
     const handleDelete = async (id) => {
+        if (userRole !== 'admin') return; // Bloqueo extra en UI
         if (!confirm("¿Estás seguro de eliminar este producto?")) return;
         try {
             const token = localStorage.getItem('token');
@@ -182,12 +192,14 @@ const PalletIcon = () => (
                                     <p className="text-blue-500 text-xs font-bold tracking-[0.3em] uppercase mt-1">Gestión de Catálogo Maestro</p>
                                 </div>
                             </div>
+                            {userRole === 'admin' && (
                             <button 
                                 onClick={() => showForm ? resetForm() : setShowForm(true)}
-                                className={`px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg flex items-center gap-2 ${showForm ? 'bg-red-600 shadow-red-900/40' : 'bg-blue-600 shadow-blue-900/40'}`}
+                                className={`px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg flex items-center gap-2 ${showForm ? 'bg-red-600' : 'bg-blue-600'}`}
                             >
                                 {showForm ? <FiX /> : <FiPlus />} {showForm ? 'Cerrar' : 'Nuevo Producto'}
                             </button>
+                        )}
                         </div>
 
                         {showForm && (
@@ -258,7 +270,9 @@ const PalletIcon = () => (
                                             </div>
                                             <div className="flex gap-2">
                                                 <button onClick={() => handleEdit(product)} className="bg-gray-800 p-3 rounded-xl hover:text-blue-400 transition-all"><FiEdit2 size={16}/></button>
-                                                <button onClick={() => handleDelete(product.id)} className="bg-gray-800 p-3 rounded-xl hover:text-red-500 transition-all"><FiTrash2 size={16}/></button>
+                                                {userRole === 'admin' && (
+                                                    <button onClick={() => handleDelete(product.id)} className="bg-gray-800 p-3 rounded-xl hover:text-red-500 transition-all"><FiTrash2 size={16}/></button>
+                                                )}
                                             </div>
                                         </div>
                                         <h3 className="text-2xl font-black uppercase truncate text-white mb-1 group-hover:text-blue-400 transition-colors">{product.name}</h3>

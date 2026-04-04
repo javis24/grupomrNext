@@ -48,24 +48,27 @@ export default function Sidebar() {
 
   // --- MAPEO DE ENLACES ---
   const menuItems = [
-    { label: 'Unidad de Negocio', href: '/reportes-unidad-negocio', icon: FiBriefcase, show: permissions.total },
-    { label: 'Productos', href: '/productos', icon: FiBox, show: permissions.total },
-    { label: 'Ventas', href: '/ventas', icon: FiTrendingUp, show: permissions.total },
-    { label: 'Rendimiento', href: '/vendedor', icon: FiBarChart2, show: permissions.total },
-    { label: 'Clientes', href: '/clientes', icon: FiUsers, show: permissions.clientes },
-    { label: 'Calendario', href: '/calendario', icon: FiCalendar, show: permissions.total },
-    { label: 'Reporte Mensual', href: '/reporte-mensual', icon: FiFileText, show: permissions.mensual },
-    { label: 'Gráficas', href: '/graficas-reportes', icon: FiBarChart2, show: permissions.mensual },
     { label: 'Asesores', href: '/user', icon: FiUser, show: permissions.asesores },
+    { label: 'Calendario', href: '/calendario', icon: FiCalendar, show: permissions.total },
+    { label: 'Productos', href: '/productos', icon: FiBox, show: permissions.total },    
     { label: 'Prospectos', href: '/prospectos', icon: FiClipboard, show: permissions.total },
     { label: 'Cotización', href: '/cotizacion', icon: FiFileText, show: permissions.cotizacion },
+    { label: 'Clientes', href: '/clientes', icon: FiUsers, show: permissions.clientes },
+    { label: 'Ventas', href: '/ventas', icon: FiTrendingUp, show: permissions.total },
     { label: 'Créditos', href: '/creditos', icon: FiCreditCard, show: permissions.total },
     { label: 'Cobranza', href: '/cartera-disponible', icon: FiCreditCard, show: permissions.total },
-    { label: 'Incidencias', href: '/incidencias', icon: FiAlertCircle, show: permissions.total },
-    { label: 'Reportes', href: '/reportes', icon: FiClipboard, show: permissions.cotizacion },
-    { label: 'Servicios', href: '/servicios', icon: FiTruck, show: permissions.servicios },
+    { label: 'Reporte General', href: '/reportes-unidad-negocio', icon: FiBriefcase, show: permissions.total },
+    { label: 'Incidencias', href: '/incidencias', icon: FiAlertCircle, show: permissions.total },  
     { label: 'PDF', href: '/archivos', icon: FiFile, show: permissions.pdfMkt },
     { label: 'MKT', href: '/mkt', icon: FiTrendingUp, show: permissions.pdfMkt },
+
+    //quitar estos
+    { label: 'Servicios', href: '/servicios', icon: FiTruck, show: permissions.servicios },
+    { label: 'Rendimiento', href: '/vendedor', icon: FiBarChart2, show: permissions.total },
+    { label: 'Reporte Mensual', href: '/reporte-mensual', icon: FiFileText, show: permissions.mensual },
+    { label: 'Gráficas', href: '/graficas-reportes', icon: FiBarChart2, show: permissions.mensual },  
+    { label: 'Reportes', href: '/reportes', icon: FiClipboard, show: permissions.cotizacion },
+   
   ];
 
   return (

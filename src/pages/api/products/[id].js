@@ -6,6 +6,7 @@ export default async function handler(req, res) {
 
     authenticateToken(req, res, async () => {
         const { method } = req;
+        const { role } = req.user; 
 
         try {
             const product = await Products.findByPk(id);
@@ -13,7 +14,16 @@ export default async function handler(req, res) {
                 return res.status(404).json({ message: "Producto no encontrado" });
             }
 
-            // --- EDITAR PRODUCTO ---
+       
+            if (method === 'PUT' || method === 'DELETE') {
+                if (role !== 'admin') {
+                    return res.status(403).json({ 
+                        message: "Acceso denegado: Solo administradores pueden gestionar el catálogo de productos." 
+                    });
+                }
+            }
+
+   
             if (method === 'PUT') {
                 const { name, description, unitMeasure, leadTime, cost, price } = req.body;
                 await product.update({
@@ -27,7 +37,7 @@ export default async function handler(req, res) {
                 return res.status(200).json({ message: "Producto actualizado con éxito" });
             }
 
-            // --- ELIMINAR PRODUCTO ---
+     
             if (method === 'DELETE') {
                 await product.destroy();
                 return res.status(200).json({ message: "Producto eliminado correctamente" });

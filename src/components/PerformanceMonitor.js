@@ -1,206 +1,274 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { format } from 'date-fns';
 import { 
-    FiUser, FiShoppingBag, FiActivity, FiPieChart, 
-    FiTrendingDown, FiChevronDown, FiCalendar, FiDollarSign, FiUserPlus, FiMail 
+  FiUser, FiCalendar, FiTarget, FiFileText, FiUsers, FiDollarSign, 
+  FiCreditCard, FiAlertTriangle, FiSearch, FiDownload, FiRefreshCw, 
+  FiChevronRight, FiClock, FiBriefcase, FiMapPin, FiChevronLeft, FiImage
 } from 'react-icons/fi';
+import { format, isValid } from 'date-fns';
+import { es } from 'date-fns/locale';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import { toast, ToastContainer } from 'react-toastify';
 
-export default function PerformanceMonitor() {
-    // 1. Estado unificado para recibir TODO el contenido de las APIs
-    const [reportData, setReportData] = useState({ salesByUser: [], salesDetails: [] });
-    const [loading, setLoading] = useState(true);
-    const [range, setRange] = useState('month');
-    const [expandedUser, setExpandedUser] = useState(null);
+const AdvisorReports = () => {
+  const [activeTab, setActiveTab] = useState('calendario');
+  const [advisors, setAdvisors] = useState([]);
+  const [selectedAdvisor, setSelectedAdvisor] = useState('all');
+  const [data, setData] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-    useEffect(() => {
-        fetchFullReport();
-    }, [range]);
+  // Resetear página al filtrar o cambiar pestaña
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, searchTerm, selectedAdvisor]);
 
-    const fetchFullReport = async () => {
-        setLoading(true);
-        try {
-            const token = localStorage.getItem('token');
-            // Esta API debe devolver el objeto completo con salesByUser y salesDetails
-            const res = await axios.get(`/api/reports/performance?range=${range}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            
-            console.log("Datos recibidos de la API:", res.data);
-            setReportData(res.data);
-        } catch (error) {
-            console.error("Error API:", error);
-            toast.error("Error al sincronizar datos reales");
-        } finally {
-            setLoading(false);
-        }
+  // 1. Cargar lista de asesores para el filtro superior
+  useEffect(() => {
+    const fetchAdvisors = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await axios.get('/api/users', { headers: { Authorization: `Bearer ${token}` } });
+        setAdvisors(res.data);
+      } catch (err) { console.error("Error cargando asesores"); }
     };
+    fetchAdvisors();
+  }, []);
 
-    // Función para calcular días de inactividad evitando el error "Infinity"
-    const getInactivityDays = (date) => {
-        if (!date || date === 'Nunca') return 0;
-        try {
-            const diff = Math.floor((new Date() - new Date(date)) / (1000 * 60 * 60 * 24));
-            return isNaN(diff) ? 0 : diff;
-        } catch (e) { return 0; }
-    };
+  // 2. Fetch dinámico (Calendario, Prospectos, Ventas, Cotizaciones, Clientes, Créditos, Incidencias)
+  const fetchData = async () => {
+    setIsLoading(true);
+    const token = localStorage.getItem('token');
+    try {
+      let endpoint = '';
+      switch (activeTab) {
+        case 'calendario': endpoint = '/api/appointments'; break;
+        case 'prospectos': endpoint = '/api/prospects'; break;
+        case 'ventas': endpoint = '/api/salesbussines'; break;
+        case 'cotizaciones': endpoint = '/api/quotes'; break;
+        case 'clientes': endpoint = '/api/clients'; break;
+        case 'creditos': endpoint = '/api/credits'; break;
+        case 'incidencias': endpoint = '/api/incidents'; break; // <--- API INCIDENCIAS
+        default: endpoint = '/api/appointments';
+      }
+      const res = await axios.get(endpoint, { headers: { Authorization: `Bearer ${token}` } });
+      setData(res.data || []);
+    } catch (err) {
+      toast.error(`Error al cargar datos de ${activeTab}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    const totalVendidoGlobal = reportData.salesDetails?.reduce((acc, curr) => acc + parseFloat(curr.total || 0), 0) || 0;
+  useEffect(() => { fetchData(); }, [activeTab]);
 
-    return (
-        <div className="p-4 md:p-8 bg-[#0e1624] min-h-screen text-white font-sans">
-            <ToastContainer theme="dark" />
-            
-            <div className="max-w-7xl mx-auto space-y-10">
-                {/* HEADER GLOBAL */}
-                <div className="flex flex-col md:flex-row justify-between items-center gap-6 bg-[#1f2937] p-8 rounded-[2.5rem] border border-gray-700 shadow-2xl">
-                    <div>
-                        <h1 className="text-4xl font-black uppercase italic tracking-tighter text-blue-500">Historial Maestro</h1>
-                        <p className="text-gray-500 text-[10px] font-bold tracking-[0.4em] uppercase">Ventas y Actividad en Tiempo Real</p>
-                    </div>
-                    
-                    <div className="flex items-center gap-4">
-                        <select 
-                            value={range} 
-                            onChange={(e) => setRange(e.target.value)}
-                            className="bg-[#0e1624] p-4 rounded-2xl border border-gray-700 outline-none text-[10px] font-black uppercase tracking-widest focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="day">Hoy</option>
-                            <option value="week">Esta Semana</option>
-                            <option value="month">Este Mes</option>
-                        </select>
-                        <div className="bg-[#0e1624] p-4 rounded-2xl border border-gray-800 text-center min-w-[160px]">
-                            <p className="text-[9px] font-black text-gray-500 uppercase mb-1">Total recaudado</p>
-                            <p className="text-xl font-black text-green-500">$ {totalVendidoGlobal.toLocaleString()}</p>
-                        </div>
-                    </div>
-                </div>
+  // Función segura para fechas
+  const safeFormatDate = (dateValue, formatStr = 'dd/MM/yyyy') => {
+    if (!dateValue) return '---';
+    const d = new Date(dateValue);
+    return isValid(d) ? format(d, formatStr, { locale: es }) : '---';
+  };
 
-                {/* TABLA MAESTRA: AQUÍ VERÁS TODAS LAS VENTAS DE TODOS */}
-                <div className="bg-[#1f2937] rounded-[2.5rem] border border-gray-700 shadow-2xl overflow-hidden">
-                    <div className="p-6 bg-gray-800/20 border-b border-gray-800 flex justify-between items-center">
-                        <h2 className="text-xs font-black uppercase tracking-[0.2em] flex items-center gap-2">
-                            <FiActivity className="text-blue-500" /> Flujo Maestro de Operaciones
-                        </h2>
-                    </div>
-                    <div className="overflow-x-auto max-h-[400px] custom-scrollbar">
-                        <table className="w-full text-left">
-                            <thead className="sticky top-0 bg-[#1f2937] text-[9px] font-black text-gray-500 uppercase tracking-widest border-b border-gray-800">
-                                <tr>
-                                    <th className="p-5 text-center">Fecha</th>
-                                    <th className="p-5">Asesor</th>
-                                    <th className="p-5">Cliente</th>
-                                    <th className="p-5 text-right">Monto</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-800/50">
-                                {reportData.salesDetails?.length > 0 ? (
-                                    reportData.salesDetails.map((sale) => (
-                                        <tr key={sale.id} className="hover:bg-blue-600/5 transition-all">
-                                            <td className="p-5 text-center font-mono text-[10px] text-gray-500">
-                                                {sale.fechaOperacion ? format(new Date(sale.fechaOperacion), 'dd/MM/yy') : '---'}
-                                            </td>
-                                            <td className="p-5">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center text-[10px] font-black text-blue-500 uppercase">
-                                                        {sale.userName?.charAt(0) || 'U'}
-                                                    </div>
-                                                    <span className="text-[10px] font-bold uppercase text-gray-300">{sale.userName || 'Sistema'}</span>
-                                                </div>
-                                            </td>
-                                            <td className="p-5 text-xs font-black uppercase text-white truncate max-w-[150px]">
-                                                {sale.clientName}
-                                            </td>
-                                            <td className="p-5 text-right font-black text-green-400 text-xs">
-                                                $ {parseFloat(sale.total || 0).toLocaleString()}
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr><td colSpan="4" className="p-10 text-center text-gray-600 uppercase text-[10px] font-black italic">No hay registros de ventas en este periodo</td></tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+  // 3. Filtro de búsqueda global
+  const filteredData = useMemo(() => {
+    return data.filter(item => {
+      const advisorId = item.userId || item.assignedTo;
+      const matchesAdvisor = selectedAdvisor === 'all' || advisorId?.toString() === selectedAdvisor;
+      const searchStr = searchTerm.toLowerCase();
+      
+      const matchesSearch = (
+        (item.clientName || "") + (item.fullName || "") + (item.contactName || "") + 
+        (item.company || "") + (item.companyName || "") + (item.nombreComercial || "") + 
+        (item.title || "") + (item.entityName || "") + (item.concepto || "")
+      ).toLowerCase().includes(searchStr);
 
-                {/* GRID DE CARDS: DESGLOSE INDIVIDUAL POR ASESOR */}
-                <h2 className="text-sm font-black uppercase tracking-widest text-gray-500 flex items-center gap-3">
-                    <span className="h-[1px] w-10 bg-gray-800"></span> Desglose por Asesor
-                </h2>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {reportData.salesByUser?.map((user) => (
-                        <div key={user.userId} className="bg-[#1f2937] rounded-[2.5rem] border border-gray-700 p-8 hover:border-blue-500/50 transition-all shadow-2xl relative group overflow-hidden flex flex-col justify-between">
-                            <div>
-                                <div className="flex justify-between items-start mb-8">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-14 h-14 rounded-2xl bg-blue-600/10 flex items-center justify-center text-3xl shadow-inner group-hover:scale-110 transition-transform text-blue-500">
-                                            👤
-                                        </div>
-                                        <div>
-                                            <h3 className="text-xl font-black uppercase italic tracking-tighter leading-none">{user.userName}</h3>
-                                            <p className="text-[9px] text-blue-500 font-bold uppercase tracking-widest mt-1">Asesor Comercial</p>
-                                        </div>
-                                    </div>
-                                </div>
+      return matchesAdvisor && matchesSearch;
+    });
+  }, [data, selectedAdvisor, searchTerm]);
 
-                                <div className="space-y-3 mb-8">
-                                    <ActivityPill 
-                                        icon={<FiShoppingBag/>} 
-                                        label="Última Venta" 
-                                        date={user.lastSaleDate} 
-                                        days={getInactivityDays(user.lastSaleDate)} 
-                                        limit={30} 
-                                    />
-                                    <ActivityPill 
-                                        icon={<FiUserPlus/>} 
-                                        label="Nuevo Cliente" 
-                                        date={user.lastClientDate} 
-                                        days={getInactivityDays(user.lastClientDate)} 
-                                        limit={15} 
-                                    />
-                                </div>
+  // 4. Paginación
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredData.slice(start, start + itemsPerPage);
+  }, [filteredData, currentPage]);
 
-                                <div className="grid grid-cols-2 gap-4 border-t border-gray-800 pt-6">
-                                    <div className="bg-[#0e1624] p-4 rounded-2xl border border-gray-800 text-center">
-                                        <p className="text-[8px] font-black text-gray-500 uppercase mb-1">Operaciones</p>
-                                        <p className="text-lg font-black text-blue-400">{user.totalSales || 0}</p>
-                                    </div>
-                                    <div className="bg-[#0e1624] p-4 rounded-2xl border border-gray-800 text-center">
-                                        <p className="text-[8px] font-black text-gray-500 uppercase mb-1">Monto Total</p>
-                                        <p className="text-lg font-black text-green-500">$ {Math.round(user.totalVendido || 0).toLocaleString()}</p>
-                                    </div>
-                                </div>
-                            </div>
+  // --- 5. LÓGICA DE EXPORTACIÓN PDF ---
+  const handleExportPDF = (isAll = true, singleItem = null) => {
+    const doc = new jsPDF(isAll ? 'l' : 'p', 'mm', 'a4');
+    const itemsToExport = isAll ? filteredData : [singleItem];
+    const advisorName = selectedAdvisor === 'all' ? 'General' : advisors.find(a => a.id.toString() === selectedAdvisor)?.name;
 
-                            <button className="w-full mt-6 bg-[#0e1624] hover:bg-blue-600 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
-                                Enviar Recordatorio
-                            </button>
-                        </div>
-                    ))}
-                </div>
-            </div>
+    doc.setFillColor(17, 24, 39);
+    doc.rect(0, 0, doc.internal.pageSize.width, 25, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(16);
+    doc.text(`REPORTE DE ${activeTab.toUpperCase()}`, 15, 16);
+    doc.setFontSize(8);
+    doc.text(`EMISIÓN: ${format(new Date(), 'PPpp', { locale: es })} | ASESOR: ${advisorName}`, 15, 21);
+
+    let columns = [];
+    let body = [];
+
+    switch(activeTab) {
+        case 'incidencias':
+            columns = ['Fecha Incid.', 'Asesor', 'Título / Asunto', 'Cliente/Entidad', 'Estatus'];
+            body = itemsToExport.map(i => [
+                safeFormatDate(i.incidentDate),
+                advisors.find(a => a.id === i.userId)?.name || 'S/N',
+                i.title, i.entityName, 'Reportada'
+            ]);
+            break;
+        case 'ventas':
+            columns = ['Fecha', 'Asesor', 'Concepto', 'Total'];
+            body = itemsToExport.map(i => [safeFormatDate(i.fechaOperacion), advisors.find(a => a.id === i.userId)?.name || 'S/N', i.concepto, `$${(i.cantidad * i.precioUnitario).toLocaleString()}`]);
+            break;
+        case 'creditos':
+            columns = ['Fecha', 'Empresa', 'RFC', 'Monto', 'Estatus'];
+            body = itemsToExport.map(i => [safeFormatDate(i.createdAt), i.nombreComercial, i.rfc, `$${parseFloat(i.montoSolicitado).toLocaleString()}`, i.status]);
+            break;
+        default:
+            columns = ['Fecha', 'Asesor', 'Entidad', 'Referencia'];
+            body = itemsToExport.map(i => [safeFormatDate(i.createdAt || i.date), advisors.find(a => a.id === (i.userId || i.assignedTo))?.name || 'S/N', i.clientName || i.fullName || i.entityName, i.clientStatus || i.saleProcess || 'OK']);
+    }
+
+    doc.autoTable({ startY: 30, head: [columns], body: body, theme: 'striped', headStyles: { fillColor: [22, 163, 74] } });
+    doc.save(`${activeTab}_report_${Date.now()}.pdf`);
+  };
+
+  const reportTypes = [
+    { id: 'calendario', label: 'Citas', icon: <FiCalendar /> },
+    { id: 'prospectos', label: 'Prospectos', icon: <FiTarget /> },
+    { id: 'cotizaciones', label: 'Cotizaciones', icon: <FiFileText /> },
+    { id: 'clientes', label: 'Clientes', icon: <FiUsers /> },
+    { id: 'ventas', label: 'Ventas', icon: <FiDollarSign /> },
+    { id: 'creditos', label: 'Créditos', icon: <FiCreditCard /> },
+    { id: 'incidencias', label: 'Incidencias', icon: <FiAlertTriangle /> },
+  ];
+
+  return (
+    <div className="min-h-screen bg-[#0e1624] text-white font-sans flex flex-col lg:flex-row">
+      <ToastContainer theme="dark" />
+      
+      {/* SIDEBAR */}
+      <aside className="w-full lg:w-72 bg-[#1f2937] border-b lg:border-r border-gray-800 lg:h-screen sticky top-0 z-30 flex flex-col">
+        <div className="p-6 hidden lg:flex items-center gap-3 border-b border-gray-800 text-white">
+          <div className="p-2 bg-blue-500/20 rounded-lg text-blue-500"><FiBriefcase size={20}/></div>
+          <h2 className="font-black uppercase tracking-tighter text-lg italic">Admin Hub</h2>
         </div>
-    );
-}
+        <nav className="p-4 flex lg:flex-col gap-2 overflow-x-auto lg:overflow-y-auto no-scrollbar">
+          {reportTypes.map((item) => (
+            <button key={item.id} onClick={() => setActiveTab(item.id)}
+              className={`flex items-center gap-3 px-5 py-3 rounded-xl transition-all whitespace-nowrap text-[10px] font-black uppercase tracking-[0.1em] flex-shrink-0 ${activeTab === item.id ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:bg-gray-800'}`}>
+              <span className="text-lg">{item.icon}</span> <span>{item.label}</span>
+            </button>
+          ))}
+        </nav>
+      </aside>
 
-const ActivityPill = ({ icon, label, date, days, limit }) => (
-    <div className="bg-[#0e1624] p-3 rounded-2xl border border-gray-800 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-            <div className="text-blue-500 opacity-50">{icon}</div>
-            <div>
-                <p className="text-[8px] font-black text-gray-500 uppercase">{label}</p>
-                <p className="text-[10px] font-bold text-gray-300">{date && date !== 'Nunca' ? format(new Date(date), 'dd MMM yyyy') : 'Sin registro'}</p>
-            </div>
+      {/* CONTENIDO */}
+      <main className="flex-1 p-4 md:p-8 space-y-6 overflow-y-auto">
+        {/* BARRA FILTROS */}
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 bg-[#1f2937] p-6 rounded-[2.5rem] border border-gray-800 shadow-2xl">
+          <div className="relative xl:col-span-2">
+            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+            <input type="text" placeholder="Buscar registros..." className="w-full bg-[#0e1624] border border-gray-700 rounded-2xl p-4 pl-12 text-sm outline-none focus:border-blue-500 transition-all text-white" value={searchTerm} onChange={(e)=>setSearchTerm(e.target.value)} />
+          </div>
+          <select value={selectedAdvisor} onChange={(e)=>setSelectedAdvisor(e.target.value)} className="bg-[#0e1624] border border-gray-700 rounded-2xl p-4 text-sm text-gray-300 outline-none focus:border-blue-500 cursor-pointer">
+            <option value="all">📊 Todos los Asesores</option>
+            {advisors.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+          </select>
+          <div className="xl:col-span-2 flex gap-3">
+            <button onClick={fetchData} className="flex-1 bg-gray-800 hover:bg-gray-700 p-4 rounded-2xl text-blue-500 flex items-center justify-center gap-3 text-[10px] font-black uppercase transition-all border border-gray-700">
+              <FiRefreshCw className={isLoading ? "animate-spin" : ""}/> Sync
+            </button>
+            <button onClick={() => handleExportPDF(true)} className="flex-1 bg-red-600/10 hover:bg-red-600/20 p-4 rounded-2xl text-red-500 flex items-center justify-center gap-3 text-[10px] font-black uppercase border border-red-500/20 transition-all shadow-lg">
+              <FiDownload size={18}/> PDF
+            </button>
+          </div>
         </div>
-        {(days > limit && date && date !== 'Nunca') ? (
-            <span className="text-[8px] font-black text-red-500 animate-pulse bg-red-500/10 px-2 py-1 rounded-lg border border-red-500/20 uppercase">
-                ¡INACTIVO!
-            </span>
-        ) : (
-            <span className="text-[8px] font-black text-green-500 opacity-40 uppercase">Vigente</span>
-        )}
+
+        {/* TABLA PRINCIPAL */}
+        <div className="bg-[#1f2937] rounded-[2.5rem] border border-gray-800 shadow-2xl overflow-hidden">
+          <div className="p-8 bg-gray-800/20 border-b border-gray-800">
+            <h3 className="text-2xl font-black uppercase italic tracking-tighter text-white">Reporte: <span className={activeTab === 'incidencias' ? 'text-red-500' : 'text-blue-500'}>{activeTab}</span></h3>
+            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">{filteredData.length} Registros encontrados</p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="text-[10px] text-gray-400 uppercase tracking-[0.2em] bg-[#0e1624]/40">
+                  <th className="px-8 py-5">Fecha / Info</th>
+                  <th className="px-8 py-5">Asesor</th>
+                  <th className="px-8 py-5">Entidad / Concepto</th>
+                  <th className="px-8 py-5 text-center">Estado / Evidencia</th>
+                  <th className="px-8 py-5 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-800/50">
+                {isLoading ? (
+                  <tr><td colSpan="5" className="py-32 text-center animate-pulse italic text-gray-700 uppercase font-black">Obteniendo datos...</td></tr>
+                ) : paginatedData.map((item) => (
+                  <tr key={item.id} className="hover:bg-white/5 transition-colors group">
+                    <td className="px-8 py-6">
+                      <p className="text-sm font-bold text-gray-200">{safeFormatDate(item.incidentDate || item.createdAt || item.date || item.fechaOperacion)}</p>
+                      {item.appointmentTime && <span className="text-[10px] text-blue-500 font-bold flex items-center gap-1 mt-1 uppercase font-mono"><FiClock/> {item.appointmentTime}</span>}
+                    </td>
+                    <td className="px-8 py-6">
+                       <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-blue-500/10 rounded-xl flex items-center justify-center text-[10px] text-blue-500 font-black border border-blue-500/20 uppercase">
+                            {(advisors.find(a => a.id === (item.userId || item.assignedTo))?.name?.substring(0,2) || "S").toUpperCase()}
+                          </div>
+                          <span className="text-sm font-bold text-gray-300">{advisors.find(a => a.id === (item.userId || item.assignedTo))?.name || 'Sistema'}</span>
+                       </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      <p className="text-sm font-black uppercase text-white truncate max-w-[280px]">
+                        {item.title || item.nombreComercial || item.fullName || item.companyName || (item.Client?.fullName) || item.concepto}
+                      </p>
+                      <p className="text-[10px] text-gray-500 font-medium mt-1 italic truncate max-w-[280px]">
+                        {item.entityName || item.businessTurn || item.description || 'Sin detalles adicionales'}
+                      </p>
+                    </td>
+                    <td className="px-8 py-6 text-center">
+                      {activeTab === 'incidencias' && item.imageUrl ? (
+                        <div className="flex flex-col items-center gap-1">
+                          <img src={item.imageUrl} className="w-10 h-10 object-cover rounded-lg border border-gray-700 shadow-lg" alt="Evidencia" />
+                          <span className="text-[8px] text-gray-500 font-black uppercase tracking-tighter">Evidencia OK</span>
+                        </div>
+                      ) : (
+                        <span className={`px-4 py-1.5 text-[9px] font-black uppercase rounded-lg border ${ (item.status === 'Aprobado' || item.saleProcess === 'Cerrado') ? 'bg-green-500/10 text-green-500 border-green-500/30' : 'bg-blue-500/10 text-blue-400 border-blue-500/30'}`}>
+                            {item.status || item.clientStatus || item.saleProcess || 'Activo'}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-8 py-6 text-right">
+                      <button onClick={()=>handleExportPDF(false, item)} className="p-3 bg-[#0e1624] rounded-2xl text-gray-500 hover:text-red-500 border border-gray-800 transition-all hover:scale-110 shadow-lg">
+                        <FiFileText size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          
+          {/* PAGINADOR FINAL */}
+          {filteredData.length > itemsPerPage && (
+            <div className="p-6 bg-[#0e1624]/20 border-t border-gray-800 flex justify-between items-center">
+               <button disabled={currentPage === 1} onClick={() => {setCurrentPage(p => p - 1); window.scrollTo({top:0, behavior:'smooth'})}} className="p-2.5 bg-gray-800 rounded-xl disabled:opacity-20 text-white"><FiChevronLeft/></button>
+               <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Página {currentPage} de {totalPages}</span>
+               <button disabled={currentPage === totalPages} onClick={() => {setCurrentPage(p => p + 1); window.scrollTo({top:0, behavior:'smooth'})}} className="p-2.5 bg-gray-800 rounded-xl disabled:opacity-20 text-white"><FiChevronRight/></button>
+            </div>
+          )}
+        </div>
+      </main>
     </div>
-);
+  );
+};
+
+export default AdvisorReports;
