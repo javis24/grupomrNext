@@ -4,8 +4,8 @@ import { useRouter } from 'next/router';
 import jwt from 'jsonwebtoken';
 import { 
   FiMenu, FiX, FiLogOut, FiBox, FiUsers, FiCalendar, 
-  FiFileText, FiBarChart2, FiUser, FiBriefcase, FiCreditCard, 
-  FiAlertCircle, FiClipboard, FiTruck, FiFile, FiTrendingUp 
+  FiFileText, FiUser, FiBriefcase, FiCreditCard, 
+  FiAlertCircle, FiClipboard, FiFile, FiTrendingUp 
 } from 'react-icons/fi';
 
 export default function Sidebar() {
@@ -39,13 +39,19 @@ export default function Sidebar() {
   const menuItems = [
     { label: 'Asesores', href: '/user', icon: FiUser, show: userData.role === 'admin' },
     { label: 'Calendario', href: '/calendario', icon: FiCalendar, show: true },
-    { label: 'Productos', href: '/productos', icon: FiBox, show: userData.role === 'admin' },    
+    
+    // CAMBIO AQUÍ: 'show: true' permite que el vendedor también vea el catálogo
+    { label: 'Productos', href: '/productos', icon: FiBox, show: true },    
+    
     { label: 'Prospectos', href: '/prospectos', icon: FiClipboard, show: true },
     { label: 'Cotización', href: '/cotizacion', icon: FiFileText, show: true },
     { label: 'Clientes', href: '/clientes', icon: FiUsers, show: true },
     { label: 'Ventas', href: '/ventas', icon: FiTrendingUp, show: true },
     { label: 'Créditos', href: '/creditos', icon: FiCreditCard, show: true },
+    
+    // Solo Admin ve el Panel de Reportes Consolidado
     { label: 'Reporte General', href: '/reportes', icon: FiBriefcase, show: userData.role === 'admin' },
+    
     { label: 'Incidencias', href: '/incidencias', icon: FiAlertCircle, show: true },  
     { label: 'PDF', href: '/archivos', icon: FiFile, show: true },
   ];
