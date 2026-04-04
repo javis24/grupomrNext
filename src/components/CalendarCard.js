@@ -7,6 +7,8 @@ import { es } from 'date-fns/locale';
 import { useRouter } from 'next/router';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import jwt from 'jsonwebtoken';
+
 
 const Calendar = lazy(() => import('react-calendar'));
 import 'react-calendar/dist/Calendar.css';
@@ -15,7 +17,7 @@ const CalendarCard = () => {
   const router = useRouter();
 
   // --- ESTADOS ---
-  const [date, setDate] = useState(new Date());
+ const [date, setDate] = useState(new Date());
   const [appointments, setAppointments] = useState([]);
   const [clientName, setClientName] = useState('');
   const [clientStatus, setClientStatus] = useState('');
@@ -27,24 +29,46 @@ const CalendarCard = () => {
   const [selectedUser, setSelectedUser] = useState('');
   const [clientSuggestions, setClientSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [userRole, setUserRole] = useState('');
 
-  // --- CARGA DE DATOS ---
-  const fetchData = useCallback(async () => {
+const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const [resUsers, resAppo] = await Promise.all([
-        axios.get('/api/users', { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get('/api/appointments', { headers: { Authorization: `Bearer ${token}` } })
-      ]);
-      setUsers(resUsers.data);
-      setAppointments(resAppo.data);
+      if (!token) return router.push('/login');
+      
+      const decoded = jwt.decode(token);
+      setUserRole(decoded.role);
+
+      // 1. Petición de CITAS (Siempre se ejecuta)
+      const resAppo = await axios.get('/api/appointments', { 
+        headers: { Authorization: `Bearer ${token}` } 
+      });
+      setAppointments(resAppo.data || []);
+
+      // 2. Lógica de USUARIOS (Solo Admin puede ver la lista completa)
+      if (decoded.role === 'admin' || decoded.role === 'gerencia') {
+        const resUsers = await axios.get('/api/users', { 
+          headers: { Authorization: `Bearer ${token}` } 
+        });
+        setUsers(resUsers.data);
+      } else {
+        // Si es VENDEDOR, se auto-asigna a sí mismo y no pide la lista (evita el 403)
+        setUsers([{ id: decoded.id, name: decoded.name }]);
+        setSelectedUser(decoded.id.toString());
+      }
+
     } catch (err) {
-      toast.error('No se pudo conectar con el servidor');
+      console.error("Fetch Error:", err);
+      // Solo mostramos error si no es un 403 (que ya manejamos arriba)
+      if (err.response?.status !== 403) {
+        toast.error('Sesión expirada o error de conexión');
+      }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [router]);
+
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -70,8 +94,15 @@ const CalendarCard = () => {
   }, [clientName]);
 
   // --- HANDLERS ---
-  const handleSaveAppointment = async () => {
-    if (!clientName || !clientStatus || !selectedUser || !appointmentTime) {
+ const handleSaveAppointment = async () => {
+    // Si no es admin, forzamos que el selectedUser sea el del vendedor logueado
+    let finalUser = selectedUser;
+    if (userRole !== 'admin') {
+        const decoded = jwt.decode(localStorage.getItem('token'));
+        finalUser = decoded.id;
+    }
+
+    if (!clientName || !clientStatus || !finalUser || !appointmentTime) {
       return toast.warning('Completa los campos obligatorios');
     }
     
@@ -81,19 +112,17 @@ const CalendarCard = () => {
         date: date.toISOString(), 
         clientName, 
         clientStatus, 
-        assignedTo: parseInt(selectedUser), 
+        assignedTo: parseInt(finalUser), 
         appointmentTime, 
         comments 
       };
 
       if (editingAppointment) {
-        // LÓGICA DE ACTUALIZACIÓN (EDITAR)
         await axios.put(`/api/appointments/${editingAppointment.id}`, payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
         toast.success('Cita actualizada');
       } else {
-        // LÓGICA DE CREACIÓN (NUEVO)
         const response = await axios.post('/api/appointments', payload, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -101,10 +130,10 @@ const CalendarCard = () => {
         toast.success('Cita agendada');
       }
       
-      fetchData(); // Recargar lista
+      fetchData(); 
       resetForm();
     } catch (e) { 
-      toast.error(editingAppointment ? 'Error al actualizar' : 'Error al guardar'); 
+      toast.error('Error al procesar la solicitud'); 
     }
   };
 
@@ -128,11 +157,12 @@ const CalendarCard = () => {
     setAppointmentTime(appo.appointmentTime || '');
     setComments(appo.comments || '');
     setDate(new Date(appo.date));
-    window.scrollTo({ top: 0, behavior: 'smooth' }); // Subir al formulario
+    window.scrollTo({ top: 0, behavior: 'smooth' }); 
   };
 
-  const resetForm = () => {
-    setClientName(''); setClientStatus(''); setSelectedUser('');
+ const resetForm = () => {
+    setClientName(''); setClientStatus(''); 
+    if (userRole === 'admin') setSelectedUser('');
     setAppointmentTime(''); setComments(''); setEditingAppointment(null);
   };
 
