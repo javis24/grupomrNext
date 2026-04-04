@@ -28,6 +28,20 @@ const SalesPage = () => {
     const [editingId, setEditingId] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
 
+    const canDelete = currentUser?.role === 'admin' || currentUser?.role === 'gerencia';
+
+    const filteredClientsByUnit = clients.filter(client => {
+        // Normalizamos los textos para evitar errores por espacios o mayúsculas
+        const clientUnit = (client.planta || '').trim().toLowerCase();
+        const categoryUnit = (selectedCategory || '').trim().toLowerCase();
+        
+        const matchesUnit = clientUnit === categoryUnit;
+        const matchesSearch = client.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                             client.companyName?.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        return matchesUnit && matchesSearch;
+    });
+
     const [formValues, setFormValues] = useState({
         concepto: '', equipo: '', cantidad: '', precioUnitario: '',
         transporte: '', estadoPago: '', fechaOperacion: '', observaciones: ''
@@ -107,12 +121,15 @@ const SalesPage = () => {
         setView('form');
     };
 
-    const handleDelete = async (id) => {
-        if (!window.confirm("¿Estás seguro de eliminar este registro de venta?")) return;
+   const handleDelete = async (id) => {
+        
+        if (!canDelete) return toast.error("No tienes permisos para eliminar ventas.");
+        
+        if (!window.confirm("¿Estás seguro de eliminar este registro?")) return;
         try {
             const token = localStorage.getItem('token');
             await axios.delete(`/api/salesbussines/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-            toast.info("Venta eliminada correctamente");
+            toast.info("Venta eliminada");
             fetchSales();
         } catch (err) { toast.error("Error al eliminar"); }
     };
@@ -200,24 +217,54 @@ const SalesPage = () => {
                 )}
 
                 {/* VISTA 2: FORMULARIO REGISTRO/EDICIÓN */}
-                {view === 'form' && (
+               {view === 'form' && (
                     <div className="flex flex-col lg:flex-row gap-8 animate-in slide-in-from-bottom-5">
-                        {/* Selector de Cliente */}
+                        
+                        {/* Selector de Cliente FILTRADO */}
                         <div className="w-full lg:w-1/3">
                             <div className="bg-[#1f2937] p-8 rounded-[2.5rem] border border-gray-700 shadow-2xl">
-                                <h2 className="text-sm font-black text-blue-500 uppercase tracking-widest mb-6 flex items-center gap-2"><FiUser /> Cliente</h2>
+                                <div className="flex justify-between items-center mb-6">
+                                    <button 
+                        onClick={() => {
+                            setView('units');
+                            setSelectedCategory(null);
+                            setSelectedClient(null);
+                        }}
+                        className="p-3 bg-[#0e1624] hover:bg-blue-600 rounded-2xl text-blue-400 hover:text-white transition-all border border-gray-800 shadow-lg group"
+                        title="Regresar a Unidades"
+                    >
+                        <FiArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+                    </button>
+                                    <h2 className="text-sm font-black text-blue-500 uppercase tracking-widest flex items-center gap-2">
+                                        <FiUser /> Clientes de {selectedCategory}
+                                    </h2>
+                                </div>
+                                
                                 <div className="relative mb-6">
                                     <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
-                                    <input type="text" placeholder="Buscar cliente..." className="w-full bg-[#0e1624] border border-gray-700 rounded-2xl p-4 pl-12 text-sm outline-none focus:border-blue-500" onChange={(e) => setSearchTerm(e.target.value)} />
+                                    <input 
+                                        type="text" 
+                                        placeholder="Buscar en esta unidad..." 
+                                        className="w-full bg-[#0e1624] border border-gray-700 rounded-2xl p-4 pl-12 text-sm outline-none focus:border-blue-500" 
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)} 
+                                    />
                                 </div>
+
                                 <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                                    {clients.filter(c => c.fullName?.toLowerCase().includes(searchTerm.toLowerCase())).map(client => (
-                                        <div key={client.id} onClick={() => setSelectedClient(client)} 
-                                            className={`p-5 rounded-2xl cursor-pointer transition-all border ${selectedClient?.id === client.id ? 'bg-blue-600 border-blue-400 shadow-lg' : 'bg-[#0e1624] border-gray-800 hover:border-gray-600'}`}>
-                                            <p className="font-black text-xs uppercase">{client.fullName}</p>
-                                            <p className="text-[9px] text-gray-500 uppercase">{client.companyName}</p>
+                                    {filteredClientsByUnit.length > 0 ? (
+                                        filteredClientsByUnit.map(client => (
+                                            <div key={client.id} onClick={() => setSelectedClient(client)} 
+                                                className={`p-5 rounded-2xl cursor-pointer transition-all border ${selectedClient?.id === client.id ? 'bg-blue-600 border-blue-400 shadow-lg' : 'bg-[#0e1624] border-gray-800 hover:border-gray-600'}`}>
+                                                <p className="font-black text-xs uppercase">{client.fullName}</p>
+                                                <p className="text-[9px] text-gray-500 uppercase">{client.companyName}</p>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="text-center py-10 border border-dashed border-gray-800 rounded-2xl">
+                                            <p className="text-[10px] text-gray-600 font-bold uppercase">No hay clientes registrados en {selectedCategory}</p>
                                         </div>
-                                    ))}
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -307,26 +354,27 @@ const SalesPage = () => {
                                 <div key={sale.id} className="bg-[#1f2937] p-8 rounded-[2.5rem] border border-gray-700 shadow-xl hover:border-blue-500/50 transition-all group">
                                     <div className="flex justify-between items-start mb-6">
                                         <div className="p-3 bg-blue-500/10 text-blue-500 rounded-2xl text-2xl">
-                                            {units.find(u => u.name === sale.unitBusiness)?.icon || <FiDollarSign />}
+                                            {units.find(u => u.name === sale.unitBusiness)?.icon || '💰'}
                                         </div>
                                         <div className="flex gap-2">
-                                            <button onClick={() => handleEdit(sale)} className="p-3 bg-gray-800 rounded-xl hover:text-green-400 transition-colors"><FiEdit2 size={16}/></button>
-                                            <button onClick={() => handleDelete(sale.id)} className="p-3 bg-gray-800 rounded-xl hover:text-red-400 transition-colors"><FiTrash2 size={16}/></button>
+                                            {/* El vendedor SIEMPRE ve el botón de editar */}
+                                            <button onClick={() => handleEdit(sale)} className="p-3 bg-gray-800 rounded-xl hover:text-green-400 transition-colors">
+                                                <FiEdit2 size={16}/>
+                                            </button>
+                                            
+                                            {/* REGLA: Solo Admin ve el botón de eliminar */}
+                                            {canDelete && (
+                                                <button onClick={() => handleDelete(sale.id)} className="p-3 bg-gray-800 rounded-xl hover:text-red-400 transition-colors">
+                                                    <FiTrash2 size={16}/>
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                     
                                     <h4 className="text-xl font-black uppercase text-white truncate">{sale.concepto}</h4>
                                     <p className="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-4">Unidad: {sale.unitBusiness}</p>
                                     
-                                    <div className="space-y-3 mb-6">
-                                        <div className="flex items-center gap-3 text-xs text-gray-400">
-                                            <FiUser className="text-blue-500" /> {sale.Client?.fullName || 'S/N Cliente'}
-                                        </div>
-                                        <div className="flex items-center gap-3 text-xs text-gray-400">
-                                            <FiCalendar className="text-blue-500" /> {new Date(sale.fechaOperacion).toLocaleDateString()}
-                                        </div>
-                                    </div>
-
+                                    {/* ... Resto de la card igual ... */}
                                     <div className="grid grid-cols-2 gap-4 border-t border-gray-800 pt-6">
                                         <div className="bg-[#0e1624] p-3 rounded-2xl border border-gray-800">
                                             <p className="text-[8px] text-gray-600 font-black uppercase">Monto Total</p>
@@ -340,11 +388,6 @@ const SalesPage = () => {
                                 </div>
                             ))}
                         </div>
-                        {sales.length === 0 && (
-                            <div className="text-center py-32 bg-[#1f2937]/50 rounded-[3rem] border-2 border-dashed border-gray-800">
-                                <p className="text-gray-600 font-black uppercase tracking-widest text-xl italic">Aún no hay ventas en tu historial</p>
-                            </div>
-                        )}
                     </div>
                 )}
             </div>
