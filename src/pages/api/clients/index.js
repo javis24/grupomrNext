@@ -4,16 +4,14 @@ import { authenticateToken } from '../../../lib/auth';
 export default async function handler(req, res) {
     const { method, query } = req;
 
-    // Forzamos a Next.js a esperar la resolución de la autenticación
     return new Promise((resolve) => {
         authenticateToken(req, res, async () => {
-            // Verificamos que el usuario exista tras la autenticación
             if (!req.user) {
                 res.status(401).json({ message: "Sesión inválida o expirada" });
                 return resolve();
             }
 
-            const { role: userRole, id: userId } = req.user;
+            const { id: userId } = req.user;
 
             try {
                 switch (method) {
@@ -34,21 +32,25 @@ export default async function handler(req, res) {
                         } 
                         else {
                             let whereClause = {};
-                            // Si es vendedor, solo ve sus clientes
-                            if (userRole === 'vendedor') {
-                                whereClause.userId = userId;
-                            }
-                            // Filtro por planta (Unidad de Negocio)
+                            
+                            // Ajuste: Eliminamos la restricción por userRole. 
+                            // Ahora todos pueden ver todos los clientes.
+
+                            // Mantenemos el filtro por planta si se requiere desde el frontend
                             if (planta) {
                                 whereClause.planta = planta;
                             }
 
-                            const response = await Clients.findAll({ where: whereClause });
+                            const response = await Clients.findAll({ 
+                                where: whereClause,
+                                order: [['fullName', 'ASC']] // Ordenamos alfabéticamente para mejor vista global
+                            });
                             res.status(200).json(response);
                         }
                         break;
 
                     case 'POST':
+                        // Al crear, seguimos vinculando quién lo registró originalmente
                         const newClient = await Clients.create({ ...req.body, userId });
                         res.status(201).json(newClient);
                         break;
@@ -62,7 +64,6 @@ export default async function handler(req, res) {
                 console.error("Database Error:", error);
                 res.status(500).json({ message: "Error interno del servidor", details: error.message });
             }
-            // Importante: resolve() indica que la promesa terminó
             resolve();
         });
     });
