@@ -50,7 +50,7 @@ export default function Sidebar() {
     { label: 'Créditos', href: '/creditos', icon: FiCreditCard, show: true },
     
     // Solo Admin ve el Panel de Reportes Consolidado
-    { label: 'Reporte General', href: '/reportes', icon: FiBriefcase, show: userData.role === 'admin' },
+    { label: 'Reporte General', href: '/reportes2', icon: FiBriefcase, show: userData.role === 'admin' },
     
     { label: 'Incidencias', href: '/incidencias', icon: FiAlertCircle, show: true },  
     { label: 'PDF', href: '/archivos', icon: FiFile, show: true },
