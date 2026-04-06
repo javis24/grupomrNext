@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { 
-    FiPlus, FiTrash2, FiDollarSign, FiUsers, FiClock, FiX, FiUser 
+    FiPlus, FiTrash2, FiDollarSign, FiUsers, FiClock, FiX, FiUser, FiEdit2, FiCheck, FiXCircle
 } from 'react-icons/fi';
 import { toast, ToastContainer } from 'react-toastify';
 import { differenceInDays, parseISO, format } from 'date-fns';
+
 
 export default function CobranzaTable() {
     const [clients, setClients] = useState([]);
     const [cobranzaList, setCobranzaList] = useState([]);
     const [showForm, setShowForm] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isEditing, setIsEditing] = useState(null);
     
     const [formData, setFormData] = useState({
         clienteId: '', 
@@ -37,58 +39,66 @@ export default function CobranzaTable() {
             toast.error("Error al sincronizar datos con el servidor"); 
         }
     };
-const handleSave = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    try {
-        const token = localStorage.getItem('token');
-        const clienteSelected = clients.find(c => c.id === parseInt(formData.clienteId));
-        
-        if (!clienteSelected) {
-            toast.error("Selecciona un cliente válido");
-            return;
-        }
 
-        // Calculamos días de atraso
-        const atraso = differenceInDays(new Date(), parseISO(formData.fechaVencimiento));
 
-        const payload = {
-            clienteId: parseInt(formData.clienteId),
-            clienteNombre: clienteSelected.companyName || clienteSelected.fullName,
-            folio: formData.folio,
-            fechaFactura: format(new Date(), 'yyyy-MM-dd'),
-            fechaVencimiento: formData.fechaVencimiento,
-            saldo: parseFloat(formData.saldo),
-            diasAtraso: atraso > 0 ? atraso : 0
-        };
-
-        // Guardar en la base de datos
-        await axios.post('/api/cobranza', payload, { 
-            headers: { Authorization: `Bearer ${token}` } 
+    const handleEditClick = (item) => {
+        setFormData({
+            clienteId: item.clienteId,
+            folio: item.folio,
+            fechaFactura: item.fechaFactura,
+            fechaVencimiento: item.fechaVencimiento,
+            saldo: item.saldo
         });
+        setIsEditing(item.id);
+        setShowForm(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
 
-        toast.success("Factura guardada correctamente");
 
-        // --- PASOS PARA ACTUALIZACIÓN AUTOMÁTICA ---
-        setShowForm(false); // Cerramos el formulario
-        setFormData({ 
-            clienteId: '', 
-            folio: '', 
-            fechaFactura: format(new Date(), 'yyyy-MM-dd'), 
-            fechaVencimiento: '', 
-            saldo: '' 
-        }); // Limpiamos los campos
-        
-        await loadInitialData(); // RECARGAMOS LOS DATOS DE LA TABLA SIN REFRESCAR
-        // ------------------------------------------
+const handleSave = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const clienteSelected = clients.find(c => c.id === parseInt(formData.clienteId));
+            const atraso = differenceInDays(new Date(), parseISO(formData.fechaVencimiento));
 
-    } catch (e) {
-        console.error("Error detallado:", e.response?.data);
-        toast.error(e.response?.data?.message || "Error al registrar");
-    } finally {
-        setIsLoading(false);
-    }
-};
+            const payload = {
+                clienteId: parseInt(formData.clienteId),
+                clienteNombre: clienteSelected.companyName || clienteSelected.fullName,
+                folio: formData.folio,
+                fechaFactura: formData.fechaFactura,
+                fechaVencimiento: formData.fechaVencimiento,
+                saldo: parseFloat(formData.saldo),
+                diasAtraso: atraso > 0 ? atraso : 0
+            };
+
+            if (isEditing) {
+                // MODO EDICIÓN
+                await axios.put(`/api/cobranza?id=${isEditing}`, payload, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                toast.success("Registro actualizado");
+            } else {
+                // MODO CREACIÓN
+                await axios.post('/api/cobranza', payload, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                toast.success("Factura guardada");
+            }
+
+            // Limpieza y recarga
+            setShowForm(false);
+            setIsEditing(null);
+            setFormData({ clienteId: '', folio: '', fechaFactura: format(new Date(), 'yyyy-MM-dd'), fechaVencimiento: '', saldo: '' });
+            await loadInitialData();
+
+        } catch (e) {
+            toast.error("Error al procesar la solicitud");
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const handleDelete = async (id) => {
         if (!confirm("¿Deseas eliminar este registro de cobranza?")) return;
@@ -224,12 +234,20 @@ const handleSave = async (e) => {
                                                 ${Number(item.saldo).toLocaleString('es-MX', {minimumFractionDigits: 2})}
                                             </td>
                                             <td className="p-6 text-center">
+                                                <div className="flex gap-2 justify-center">
+                                                <button 
+                                                    onClick={() => handleEditClick(item)} 
+                                                    className="text-gray-400 hover:text-blue-500 transition-all p-3 bg-gray-800/50 rounded-xl"
+                                                >
+                                                    <FiEdit2 size={16}/>
+                                                </button>
                                                 <button 
                                                     onClick={() => handleDelete(item.id)} 
                                                     className="text-gray-700 hover:text-red-500 transition-all p-3 bg-gray-800/50 rounded-xl"
                                                 >
                                                     <FiTrash2 size={16}/>
                                                 </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))

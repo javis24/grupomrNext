@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 import { 
   FiMenu, FiX, FiLogOut, FiBox, FiUsers, FiCalendar, 
   FiFileText, FiUser, FiBriefcase, FiCreditCard, 
-  FiAlertCircle, FiClipboard, FiFile, FiTrendingUp 
+  FiAlertCircle, FiClipboard, FiFile, FiTrendingUp, FiDollarSign, FiEdit2, FiTrash2
 } from 'react-icons/fi';
 
 export default function Sidebar() {
@@ -48,7 +48,7 @@ export default function Sidebar() {
     { label: 'Clientes', href: '/clientes', icon: FiUsers, show: true },
     { label: 'Ventas', href: '/ventas', icon: FiTrendingUp, show: true },
     { label: 'Créditos', href: '/creditos', icon: FiCreditCard, show: true },
-    { label: 'Cobranza', href: '/cobranza', icon: FiTrendingUp, show: true },
+    { label: 'Cobranza', href: '/cobranza', icon: FiDollarSign, show: true },
     
     // Solo Admin ve el Panel de Reportes Consolidado
     { label: 'Reporte General', href: '/reportes2', icon: FiBriefcase, show: userData.role === 'admin' },

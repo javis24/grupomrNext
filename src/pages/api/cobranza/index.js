@@ -42,6 +42,32 @@ export default async function handler(req, res) {
                         res.status(201).json(newRecord);
                         break;
 
+                        case 'PUT':
+                            try {
+                                const { id } = query;
+                                const { folio, fechaVencimiento, saldo, diasAtraso } = req.body;
+
+                                const record = await AccountsReceivable.findByPk(id);
+                                if (!record) return res.status(404).json({ message: "Registro no encontrado" });
+
+                                // Solo el dueño o admin pueden editar
+                                if (userRole !== 'admin' && record.userId !== userId) {
+                                    return res.status(403).json({ message: "No autorizado" });
+                                }
+
+                                await record.update({
+                                    folio,
+                                    fechaVencimiento,
+                                    saldo: parseFloat(saldo),
+                                    diasAtraso: parseInt(diasAtraso)
+                                });
+
+                                res.status(200).json({ message: "Registro actualizado" });
+                            } catch (error) {
+                                res.status(400).json({ message: "Error al actualizar", error: error.message });
+                            }
+                            break;
+
                     case 'DELETE':
                         // Si viene un ID en la URL (?id=5), borramos ese registro
                         if (query.id) {
