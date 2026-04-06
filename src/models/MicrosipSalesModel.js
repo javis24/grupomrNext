@@ -1,5 +1,5 @@
 import { DataTypes } from 'sequelize';
-import sequelize from '../config/db';
+import db from '../config/Database.js';
 
 const MicrosipSales = sequelize.define('MicrosipSales', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
@@ -16,3 +16,4 @@ const MicrosipSales = sequelize.define('MicrosipSales', {
 }, { timestamps: true });
 
 export default MicrosipSales;
+
