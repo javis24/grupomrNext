@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 import { 
   FiMenu, FiX, FiLogOut, FiBox, FiUsers, FiCalendar, 
   FiFileText, FiUser, FiBriefcase, FiCreditCard, 
-  FiAlertCircle, FiClipboard, FiFile, FiTrendingUp, FiDollarSign, FiEdit2, FiTrash2
+  FiAlertCircle, FiClipboard, FiFile, FiTrendingUp, FiDollarSign
 } from 'react-icons/fi';
 
 export default function Sidebar() {
@@ -86,7 +86,7 @@ export default function Sidebar() {
                       : 'hover:bg-gray-800 hover:text-white'}
                   `}
                 >
-                  <item.icon className={`text-xl min-w-[24px] ${isActive ? 'text-blue-400' : 'group-hover:text-blue-400'}`} />
+                  {item.icon && <item.icon className={`text-xl min-w-[24px] ${isActive ? 'text-blue-400' : 'group-hover:text-blue-400'}`} />}
                   {!isCollapsed && (
                     <span className="text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-300">
                       {item.label}
