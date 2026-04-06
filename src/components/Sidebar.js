@@ -48,6 +48,7 @@ export default function Sidebar() {
     { label: 'Clientes', href: '/clientes', icon: FiUsers, show: true },
     { label: 'Ventas', href: '/ventas', icon: FiTrendingUp, show: true },
     { label: 'Créditos', href: '/creditos', icon: FiCreditCard, show: true },
+    { label: 'Cobranza', href: '/cobranza', icon: FiTrendingUp, show: true },
     
     // Solo Admin ve el Panel de Reportes Consolidado
     { label: 'Reporte General', href: '/reportes2', icon: FiBriefcase, show: userData.role === 'admin' },
