@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'; 
+import { useEffect, useState, useRef } from 'react'; 
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useRouter } from 'next/router';
@@ -11,9 +11,19 @@ const CreateQuote = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [quoteNumber, setQuoteNumber] = useState(1);
   const [currentDate, setCurrentDate] = useState("");
+
+  const [allClients, setAllClients] = useState([]);
+  const [filteredClients, setFilteredClients] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const suggestionsRef = useRef(null);
+
+
   
   const [descripcionGeneral, setDescripcionGeneral] = useState("");
   const [observacionesSeleccionadas, setObservacionesSeleccionadas] = useState([]);
+
+
+
 
   const opcionesObservaciones = [
     "PRECIO DURANTE EL PRESENTE AÑO",
@@ -58,6 +68,9 @@ const CreateQuote = () => {
     }
   };
 
+
+  
+
   useEffect(() => {
     if (router.isReady) {
       const { client, phone, address } = router.query;
@@ -81,9 +94,62 @@ const CreateQuote = () => {
     setCurrentDate(new Date().toLocaleDateString('es-MX'));
   }, []);
 
+// 1. CARGAR TODOS LOS CLIENTES AL INICIO
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await axios.get('/api/clients', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setAllClients(res.data);
+      } catch (err) {
+        console.error("Error cargando clientes para autocompletado", err);
+      }
+    };
+    fetchClients();
+  }, []);
+
+  // 2. CERRAR SUGERENCIAS SI SE HACE CLIC FUERA
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // 3. MANEJADOR DE ENTRADA CON FILTRO
   const handleClientInputChange = (e) => {
     const { name, value } = e.target;
     setClientData(prev => ({ ...prev, [name]: value }));
+
+    if (name === 'companyName') {
+      if (value.length > 1) {
+        const filtered = allClients.filter(client =>
+          (client.companyName || client.fullName).toLowerCase().includes(value.toLowerCase())
+        );
+        setFilteredClients(filtered);
+        setShowSuggestions(true);
+      } else {
+        setShowSuggestions(false);
+      }
+    }
+  };
+
+  // 4. SELECCIONAR CLIENTE DE LA LISTA
+  const selectClient = (client) => {
+    setClientData({
+      companyName: client.companyName || client.fullName,
+      address: client.address || '',
+      attentionTo: client.contactName || client.fullName,
+      email: client.email || '',
+      phone: client.companyPhone || client.contactPhone || '',
+      supervisor: client.assignedUser || '',
+    });
+    setShowSuggestions(false);
   };
 
   const handleRowChange = (index, e) => {
@@ -231,8 +297,34 @@ const CreateQuote = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
           <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1 relative" ref={suggestionsRef}>
+              <label className="text-[10px] font-black text-gray-500 uppercase ml-1">Empresa</label>
+              <input 
+                type="text" 
+                name="companyName"
+                autoComplete="off"
+                value={clientData.companyName}
+                onChange={handleClientInputChange}
+                className="bg-[#0e1624] p-3 rounded-xl border border-gray-700 text-sm text-white outline-none focus:border-blue-500 transition-all"
+              />
+              
+              {/* LISTA DE SUGERENCIAS */}
+              {showSuggestions && filteredClients.length > 0 && (
+                <div className="absolute top-full left-0 w-full bg-[#1f2937] border border-gray-600 rounded-xl mt-1 z-50 shadow-2xl max-h-60 overflow-y-auto overflow-x-hidden">
+                  {filteredClients.map((client) => (
+                    <div 
+                      key={client.id}
+                      onClick={() => selectClient(client)}
+                      className="p-3 hover:bg-blue-600 cursor-pointer border-b border-gray-700 last:border-0 transition-colors"
+                    >
+                      <div className="text-sm font-bold text-white">{client.companyName || client.fullName}</div>
+                      <div className="text-[10px] text-gray-400 uppercase">{client.contactName}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             {[
-              { label: 'Empresa', name: 'companyName' },
               { label: 'Domicilio', name: 'address' },
               { label: 'Atención a', name: 'attentionTo' },
               { label: 'Email', name: 'email' },
