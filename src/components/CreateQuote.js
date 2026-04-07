@@ -276,17 +276,37 @@ const CreateQuote = () => {
             doc.setFont("helvetica", "normal");
             doc.text(clientData.email || "N/A", rightCol + 15, 82);
 
+            let currentY = 90; // Ajustamos la posición Y
+            if (descripcionGeneral) {
+                doc.setFontSize(9);
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(217, 83, 25); // Color naranja/ocre
+                doc.text("DESCRIPCIÓN DEL SERVICIO / PRODUCTO:", 15, currentY);
+                
+                doc.setFont("helvetica", "normal");
+                doc.setTextColor(0, 0, 0);
+                // Dividimos el texto para que no se salga del ancho de la hoja
+                const splitDesc = doc.splitTextToSize(descripcionGeneral.toUpperCase(), 180);
+                doc.text(splitDesc, 15, currentY + 5);
+                
+                // Calculamos cuánto espacio ocupó el texto para mover la tabla hacia abajo
+                const lines = splitDesc.length;
+                currentY = currentY + 10 + (lines * 4); 
+            } else {
+                currentY = 90; // Si no hay descripción, mantenemos un margen pequeño
+            }
+
             // --- TABLA DE PRODUCTOS ---
             const tableData = serviceRows.map((row) => [
                 row.cantidad,
                 row.um,
                 row.description.toUpperCase(),
-                `$${Number(row.pu).toLocaleString()}`,
-                `$${Number(row.subtotal).toLocaleString()}`
+                `$${Number(row.pu).toLocaleString('es-MX', {minimumFractionDigits: 2})}`,
+                `$${Number(row.subtotal).toLocaleString('es-MX', {minimumFractionDigits: 2})}`
             ]);
 
             doc.autoTable({
-                startY: 95,
+                startY: currentY, 
                 head: [['CANT.', 'UNIDAD', 'DESCRIPCIÓN', 'P. UNITARIO', 'IMPORTE']],
                 body: tableData,
                 theme: 'grid',
