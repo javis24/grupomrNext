@@ -189,105 +189,184 @@ const CreateQuote = () => {
 
   const generatePDF = async () => {
     if (!clientData.companyName) {
-      alert("Por favor ingresa el nombre de la empresa");
-      return;
+        alert("Por favor ingresa el nombre de la empresa");
+        return;
     }
 
     setIsSaving(true);
 
     try {
-      const token = localStorage.getItem('token');
-      
-      // 1. Guardar en Base de Datos primero (para asegurar el registro)
-      await axios.post('/api/quotes', {
-        quoteNumber,
-        companyName: clientData.companyName,
-        attentionTo: clientData.attentionTo,
-        email: clientData.email,
-        phone: clientData.phone,
-        total: globalTotal,
-      }, { headers: { Authorization: `Bearer ${token}` } });
-
-      // 2. Iniciar generación de PDF
-      const doc = new jsPDF();
-      const image = new Image();
-      image.src = '/logo_mr.png';
-
-      image.onload = () => {
-        // Encabezados y Logo
-        doc.addImage(image, 'PNG', 20, 10, 30, 30);
-        doc.setFontSize(10);
-        doc.text("Materiales Reutilizables S.A. de C.V.", 105, 20, { align: 'center' });
+        const token = localStorage.getItem('token');
         
-        doc.setFillColor(255, 204, 0);
-        doc.rect(160, 20, 40, 10, 'F');
-        doc.setTextColor(0, 0, 0);
-        doc.text("COTIZACIÓN", 180, 27, { align: 'center' });
-        doc.text(`Nº ${quoteNumber}`, 180, 35, { align: 'center' });
+        // 1. Guardar en Base de Datos
+        await axios.post('/api/quotes', {
+            quoteNumber,
+            companyName: clientData.companyName,
+            attentionTo: clientData.attentionTo,
+            email: clientData.email,
+            phone: clientData.phone,
+            total: globalTotal,
+        }, { headers: { Authorization: `Bearer ${token}` } });
 
-        // Tabla de Cliente
-        doc.autoTable({
-          startY: 50,
-          head: [['CONCEPTO', 'DATOS DEL CLIENTE']],
-          body: [
-            ['EMPRESA', clientData.companyName],
-            ['TELÉFONO', clientData.phone],
-            ['ATENCIÓN', clientData.attentionTo],
-            ['FECHA', currentDate]
-          ],
-          theme: 'grid',
-          headStyles: { fillColor: [255, 204, 0], textColor: 0 }
-        });
+        // 2. Iniciar generación de PDF
+        const doc = new jsPDF();
+        const image = new Image();
+        image.src = '/logo_mr.png'; // Asegúrate de que el logo sea transparente
 
-        // Tabla de Productos
-        const tableData = serviceRows.map((row, i) => [
-          i + 1, row.description, row.cantidad, `$${row.pu}`, `$${row.subtotal}`, `$${row.iva}`, `$${row.total}`
-        ]);
+        image.onload = () => {
+            // --- ENCABEZADO ---
+            doc.addImage(image, 'PNG', 15, 10, 45, 15); // Logo MR ajustado
+            
+            doc.setFontSize(22);
+            doc.setTextColor(217, 83, 25); // Color Naranja/Ocre del diseño
+            doc.setFont("helvetica", "bold");
+            doc.text("Cotización", 195, 20, { align: 'right' });
+            
+            doc.setFontSize(11);
+            doc.setTextColor(0, 0, 0);
+            doc.text(`NUM: ${String(quoteNumber).padStart(3, '0')}`, 195, 28, { align: 'right' });
 
-        doc.autoTable({
-          startY: doc.lastAutoTable.finalY + 10,
-          head: [['NO', 'DESCRIPCIÓN', 'CANT', 'P.U.', 'SUBTOTAL', 'IVA', 'TOTAL']],
-          body: [
-              ...tableData,
-              ['', '', '', '', '', 'SUBTOTAL:', `$${globalSubtotal}`],
-              ['', '', '', '', '', 'IVA (16%):', `$${globalIva}`],
-              ['', '', '', '', '', 'TOTAL:', `$${globalTotal}`]
-          ],
-          theme: 'striped',
-          headStyles: { fillColor: [30, 41, 59] }
-        });
+            // --- BLOQUE EMISOR Y CLIENTE ---
+            doc.setFontSize(8);
+            doc.setFont("helvetica", "bold");
+            
+            // Columna Izquierda (EMISOR)
+            doc.text("EMISOR:", 15, 45);
+            doc.setFont("helvetica", "normal");
+            doc.text("Materiales Reutilizables SA de CV", 15, 50);
+            doc.text("Calle Guanacevi #435", 15, 54);
+            doc.text("Col. Parque Industrial Carlos A. Herrera Aluce", 15, 58);
+            doc.text("C.P. 35078", 15, 62);
+            
+            doc.setFont("helvetica", "bold");
+            doc.text("SUPERVISOR ASIGNADO:", 15, 70);
+            doc.setFont("helvetica", "normal");
+            doc.text(clientData.supervisor || "N/A", 55, 70);
+            
+            doc.setFont("helvetica", "bold");
+            doc.text("FECHA:", 15, 75);
+            doc.setFont("helvetica", "normal");
+            doc.text(currentDate, 30, 75);
 
-        // Observaciones finales
-        let currentY = doc.lastAutoTable.finalY + 15;
-        doc.setFont("helvetica", "bold");
-        doc.text("OBSERVACIONES Y CONDICIONES COMERCIALES:", 14, currentY);
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(9);
-        observacionesSeleccionadas.forEach((obs, index) => {
-          doc.text(`- ${obs}`, 14, currentY + 7 + (index * 6));
-        });
+            // Columna Derecha (CLIENTE)
+            const rightCol = 110;
+            doc.setFont("helvetica", "bold");
+            doc.text("CLIENTE:", rightCol, 45);
+            doc.setFont("helvetica", "normal");
+            doc.text(clientData.companyName.toUpperCase(), rightCol + 15, 45);
 
-        // Guardar estado local y descargar
-        localStorage.setItem('quoteNumber', quoteNumber);
-        doc.save(`Cotizacion_${clientData.companyName}.pdf`);
-        setIsSaving(false);
-        alert("Cotización guardada y descargada con éxito");
-      };
+            doc.setFont("helvetica", "bold");
+            doc.text("ATENCIÓN A:", rightCol, 52);
+            doc.setFont("helvetica", "normal");
+            doc.text(clientData.attentionTo.toUpperCase(), rightCol + 22, 52);
 
-      image.onerror = () => {
-        console.error("No se pudo cargar el logo");
-        // Intentar guardar sin imagen si el logo falla
-        doc.save(`Cotizacion_${clientData.companyName}.pdf`);
-        setIsSaving(false);
-      };
+            doc.setFont("helvetica", "bold");
+            doc.text("DOMICILIO:", rightCol, 59);
+            doc.setFont("helvetica", "normal");
+            const splitAddress = doc.splitTextToSize(clientData.address.toUpperCase(), 70);
+            doc.text(splitAddress, rightCol + 18, 59);
+
+            doc.setFont("helvetica", "bold");
+            doc.text("NUM. CELULAR:", rightCol, 75);
+            doc.setFont("helvetica", "normal");
+            doc.text(clientData.phone || "N/A", rightCol + 25, 75);
+
+            doc.setFont("helvetica", "bold");
+            doc.text("CORREO:", rightCol, 82);
+            doc.setFont("helvetica", "normal");
+            doc.text(clientData.email || "N/A", rightCol + 15, 82);
+
+            // --- TABLA DE PRODUCTOS ---
+            const tableData = serviceRows.map((row) => [
+                row.cantidad,
+                row.um,
+                row.description.toUpperCase(),
+                `$${Number(row.pu).toLocaleString()}`,
+                `$${Number(row.subtotal).toLocaleString()}`
+            ]);
+
+            doc.autoTable({
+                startY: 95,
+                head: [['CANT.', 'UNIDAD', 'DESCRIPCIÓN', 'P. UNITARIO', 'IMPORTE']],
+                body: tableData,
+                theme: 'grid',
+                headStyles: { 
+                    fillColor: [217, 83, 25], // Naranja ocre
+                    textColor: [255, 255, 255],
+                    fontSize: 9,
+                    halign: 'center'
+                },
+                styles: { 
+                    fontSize: 8, 
+                    cellPadding: 3,
+                    valign: 'middle'
+                },
+                columnStyles: {
+                    0: { halign: 'center', cellWidth: 15 },
+                    1: { halign: 'center', cellWidth: 20 },
+                    2: { halign: 'left' },
+                    3: { halign: 'right', cellWidth: 30 },
+                    4: { halign: 'right', cellWidth: 30 },
+                }
+            });
+
+            // --- TOTALES ---
+            const finalY = doc.lastAutoTable.finalY;
+            doc.autoTable({
+                startY: finalY,
+                body: [
+                    ['SUBTOTAL:', `$${Number(globalSubtotal).toLocaleString()}`],
+                    ['IVA', `$${Number(globalIva).toLocaleString()}`],
+                    ['TOTAL:', `$${Number(globalTotal).toLocaleString()}`]
+                ],
+                theme: 'grid',
+                styles: { fontSize: 9, halign: 'right', fontStyle: 'bold' },
+                columnStyles: {
+                    0: { cellWidth: 30, fillColor: [240, 240, 240] },
+                    1: { cellWidth: 30 }
+                },
+                margin: { left: 135 } // Alineado a la derecha
+            });
+
+            // --- NOTAS Y CONDICIONES ---
+            let notesY = doc.lastAutoTable.finalY + 10;
+            doc.setFontSize(9);
+            doc.setFont("helvetica", "bold");
+            doc.text("NOTAS Y CONDICIONES", 15, notesY);
+            
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8);
+            observacionesSeleccionadas.forEach((obs, index) => {
+                doc.text(`• ${obs}`, 15, notesY + 6 + (index * 5));
+            });
+
+            // --- PIE DE PÁGINA ---
+            const pageHeight = doc.internal.pageSize.height;
+            doc.setDrawColor(200, 200, 200);
+            doc.line(15, pageHeight - 20, 195, pageHeight - 20);
+            doc.setFontSize(8);
+            doc.setTextColor(100, 100, 100);
+            doc.text("Materiales Reutilizables SA de CV  ·  Comercialización", 105, pageHeight - 15, { align: 'center' });
+            doc.text(`Página 1 de 1`, 195, pageHeight - 10, { align: 'right' });
+
+            // Finalizar
+            localStorage.setItem('quoteNumber', quoteNumber);
+            doc.save(`Cotizacion_${clientData.companyName}.pdf`);
+            setIsSaving(false);
+            alert("Cotización generada correctamente.");
+        };
+
+        image.onerror = () => {
+            alert("Error al cargar el logo. Asegúrate de que el archivo existe en /public/logo_mr.png");
+            setIsSaving(false);
+        };
 
     } catch (error) {
-      console.error("Error en el proceso:", error);
-      alert("Error al guardar en la base de datos. El PDF no se generó.");
-      setIsSaving(false);
+        console.error("Error:", error);
+        alert("Error al procesar la cotización.");
+        setIsSaving(false);
     }
-  };
-
+};
   return (
     <div className="min-h-screen bg-[#0e1624] text-white p-4 md:p-8 font-sans">
       <div className="max-w-7xl mx-auto bg-[#1f2937] p-6 rounded-3xl border border-gray-700 shadow-2xl">
