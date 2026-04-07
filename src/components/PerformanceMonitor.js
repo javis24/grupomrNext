@@ -10,6 +10,7 @@ import { es } from 'date-fns/locale';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { toast, ToastContainer } from 'react-toastify';
+import { differenceInDays, differenceInMonths, differenceInYears } from 'date-fns';
 
 const AdvisorReports = () => {
   const [activeTab, setActiveTab] = useState('calendario');
@@ -20,11 +21,26 @@ const AdvisorReports = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const [salesData, setSalesData] = useState([]);
 
   // Resetear página al filtrar o cambiar pestaña
   useEffect(() => {
     setCurrentPage(1);
   }, [activeTab, searchTerm, selectedAdvisor]);
+
+  // Calcula la antigüedad de forma legible
+const getClientAntiquity = (dateValue) => {
+    if (!dateValue) return '---';
+    const start = new Date(dateValue);
+    const now = new Date();
+    const years = differenceInYears(now, start);
+    const months = differenceInMonths(now, start) % 12;
+    const days = differenceInDays(now, start) % 30;
+
+    if (years > 0) return `${years} años, ${months} m`;
+    if (months > 0) return `${months} meses`;
+    return `${days} días`;
+};
 
   // 1. Cargar lista de asesores para el filtro superior
   useEffect(() => {
@@ -39,7 +55,7 @@ const AdvisorReports = () => {
   }, []);
 
   // 2. Fetch dinámico (Calendario, Prospectos, Ventas, Cotizaciones, Clientes, Créditos, Incidencias)
-  const fetchData = async () => {
+ const fetchData = async () => {
     setIsLoading(true);
     const token = localStorage.getItem('token');
     try {
@@ -51,11 +67,31 @@ const AdvisorReports = () => {
         case 'cotizaciones': endpoint = '/api/quotes'; break;
         case 'clientes': endpoint = '/api/clients'; break;
         case 'creditos': endpoint = '/api/credits'; break;
-        case 'incidencias': endpoint = '/api/incidents'; break; // <--- API INCIDENCIAS
+        case 'incidencias': endpoint = '/api/incidents'; break;
         default: endpoint = '/api/appointments';
       }
       const res = await axios.get(endpoint, { headers: { Authorization: `Bearer ${token}` } });
-      setData(res.data || []);
+      let result = res.data || [];
+      if (activeTab === 'clientes') {
+        const resVentas = await axios.get('/api/salesbussines', { headers: { Authorization: `Bearer ${token}` } });
+        const todasLasVentas = resVentas.data || [];
+        
+        result = result.map(cliente => {
+            // Sumar todas las ventas cuyo concepto o ID coincida con el cliente
+            // Ajustar 'cliente.id' o 'cliente.companyName' según cómo guardes la venta
+            const totalVendido = todasLasVentas
+                .filter(v => v.clientName === cliente.companyName || v.clientId === cliente.id)
+                .reduce((acc, v) => acc + (parseFloat(v.cantidad) * parseFloat(v.precioUnitario)), 0);
+            
+            return {
+                ...cliente,
+                antigüedad: getClientAntiquity(cliente.createdAt),
+                ventaTotal: totalVendido
+            };
+        });
+      }
+
+   setData(result);
     } catch (err) {
       toast.error(`Error al cargar datos de ${activeTab}`);
     } finally {
@@ -114,6 +150,16 @@ const AdvisorReports = () => {
     let body = [];
 
     switch(activeTab) {
+      case 'clientes':
+        columns = ['Nombre/Empresa', 'Registro', 'Antigüedad', 'Venta Total', 'Asesor'];
+        body = itemsToExport.map(i => [
+            i.companyName || i.fullName,
+            safeFormatDate(i.createdAt),
+            i.antigüedad || '---',
+            `$${(i.ventaTotal || 0).toLocaleString('es-MX')}`,
+            advisors.find(a => a.id === i.userId)?.name || 'S/N'
+        ]);
+        break;
         case 'incidencias':
             columns = ['Fecha Incid.', 'Asesor', 'Título / Asunto', 'Cliente/Entidad', 'Estatus'];
             body = itemsToExport.map(i => [
@@ -209,14 +255,14 @@ const AdvisorReports = () => {
                   <th className="px-8 py-5 text-right">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-800/50">
+            <tbody className="divide-y divide-gray-800/50">
                 {isLoading ? (
                   <tr><td colSpan="5" className="py-32 text-center animate-pulse italic text-gray-700 uppercase font-black">Obteniendo datos...</td></tr>
                 ) : paginatedData.map((item) => (
                   <tr key={item.id} className="hover:bg-white/5 transition-colors group">
                     <td className="px-8 py-6">
-                      <p className="text-sm font-bold text-gray-200">{safeFormatDate(item.incidentDate || item.createdAt || item.date || item.fechaOperacion)}</p>
-                      {item.appointmentTime && <span className="text-[10px] text-blue-500 font-bold flex items-center gap-1 mt-1 uppercase font-mono"><FiClock/> {item.appointmentTime}</span>}
+                      <p className="text-sm font-bold text-gray-200">{safeFormatDate(item.createdAt || item.date || item.fechaOperacion || item.incidentDate)}</p>
+                      {activeTab === 'clientes' && <span className="text-[10px] text-green-500 font-black uppercase flex items-center gap-1 mt-1 font-mono"><FiClock/> {item.antigüedad}</span>}
                     </td>
                     <td className="px-8 py-6">
                        <div className="flex items-center gap-3">
@@ -228,23 +274,16 @@ const AdvisorReports = () => {
                     </td>
                     <td className="px-8 py-6">
                       <p className="text-sm font-black uppercase text-white truncate max-w-[280px]">
-                        {item.title || item.nombreComercial || item.fullName || item.companyName || (item.Client?.fullName) || item.concepto}
+                        {item.companyName || item.fullName || item.title || item.concepto || item.clientName}
                       </p>
-                      <p className="text-[10px] text-gray-500 font-medium mt-1 italic truncate max-w-[280px]">
-                        {item.entityName || item.businessTurn || item.description || 'Sin detalles adicionales'}
-                      </p>
+                      {activeTab === 'clientes' && (
+                        <p className="text-xs font-black text-blue-400 mt-1">Venta Histórica: ${item.ventaTotal?.toLocaleString('es-MX')}</p>
+                      )}
                     </td>
                     <td className="px-8 py-6 text-center">
-                      {activeTab === 'incidencias' && item.imageUrl ? (
-                        <div className="flex flex-col items-center gap-1">
-                          <img src={item.imageUrl} className="w-10 h-10 object-cover rounded-lg border border-gray-700 shadow-lg" alt="Evidencia" />
-                          <span className="text-[8px] text-gray-500 font-black uppercase tracking-tighter">Evidencia OK</span>
-                        </div>
-                      ) : (
-                        <span className={`px-4 py-1.5 text-[9px] font-black uppercase rounded-lg border ${ (item.status === 'Aprobado' || item.saleProcess === 'Cerrado') ? 'bg-green-500/10 text-green-500 border-green-500/30' : 'bg-blue-500/10 text-blue-400 border-blue-500/30'}`}>
-                            {item.status || item.clientStatus || item.saleProcess || 'Activo'}
-                        </span>
-                      )}
+                      <span className={`px-4 py-1.5 text-[9px] font-black uppercase rounded-lg border ${ (item.status === 'Aprobado' || item.saleProcess === 'Cerrado') ? 'bg-green-500/10 text-green-500 border-green-500/30' : 'bg-blue-500/10 text-blue-400 border-blue-500/30'}`}>
+                        {item.status || item.clientStatus || item.saleProcess || 'Activo'}
+                      </span>
                     </td>
                     <td className="px-8 py-6 text-right">
                       <button onClick={()=>handleExportPDF(false, item)} className="p-3 bg-[#0e1624] rounded-2xl text-gray-500 hover:text-red-500 border border-gray-800 transition-all hover:scale-110 shadow-lg">
