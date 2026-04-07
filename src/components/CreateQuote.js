@@ -215,10 +215,10 @@ const CreateQuote = () => {
 
         image.onload = () => {
             // --- ENCABEZADO ---
-            doc.addImage(image, 'PNG', 15, 10, 45, 15); // Logo MR ajustado
+            doc.addImage(image, 'PNG', 15, 10, 30, 20);
             
             doc.setFontSize(22);
-            doc.setTextColor(217, 83, 25); // Color Naranja/Ocre del diseño
+            doc.setTextColor(255, 204, 0); // Color Naranja/Ocre del diseño
             doc.setFont("helvetica", "bold");
             doc.text("Cotización", 195, 20, { align: 'right' });
             
@@ -280,7 +280,7 @@ const CreateQuote = () => {
             if (descripcionGeneral) {
                 doc.setFontSize(9);
                 doc.setFont("helvetica", "bold");
-                doc.setTextColor(217, 83, 25); // Color naranja/ocre
+                doc.setTextColor(255, 204, 0); // Color naranja/ocre
                 doc.text("DESCRIPCIÓN DEL SERVICIO / PRODUCTO:", 15, currentY);
                 
                 doc.setFont("helvetica", "normal");
@@ -311,7 +311,7 @@ const CreateQuote = () => {
                 body: tableData,
                 theme: 'grid',
                 headStyles: { 
-                    fillColor: [217, 83, 25], // Naranja ocre
+                   fillColor: [255, 204, 0],
                     textColor: [255, 255, 255],
                     fontSize: 9,
                     halign: 'center'
