@@ -20,9 +20,9 @@ export default async function handler(req, res) {
             }
 
             if (method === 'PUT') {
-                const { name, description, unitMeasure, leadTime, cost, price } = req.body;
+                const { code, name, description, unitMeasure, leadTime, cost, price, businessUnit } = req.body;
                 await product.update({
-                    name, description, unitMeasure, leadTime,
+                    code, name, description, unitMeasure, leadTime, businessUnit,
                     cost: parseFloat(cost || 0),
                     price: parseFloat(price || 0)
                 });
