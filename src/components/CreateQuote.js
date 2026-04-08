@@ -215,10 +215,10 @@ const CreateQuote = () => {
 
         image.onload = () => {
             // --- ENCABEZADO ---
-            doc.addImage(image, 'PNG', 15, 10, 30, 20);
+            doc.addImage(image, 'PNG', 15, 10, 25, 20);
             
             doc.setFontSize(22);
-            doc.setTextColor(255, 204, 0); // Color Naranja/Ocre del diseño
+            doc.setTextColor(0, 0, 0); // Color Naranja/Ocre del diseño
             doc.setFont("helvetica", "bold");
             doc.text("Cotización", 195, 20, { align: 'right' });
             
@@ -267,7 +267,7 @@ const CreateQuote = () => {
             doc.text(splitAddress, rightCol + 18, 59);
 
             doc.setFont("helvetica", "bold");
-            doc.text("NUM. CELULAR:", rightCol, 75);
+            doc.text("CELULAR:", rightCol, 75);
             doc.setFont("helvetica", "normal");
             doc.text(clientData.phone || "N/A", rightCol + 25, 75);
 
@@ -280,7 +280,7 @@ const CreateQuote = () => {
             if (descripcionGeneral) {
                 doc.setFontSize(9);
                 doc.setFont("helvetica", "bold");
-                doc.setTextColor(255, 204, 0); // Color naranja/ocre
+                doc.setTextColor(0, 0, 0); // Color naranja/ocre
                 doc.text("DESCRIPCIÓN DEL SERVICIO / PRODUCTO:", 15, currentY);
                 
                 doc.setFont("helvetica", "normal");
@@ -307,15 +307,16 @@ const CreateQuote = () => {
 
             doc.autoTable({
                 startY: currentY, 
-                head: [['CANT.', 'UNIDAD', 'DESCRIPCIÓN', 'P. UNITARIO', 'IMPORTE']],
+                head: [['CANT', 'UNIDAD', 'DESCRIPCIÓN', 'P. UNITARIO', 'IMPORTE']],
                 body: tableData,
                 theme: 'grid',
                 headStyles: { 
-                   fillColor: [255, 204, 0],
-                    textColor: [255, 255, 255],
-                    fontSize: 9,
-                    halign: 'center'
-                },
+                      fillColor: [255, 204, 0], // El amarillo que ya tienes
+                      textColor: [0, 0, 0],     // CAMBIO: 0,0,0 es color Negro
+                      fontSize: 9,
+                      halign: 'center',
+                      fontStyle: 'bold'
+                  },
                 styles: { 
                     fontSize: 8, 
                     cellPadding: 3,
