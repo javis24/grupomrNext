@@ -1,231 +1,193 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
+import { 
+    FiUploadCloud, FiFileText, FiTrash2, FiDownload, FiSearch, 
+    FiCheckCircle, FiAlertCircle 
+} from 'react-icons/fi';
+import { toast, ToastContainer } from 'react-toastify';
 
 export default function UploadList() {
-  const [file, setFile] = useState(null);
-  const [fileList, setFileList] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [userEmail, setUserEmail] = useState('');
-  const [error, setError] = useState('');
-  const [fileType, setFileType] = useState('Documento 1'); // Estado para el tipo de archivo
+    const [file, setFile] = useState(null);
+    const [fileList, setFileList] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [userRole, setUserRole] = useState(''); // Estado para el rol
+    const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      const decodedToken = jwt.decode(token);
-      setUserEmail(decodedToken.email);
-    }
-    fetchFiles();
-  }, []);
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            try {
+                const decodedToken = jwt.decode(token);
+                // Extraemos el rol del token (asegúrate de que tu backend envíe "role")
+                setUserRole(decodedToken.role);
+            } catch (e) { console.error("Error al decodificar el token"); }
+        }
+        fetchFiles();
+    }, []);
 
-  const fetchFiles = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('/api/files', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setFileList(response.data);
-    } catch (error) {
-      console.error('Error al obtener archivos:', error);
-      setError('Hubo un problema al cargar los archivos.');
-    }
-  };
+    const fetchFiles = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get('/api/files', {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            setFileList(response.data);
+        } catch (error) {
+            toast.error('Error al cargar archivos');
+        }
+    };
 
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      // Verificar el prefijo del nombre de archivo
-      const filename = selectedFile.name.toLowerCase();
-      if (filename.startsWith('ordende')) {
-        setFileType('Orden Compra');
-      } else {
-        setFileType('Documento 1');
-      }
-      setFile(selectedFile);
-    }
-  };
+    const handleUpload = async () => {
+        if (!file) return toast.warning('Selecciona un archivo PDF');
+        setIsLoading(true);
 
-  const handleUpload = async () => {
-    if (!file) {
-      alert('Por favor selecciona un archivo');
-      return;
-    }
+        const formData = new FormData();
+        formData.append('file', file);
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('type', fileType); // Añadir el tipo de archivo
+        try {
+            const token = localStorage.getItem('token');
+            await axios.post('/api/files', formData, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            fetchFiles();
+            setFile(null);
+            toast.success('Archivo subido');
+        } catch (error) {
+            toast.error('Error al subir');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-    try {
-      const token = localStorage.getItem('token');
-      await axios.post('/api/files', formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      fetchFiles();
-      setFile(null);
-      alert('Archivo subido exitosamente');
-    } catch (error) {
-      console.error('Error al subir archivo:', error);
-      alert('Hubo un error al subir el archivo');
-    }
-  };
+    const handleDelete = async (fileId, filename) => {
+        if (!window.confirm(`¿Eliminar permanentemente: ${filename}?`)) return;
 
-  const handleDelete = async (fileId) => {
-    try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`/api/files/${fileId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      fetchFiles();
-    } catch (error) {
-      console.error('Error al eliminar archivo:', error);
-      alert('Hubo un error al eliminar el archivo');
-    }
-  };
+        try {
+            const token = localStorage.getItem('token');
+            await axios.delete(`/api/files/${fileId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            
+            setFileList(prev => prev.filter(f => f.id !== fileId));
+            toast.info("Archivo eliminado");
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Error al eliminar');
+        }
+    };
 
-// Archivos filtrados por término de búsqueda
-const filteredFiles = fileList.filter((file) =>
-  file.filename.toLowerCase().includes(searchTerm.toLowerCase())
-);
+    const filteredFiles = fileList.filter((f) =>
+        f.filename.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
-// Clasificar los archivos en "Documento 1" y "Ordenes de Compra" basados en el prefijo en el nombre del archivo
-const documents = filteredFiles.filter(file => !file.filename.toLowerCase().startsWith('ordende'));
-const orders = filteredFiles.filter(file => file.filename.toLowerCase().startsWith('ordende'));
+    // --- LÓGICA DE PERMISOS POR ROL ---
+    const isAdmin = userRole === 'admin';
+    // Todos pueden subir, pero solo el admin puede borrar.
 
-
-  return (
-    <div className="container mx-auto p-4 bg-[#0e1624] text-white min-h-screen flex flex-col">
-      <h2 className="text-2xl font-semibold mb-4 text-center">Gestión de Archivos PDF</h2>
-      
-      {/* Formulario para subir archivos */}
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
-      {!['tarimas@grupomrlaguna.com', 'logistica@grupomrlaguna.com', 'facturacion@grupomrlaguna.com' ].includes(userEmail) && (
-        <div className="flex items-center space-x-2">
-          <input
-            type="file"
-            onChange={handleFileChange}
-            className="border p-2 rounded-md bg-[#1f2937] text-white"
-          />
-          <button
-            onClick={handleUpload}
-            className="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-700"
-          >
-            Subir Archivo
-          </button>
-        </div>
-          )}
-
-        {/* Buscador */}
-        <div className="mt-4 sm:mt-0">
-          <input
-            type="text"
-            placeholder="Buscar archivo..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="border p-2 rounded-md bg-[#1f2937] text-white"
-          />
-        </div>
-      </div>
-
-      {error && <p className="text-red-500 text-center">{error}</p>}
-
-       {/* Mostrar "Documento 1" solo para usuarios distintos a tarimas@grupomrlaguna.com */}
-       {!['tarimas@grupomrlaguna.com', 'logistica@grupomrlaguna.com', 'facturacion@grupomrlaguna.com' ].includes(userEmail) && (
-        <>
-      {/* Tabla de Documentos 1 */}
-      <h3 className="text-xl font-semibold mt-4 mb-2">Documento 1</h3>
-      {documents.length === 0 ? (
-        <p className="text-center mt-4">No hay documentos subidos.</p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-[#1f2937] text-left rounded-lg border border-gray-600">
-            <thead>
-              <tr className="bg-[#374151]">
-                <th className="px-4 py-2">Nombre del Archivo</th>
-                <th className="px-4 py-2">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {documents.map((file) => (
-                <tr key={file.id} className="hover:bg-[#4b5563]">
-                  <td className="px-4 py-2">{file.filename}</td>
-                  <td className="px-4 py-2">
-                    <div className="flex space-x-4">
-                      <a
-                        href={file.filepath}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="bg-green-500 text-white p-2 rounded-md hover:bg-green-700"
-                      >
-                        Descargar
-                      </a>
-                      {(userEmail === 'coordinadora@grupomrlaguna.com' || userEmail === 'mgaliano@grupomrlaguna.com') && (
-                        <button
-                          onClick={() => handleDelete(file.id)}
-                          className="bg-red-500 text-white p-2 rounded-md hover:bg-red-700"
-                        >
-                          Eliminar
-                        </button>
-                      )}
+    return (
+        <div className="p-4 md:p-8 bg-[#0e1624] min-h-screen text-white font-sans">
+            <ToastContainer theme="dark" position="bottom-right" />
+            <div className="max-w-5xl mx-auto">
+                
+                {/* CABECERA */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-4">
+                    <div>
+                        <h1 className="text-4xl font-black uppercase italic text-blue-500 tracking-tighter">Biblioteca</h1>
+                        <p className="text-gray-500 text-xs font-bold uppercase tracking-[0.3em]">Documentos de {userRole}</p>
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-       </>
-      )}    
-      
-      
-
-      {/* Tabla de Ordenes de Compra */}
-      <h3 className="text-xl font-semibold mt-4 mb-2">Ordenes de Compra</h3>
-      {orders.length === 0 ? (
-        <p className="text-center mt-4">No hay ordenes de compra subidas.</p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-[#1f2937] text-left rounded-lg border border-gray-600">
-            <thead>
-              <tr className="bg-[#374151]">
-                <th className="px-4 py-2">Nombre del Archivo</th>
-                <th className="px-4 py-2">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((file) => (
-                <tr key={file.id} className="hover:bg-[#4b5563]">
-                  <td className="px-4 py-2">{file.filename}</td>
-                  <td className="px-4 py-2">
-                    <div className="flex space-x-4">
-                      <a
-                        href={file.filepath}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="bg-green-500 text-white p-2 rounded-md hover:bg-green-700"
-                      >
-                        Descargar
-                      </a>
-                      {(userEmail === 'coordinadora@grupomrlaguna.com' || userEmail === 'mgaliano@grupomrlaguna.com') && (
-                        <button
-                          onClick={() => handleDelete(file.id)}
-                          className="bg-red-500 text-white p-2 rounded-md hover:bg-red-700"
-                        >
-                          Eliminar
-                        </button>
-                      )}
+                    
+                    <div className="relative w-full md:w-72">
+                        <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+                        <input 
+                            type="text" 
+                            placeholder="BUSCAR..." 
+                            className="w-full bg-[#1f2937] border border-gray-700 rounded-2xl p-4 pl-12 text-xs uppercase outline-none focus:border-blue-500 transition-all"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                </div>
+
+                {/* AREA DE SUBIDA */}
+                <div className="bg-[#1f2937] p-8 rounded-[2.5rem] border border-gray-700 mb-12 shadow-2xl flex flex-col md:flex-row items-center gap-6">
+                    <label className="flex-1 w-full flex items-center gap-4 bg-[#0e1624] p-4 rounded-2xl border border-gray-700 cursor-pointer hover:border-blue-500 transition-all group">
+                        <FiUploadCloud className="text-blue-500 text-2xl" />
+                        <div className="flex flex-col">
+                            <span className="text-[10px] text-gray-500 font-black uppercase">Adjuntar documento</span>
+                            <span className="text-xs text-white font-bold truncate max-w-[250px]">{file ? file.name : "Seleccionar PDF"}</span>
+                        </div>
+                        <input type="file" className="hidden" onChange={(e) => setFile(e.target.files[0])} accept=".pdf" />
+                    </label>
+
+                    <button 
+                        onClick={handleUpload} 
+                        disabled={isLoading || !file}
+                        className="w-full md:w-auto bg-blue-600 hover:bg-blue-500 disabled:bg-gray-800 disabled:text-gray-600 px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2"
+                    >
+                        {isLoading ? "SUBIENDO..." : <><FiCheckCircle/> SUBIR</>}
+                    </button>
+                </div>
+
+                {/* TABLA */}
+                <div className="bg-[#1f2937] rounded-[2.5rem] border border-gray-800 shadow-2xl overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-[11px]">
+                            <thead className="bg-[#111827] text-gray-500 font-black uppercase tracking-widest text-[9px]">
+                                <tr>
+                                    <th className="p-6">Nombre del Archivo</th>
+                                    <th className="p-6">Fecha</th>
+                                    <th className="p-6 text-right">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-800/50">
+                                {filteredFiles.length > 0 ? (
+                                    filteredFiles.map((f) => (
+                                        <tr key={f.id} className="hover:bg-white/5 transition-all group">
+                                            <td className="p-6 flex items-center gap-3">
+                                                <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500">
+                                                    <FiFileText size={16}/>
+                                                </div>
+                                                <span className="font-bold text-gray-300 group-hover:text-white uppercase truncate max-w-[350px]">{f.filename}</span>
+                                            </td>
+                                            <td className="p-6 text-gray-500">
+                                                {new Date(f.createdAt || Date.now()).toLocaleDateString('es-MX')}
+                                            </td>
+                                            <td className="p-6">
+                                                <div className="flex justify-end gap-2">
+                                                    <a href={f.filepath} target="_blank" rel="noreferrer"
+                                                        className="p-3 bg-blue-500/10 text-blue-500 rounded-xl hover:bg-blue-500 hover:text-white transition-all shadow-lg">
+                                                        <FiDownload size={14}/>
+                                                    </a>
+                                                    
+                                                    {/* BOTÓN ELIMINAR SOLO PARA ADMINISTRADOR */}
+                                                    {isAdmin && (
+                                                        <button 
+                                                            onClick={() => handleDelete(f.id, f.filename)}
+                                                            className="p-3 bg-red-600/10 text-red-500 rounded-xl hover:bg-red-600 hover:text-white transition-all shadow-lg"
+                                                        >
+                                                            <FiTrash2 size={14}/>
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="3" className="p-20 text-center text-gray-600 uppercase font-black text-[10px] tracking-widest opacity-20">
+                                            <FiAlertCircle className="mx-auto mb-2" size={40}/>
+                                            Sin registros
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
-      )}
-    </div>
-  );
+    );
 }

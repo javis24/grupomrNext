@@ -215,7 +215,7 @@ const CreateQuote = () => {
 
         image.onload = () => {
             // --- ENCABEZADO ---
-            doc.addImage(image, 'PNG', 15, 10, 25, 20);
+            doc.addImage(image, 'PNG', 17, 7, 35, 0);
             
             doc.setFontSize(22);
             doc.setTextColor(0, 0, 0); // Color Naranja/Ocre del diseño
@@ -301,13 +301,14 @@ const CreateQuote = () => {
                 row.cantidad,
                 row.um,
                 row.description.toUpperCase(),
+                row.comments ? row.comments.toUpperCase() : '',
                 `$${Number(row.pu).toLocaleString('es-MX', {minimumFractionDigits: 2})}`,
                 `$${Number(row.subtotal).toLocaleString('es-MX', {minimumFractionDigits: 2})}`
             ]);
 
             doc.autoTable({
                 startY: currentY, 
-                head: [['CANT', 'UNIDAD', 'DESCRIPCIÓN', 'P. UNITARIO', 'IMPORTE']],
+                head: [['CANT', 'UNIDAD', 'DESCRIPCIÓN','Notas', 'P. UNITARIO', 'IMPORTE']],
                 body: tableData,
                 theme: 'grid',
                 headStyles: { 
