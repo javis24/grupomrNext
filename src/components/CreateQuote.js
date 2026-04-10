@@ -218,7 +218,7 @@ const CreateQuote = () => {
             doc.addImage(image, 'PNG', 17, 7, 35, 0);
             
             doc.setFontSize(22);
-            doc.setTextColor(0, 0, 0); // Color Naranja/Ocre del diseño
+            doc.setTextColor(255, 204, 0); // Color Naranja/Ocre del diseño
             doc.setFont("helvetica", "bold");
             doc.text("Cotización", 195, 20, { align: 'right' });
             
@@ -248,7 +248,6 @@ const CreateQuote = () => {
             doc.setFont("helvetica", "normal");
             doc.text(currentDate, 30, 75);
 
-            // Columna Derecha (CLIENTE)
             const rightCol = 110;
             doc.setFont("helvetica", "bold");
             doc.text("CLIENTE:", rightCol, 45);
@@ -256,20 +255,21 @@ const CreateQuote = () => {
             doc.text(clientData.companyName.toUpperCase(), rightCol + 15, 45);
 
             doc.setFont("helvetica", "bold");
-            doc.text("ATENCIÓN A:", rightCol, 52);
+            doc.text("ATENCIÓN:", rightCol, 52);
             doc.setFont("helvetica", "normal");
-            doc.text(clientData.attentionTo.toUpperCase(), rightCol + 22, 52);
+            doc.text(clientData.attentionTo.toUpperCase(), rightCol + 18, 52);
+            
 
             doc.setFont("helvetica", "bold");
-            doc.text("DOMICILIO:", rightCol, 59);
+            doc.text("DOMICILIO:", rightCol, 66);
             doc.setFont("helvetica", "normal");
             const splitAddress = doc.splitTextToSize(clientData.address.toUpperCase(), 70);
-            doc.text(splitAddress, rightCol + 18, 59);
+            doc.text(splitAddress, rightCol + 18, 66);
 
             doc.setFont("helvetica", "bold");
-            doc.text("CELULAR:", rightCol, 75);
+            doc.text("DEPARTAMENTO:", rightCol, 59);
             doc.setFont("helvetica", "normal");
-            doc.text(clientData.phone || "N/A", rightCol + 25, 75);
+            doc.text((clientData.department || "COMPRAS").toUpperCase(), rightCol + 28, 59);
 
             doc.setFont("helvetica", "bold");
             doc.text("CORREO:", rightCol, 82);
@@ -310,45 +310,62 @@ const CreateQuote = () => {
                 startY: currentY, 
                 head: [['CANT', 'UNIDAD', 'DESCRIPCIÓN','Notas', 'P. UNITARIO', 'IMPORTE']],
                 body: tableData,
-                theme: 'grid',
+               theme: 'grid', // Activa las divisiones de renglones y columnas
                 headStyles: { 
-                      fillColor: [255, 204, 0], // El amarillo que ya tienes
-                      textColor: [0, 0, 0],     // CAMBIO: 0,0,0 es color Negro
-                      fontSize: 9,
-                      halign: 'center',
-                      fontStyle: 'bold'
-                  },
+                    fillColor: [255, 204, 0], 
+                    textColor: [0, 0, 0], 
+                    fontSize: 8,
+                    halign: 'center',
+                    lineWidth: 0.1,
+                    lineColor: [200, 200, 200]
+                },
                 styles: { 
-                    fontSize: 8, 
-                    cellPadding: 3,
-                    valign: 'middle'
+                    fontSize: 7, 
+                    cellPadding: 2,
+                    valign: 'middle',
+                    lineWidth: 0.1,
+                    lineColor: [230, 230, 230]
                 },
                 columnStyles: {
-                    0: { halign: 'center', cellWidth: 15 },
-                    1: { halign: 'center', cellWidth: 20 },
-                    2: { halign: 'left' },
-                    3: { halign: 'right', cellWidth: 30 },
-                    4: { halign: 'right', cellWidth: 30 },
+                    0: { halign: 'center', cellWidth: 12 },
+                    1: { halign: 'center', cellWidth: 15 },
+                    2: { halign: 'left', cellWidth: 'auto' },
+                    3: { halign: 'left', cellWidth: 35 },
+                    4: { halign: 'right', cellWidth: 22 },
+                    5: { halign: 'right', cellWidth: 22 },
                 }
             });
 
-            // --- TOTALES ---
-            const finalY = doc.lastAutoTable.finalY;
-            doc.autoTable({
-                startY: finalY,
-                body: [
-                    ['SUBTOTAL:', `$${Number(globalSubtotal).toLocaleString()}`],
-                    ['IVA', `$${Number(globalIva).toLocaleString()}`],
-                    ['TOTAL:', `$${Number(globalTotal).toLocaleString()}`]
-                ],
-                theme: 'grid',
-                styles: { fontSize: 9, halign: 'right', fontStyle: 'bold' },
-                columnStyles: {
-                    0: { cellWidth: 30, fillColor: [240, 240, 240] },
-                    1: { cellWidth: 30 }
-                },
-                margin: { left: 135 } // Alineado a la derecha
-            });
+           const finalY = doc.lastAutoTable.finalY;
+           doc.autoTable({
+                  startY: finalY + 1, // Un pequeño espacio para que no pegue las líneas
+                  body: [
+                      ['SUBTOTAL:', `$${Number(globalSubtotal).toLocaleString('es-MX', {minimumFractionDigits: 2})}`],
+                      ['IVA (16%):', `$${Number(globalIva).toLocaleString('es-MX', {minimumFractionDigits: 2})}`],
+                      ['TOTAL:', `$${Number(globalTotal).toLocaleString('es-MX', {minimumFractionDigits: 2})}`]
+                  ],
+                  theme: 'grid',
+                  styles: { 
+                      fontSize: 8, 
+                      halign: 'right', 
+                      fontStyle: 'bold',
+                      lineWidth: 0.1,
+                      lineColor: [200, 200, 200]
+                  },
+                  columnStyles: {
+                      // Ajustamos los anchos para que sumen 44mm igual que las columnas de arriba
+                      0: { cellWidth: 22, fillColor: [245, 245, 245] }, 
+                      1: { cellWidth: 22 }
+                  },
+                  // 196 es el borde derecho aproximado, menos 44 de ancho total = 152
+                  margin: { left: 152 }, 
+                  didParseCell: function(data) {
+                      if (data.row.index === 2) { 
+                          data.cell.styles.fillColor = [255, 204, 0];
+                          data.cell.styles.textColor = [0, 0, 0];
+                      }
+                  }
+              });
 
             // --- NOTAS Y CONDICIONES ---
             let notesY = doc.lastAutoTable.finalY + 10;
