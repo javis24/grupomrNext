@@ -248,33 +248,43 @@ const CreateQuote = () => {
             doc.setFont("helvetica", "normal");
             doc.text(currentDate, 30, 75);
 
-            const rightCol = 110;
-            doc.setFont("helvetica", "bold");
-            doc.text("CLIENTE:", rightCol, 45);
-            doc.setFont("helvetica", "normal");
-            doc.text(clientData.companyName.toUpperCase(), rightCol + 15, 45);
+           const rightCol = 110;
+            const startYRight = 45; // Punto de inicio para mantener alineación con EMISOR
 
             doc.setFont("helvetica", "bold");
-            doc.text("ATENCIÓN:", rightCol, 52);
+            doc.text("CLIENTE:", rightCol, startYRight);
             doc.setFont("helvetica", "normal");
-            doc.text(clientData.attentionTo.toUpperCase(), rightCol + 18, 52);
-            
+            doc.text((clientData.companyName || "").toUpperCase(), rightCol + 15, startYRight);
 
             doc.setFont("helvetica", "bold");
-            doc.text("DOMICILIO:", rightCol, 66);
+            doc.text("ATENCIÓN A:", rightCol, startYRight + 7); // y=52
             doc.setFont("helvetica", "normal");
-            const splitAddress = doc.splitTextToSize(clientData.address.toUpperCase(), 70);
-            doc.text(splitAddress, rightCol + 18, 66);
+            doc.text((clientData.attentionTo || "").toUpperCase(), rightCol + 22, startYRight + 7);
+
+            // --- LÍNEA DE DEPARTAMENTO ---
+            doc.setFont("helvetica", "bold");
+            doc.text("DEPARTAMENTO:", rightCol, startYRight + 14); // y=59
+            doc.setFont("helvetica", "normal");
+            // Usamos String() para asegurar que el texto sea procesado correctamente
+            const deptText = String(clientData.department || "COMPRAS").toUpperCase();
+            doc.text(deptText, rightCol + 28, startYRight + 14);
 
             doc.setFont("helvetica", "bold");
-            doc.text("DEPARTAMENTO:", rightCol, 59);
+            doc.text("DOMICILIO:", rightCol, startYRight + 21); // y=66
             doc.setFont("helvetica", "normal");
-            doc.text((clientData.department || "COMPRAS").toUpperCase(), rightCol + 28, 59);
+            const splitAddress = doc.splitTextToSize((clientData.address || "").toUpperCase(), 70);
+            doc.text(splitAddress, rightCol + 18, startYRight + 21);
+
+            // Ajustamos Celular y Correo más abajo para que el domicilio largo no los tape
+            doc.setFont("helvetica", "bold");
+            doc.text("CELULAR:", rightCol, startYRight + 34); // y=79
+            doc.setFont("helvetica", "normal");
+            doc.text(String(clientData.phone || "N/A"), rightCol + 18, startYRight + 34);
 
             doc.setFont("helvetica", "bold");
-            doc.text("CORREO:", rightCol, 82);
+            doc.text("CORREO:", rightCol, startYRight + 41); // y=86
             doc.setFont("helvetica", "normal");
-            doc.text(clientData.email || "N/A", rightCol + 15, 82);
+            doc.text((clientData.email || "N/A").toLowerCase(), rightCol + 15, startYRight + 41);
 
             let currentY = 90; // Ajustamos la posición Y
             if (descripcionGeneral) {
