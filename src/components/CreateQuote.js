@@ -152,7 +152,7 @@ const CreateQuote = () => {
     setShowSuggestions(false);
   };
 
-  const handleRowChange = (index, e) => {
+const handleRowChange = (index, e) => {
     const { name, value } = e.target;
     const updatedRows = [...serviceRows];
     updatedRows[index][name] = value;
@@ -162,7 +162,7 @@ const CreateQuote = () => {
       const precio = parseFloat(updatedRows[index].pu) || 0;
       
       const subtotal = cant * precio;
-      const iva = subtotal * 0.16; // Cálculo de IVA 16%
+      const iva = subtotal * 0.16; 
       const total = subtotal + iva;
 
       updatedRows[index].subtotal = subtotal.toFixed(2);
@@ -307,14 +307,14 @@ const CreateQuote = () => {
             }
 
             // --- TABLA DE PRODUCTOS ---
-            const tableData = serviceRows.map((row) => [
-                row.cantidad,
-                row.um,
-                row.description.toUpperCase(),
-                row.comments ? row.comments.toUpperCase() : '',
-                `$${Number(row.pu).toLocaleString('es-MX', {minimumFractionDigits: 2})}`,
-                `$${Number(row.subtotal).toLocaleString('es-MX', {minimumFractionDigits: 2})}`
-            ]);
+           const tableData = serviceRows.map((row) => [
+            row.cantidad,
+            row.um.toUpperCase(), // Forzamos mayúsculas aquí
+            row.description.toUpperCase(),
+            row.comments ? row.comments.toUpperCase() : 'S/NOTAS',
+            `$${Number(row.pu).toLocaleString('es-MX', {minimumFractionDigits: 2})}`,
+            `$${Number(row.subtotal).toLocaleString('es-MX', {minimumFractionDigits: 2})}`
+        ]);
 
             doc.autoTable({
                 startY: currentY, 
@@ -494,9 +494,16 @@ const CreateQuote = () => {
                 <input type="text" name="description" value={row.description} onChange={(e) => handleRowChange(index, e)} className="bg-[#1f2937] p-2 rounded-lg border border-gray-700 text-sm" />
               </div>
               <div className="md:col-span-1 flex flex-col gap-1">
-                <label className="text-[9px] font-bold text-gray-600 uppercase">Cant.</label>
-                <input type="number" name="cantidad" value={row.cantidad} onChange={(e) => handleRowChange(index, e)} className="bg-[#1f2937] p-2 rounded-lg border border-gray-700 text-sm text-center" />
-              </div>
+            <label className="text-[9px] font-bold text-gray-600 uppercase">U.M.</label>
+            <input 
+                type="text" 
+                name="um" 
+                placeholder="Pza/Kg"
+                value={row.um} 
+                onChange={(e) => handleRowChange(index, e)} 
+                className="bg-[#1f2937] p-2 rounded-lg border border-gray-700 text-sm text-center uppercase" 
+            />
+          </div>
               <div className="md:col-span-1 flex flex-col gap-1">
                 <label className="text-[9px] font-bold text-gray-600 uppercase">P.U.</label>
                 <input type="number" name="pu" value={row.pu} onChange={(e) => handleRowChange(index, e)} className="bg-[#1f2937] p-2 rounded-lg border border-gray-700 text-sm text-green-400 font-bold" />
