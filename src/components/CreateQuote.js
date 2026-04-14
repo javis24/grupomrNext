@@ -296,7 +296,7 @@ const handleRowChange = (index, e) => {
                 doc.setFont("helvetica", "normal");
                 doc.setTextColor(0, 0, 0);
                 // Dividimos el texto para que no se salga del ancho de la hoja
-                const splitDesc = doc.splitTextToSize(descripcionGeneral.toUpperCase(), 180);
+                const splitDesc = doc.splitTextToSize(descripcionGeneral, 180);
                 doc.text(splitDesc, 15, currentY + 5);
                 
                 // Calculamos cuánto espacio ocupó el texto para mover la tabla hacia abajo
@@ -527,7 +527,7 @@ const handleRowChange = (index, e) => {
               </div>
             </div>
               <div className="md:col-span-1 flex flex-col gap-1">
-                <label className="text-[9px] font-bold text-gray-600 uppercase">Notas</label>
+                <label className="text-[9px] font-bold text-gray-600 uppercase">NOTAS</label>
                 <input type="text" name="comments" value={row.comments} onChange={(e) => handleRowChange(index, e)} className="bg-[#1f2937] p-2 rounded-lg border border-gray-700 text-xs opacity-60" />
               </div>
               <div className="md:col-span-1">
