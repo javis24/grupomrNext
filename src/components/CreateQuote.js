@@ -508,6 +508,10 @@ const handleRowChange = (index, e) => {
                 <label className="text-[9px] font-bold text-gray-600 uppercase">P.U.</label>
                 <input type="number" name="pu" value={row.pu} onChange={(e) => handleRowChange(index, e)} className="bg-[#1f2937] p-2 rounded-lg border border-gray-700 text-sm text-green-400 font-bold" />
               </div>
+              <div className="md:col-span-1 flex flex-col gap-1">
+                <label className="text-[9px] font-bold text-gray-600 uppercase">Cant.</label>
+                <input type="number" name="cantidad" value={row.cantidad} onChange={(e) => handleRowChange(index, e)} className="bg-[#1f2937] p-2 rounded-lg border border-gray-700 text-sm text-center" />
+              </div>
               <div className="md:col-span-2 flex flex-col gap-1">
                 <label className="text-[9px] font-bold text-gray-600 uppercase">Subtotal</label>
                 <div className="bg-[#1f2937]/30 p-2 rounded-lg text-sm font-black text-blue-400">$ {row.subtotal}</div>
@@ -517,9 +521,11 @@ const handleRowChange = (index, e) => {
                 <div className="bg-[#1f2937]/30 p-2 rounded-lg text-sm font-bold text-yellow-600">$ {row.iva}</div>
               </div>
               <div className="md:col-span-2 flex flex-col gap-1">
-                <label className="text-[9px] font-bold text-gray-600 uppercase">Total</label>
-                <div className="bg-[#1f2937]/50 p-2 rounded-lg text-sm font-black text-green-500 border border-green-900/30">$ {row.total}</div>
+              <label className="text-[9px] font-bold text-gray-600 uppercase italic text-right mr-0">Total</label>
+              <div className="bg-[#1f2937]/50 p-2 rounded-lg text-sm font-black text-green-500 border border-green-900/30 text-right shadow-md">
+                $ {row.total}
               </div>
+            </div>
               <div className="md:col-span-1 flex flex-col gap-1">
                 <label className="text-[9px] font-bold text-gray-600 uppercase">Notas</label>
                 <input type="text" name="comments" value={row.comments} onChange={(e) => handleRowChange(index, e)} className="bg-[#1f2937] p-2 rounded-lg border border-gray-700 text-xs opacity-60" />
@@ -533,6 +539,8 @@ const handleRowChange = (index, e) => {
             <FiPlus /> Agregar Producto/Servicio
           </button>
         </div>
+
+        
           <div className="mb-10 bg-[#0e1624]/30 p-6 rounded-[2rem] border border-gray-800">
           <h2 className="text-sm font-black text-yellow-500 uppercase tracking-widest mb-4 flex items-center gap-2">
             <FiFileText /> Términos y Observaciones
