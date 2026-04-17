@@ -3,8 +3,8 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useRouter } from 'next/router';
 import axios from 'axios'; 
-import { toast, ToastContainer } from 'react-toastify'; // Opcional pero recomendado para feedback
-import { FiCheckSquare, FiSquare, FiFileText, FiPlus, FiTrash2, } from 'react-icons/fi';
+import { toast, ToastContainer } from 'react-toastify';
+import { FiCheckSquare, FiSquare, FiFileText, FiPlus, FiTrash2, FiSearch, FiDownload } from 'react-icons/fi';
 
 const CreateQuote = () => {
   const router = useRouter();
@@ -17,7 +17,8 @@ const CreateQuote = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const suggestionsRef = useRef(null);
 
-
+  const [userQuotes, setUserQuotes] = useState([]);
+  const [listSearchTerm, setListSearchTerm] = useState("");
   
   const [descripcionGeneral, setDescripcionGeneral] = useState("");
   const [observacionesSeleccionadas, setObservacionesSeleccionadas] = useState([]);
@@ -67,6 +68,52 @@ const CreateQuote = () => {
       setObservacionesSeleccionadas([...observacionesSeleccionadas, opcion]);
     }
   };
+
+
+
+  useEffect(() => {
+    fetchInitialData();
+    const lastQuoteNumber = localStorage.getItem('quoteNumber');
+    if (lastQuoteNumber) setQuoteNumber(parseInt(lastQuoteNumber) + 1);
+    setCurrentDate(new Date().toLocaleDateString('es-MX'));
+  }, []);
+
+  const fetchInitialData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+      
+      const [clientsRes, quotesRes] = await Promise.all([
+        axios.get('/api/clients', { headers }),
+        axios.get('/api/quotes', { headers }) // Asegúrate que este endpoint filtre por usuario en el backend
+      ]);
+
+      setAllClients(clientsRes.data);
+      setUserQuotes(quotesRes.data);
+    } catch (err) {
+      console.error("Error cargando datos", err);
+    }
+  };
+
+const filteredQuotes = userQuotes
+    .filter(quote => {
+        const search = listSearchTerm.toLowerCase();
+        const matchCompany = quote.companyName?.toLowerCase().includes(search);
+        
+        // Buscamos también en los productos si existen
+        const matchProducts = quote.items?.some(item => 
+            item.description?.toLowerCase().includes(search)
+        );
+
+        return matchCompany || matchProducts;
+    })
+    // Ordenamos por fecha (más recientes primero)
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+// Esta es la variable que usaremos para el "map" en el renderizado
+const displayedQuotes = listSearchTerm 
+    ? filteredQuotes // Si el usuario está buscando, mostramos todos los resultados
+    : filteredQuotes.slice(0, 5); // Si no busca, solo mostramos las últimas 5
 
 
   
@@ -122,14 +169,14 @@ const CreateQuote = () => {
   }, []);
 
   // 3. MANEJADOR DE ENTRADA CON FILTRO
-  const handleClientInputChange = (e) => {
+const handleClientInputChange = (e) => {
     const { name, value } = e.target;
     setClientData(prev => ({ ...prev, [name]: value }));
 
     if (name === 'companyName') {
       if (value.length > 1) {
         const filtered = allClients.filter(client =>
-          (client.companyName || client.fullName).toLowerCase().includes(value.toLowerCase())
+          (client.companyName || client.fullName || "").toLowerCase().includes(value.toLowerCase())
         );
         setFilteredClients(filtered);
         setShowSuggestions(true);
@@ -139,8 +186,7 @@ const CreateQuote = () => {
     }
   };
 
-  // 4. SELECCIONAR CLIENTE DE LA LISTA
-  const selectClient = (client) => {
+ const selectClient = (client) => {
     setClientData({
       companyName: client.companyName || client.fullName,
       address: client.address || '',
@@ -160,7 +206,6 @@ const handleRowChange = (index, e) => {
     if (name === 'cantidad' || name === 'pu') {
       const cant = parseFloat(updatedRows[index].cantidad) || 0;
       const precio = parseFloat(updatedRows[index].pu) || 0;
-      
       const subtotal = cant * precio;
       const iva = subtotal * 0.16; 
       const total = subtotal + iva;
@@ -173,10 +218,10 @@ const handleRowChange = (index, e) => {
   };
 
   const addRow = () => {
-    setServiceRows([...serviceRows, { description: '', cantidad: 1, um: 'Pieza', pu: 0, subtotal: 0, iva: 0, total: 0, comments: '' }]);
+    setServiceRows([...serviceRows, { description: '', cantidad: 1, um: 'SERVICIO', pu: 0, subtotal: 0, iva: 0, total: 0, comments: '' }]);
   };
 
-  const removeRow = (index) => {
+const removeRow = (index) => {
     if (serviceRows.length > 1) {
       setServiceRows(serviceRows.filter((_, i) => i !== index));
     }
@@ -581,6 +626,72 @@ const handleRowChange = (index, e) => {
             <button onClick={() => router.back()} className="px-8 py-4 bg-gray-800 hover:bg-gray-700 rounded-2xl font-black text-xs uppercase text-gray-500">
                 Cerrar
             </button>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto w-full bg-[#1f2937] p-6 rounded-3xl border border-gray-700 shadow-2xl">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <h2 className="text-xl font-black text-white uppercase tracking-widest flex items-center gap-2">
+                <FiFileText className="text-blue-400" /> Mis Cotizaciones
+            </h2>
+            
+            {/* BUSCADOR */}
+            <div className="relative w-full md:w-96">
+                <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
+                <input 
+                    type="text" 
+                    placeholder="Buscar por Empresa o Producto..." 
+                    className="w-full bg-[#0e1624] border border-gray-700 rounded-2xl py-3 pl-12 pr-4 text-sm outline-none focus:border-blue-500 transition-all"
+                    value={listSearchTerm}
+                    onChange={(e) => setListSearchTerm(e.target.value)}
+                />
+            </div>
+        </div>
+
+        <div className="overflow-x-auto rounded-2xl border border-gray-800">
+            <table className="w-full text-left text-sm">
+                <thead className="bg-[#0e1624] text-gray-400 font-black uppercase text-[10px] tracking-widest">
+                    <tr>
+                        <th className="p-4">Folio</th>
+                        <th className="p-4">Empresa</th>
+                        <th className="p-4">Fecha</th>
+                        <th className="p-4">Total</th>
+                        <th className="p-4 text-center">Acciones</th>
+                    </tr>
+                </thead>
+              <tbody className="divide-y divide-gray-800">
+    {displayedQuotes.length > 0 ? (
+        displayedQuotes.map((q) => (
+            <tr key={q.id} className="hover:bg-[#111827] transition-colors">
+                <td className="p-4 font-mono text-yellow-500">
+                    #{String(q.quoteNumber).padStart(3, '0')}
+                </td>
+                <td className="p-4 font-bold uppercase">{q.companyName}</td>
+                <td className="p-4 text-gray-400">
+                    {new Date(q.createdAt).toLocaleDateString()}
+                </td>
+                <td className="p-4 text-green-500 font-black">${q.total}</td>
+                <td className="p-4 text-center">
+                    <button 
+                        className="p-2 bg-blue-600/10 text-blue-500 rounded-lg hover:bg-blue-600 hover:text-white transition-all"
+                        onClick={() => {/* Función de descarga */}}
+                    >
+                        <FiDownload />
+                    </button>
+                </td>
+            </tr>
+        ))
+    ) : (
+        <tr>
+            <td colSpan="5" className="p-10 text-center text-gray-500 italic">
+                {listSearchTerm 
+                    ? "No se encontraron coincidencias para tu búsqueda." 
+                    : "No hay cotizaciones registradas."}
+            </td>
+        </tr>
+    )}
+</tbody>
+            </table>
         </div>
       </div>
     </div>
