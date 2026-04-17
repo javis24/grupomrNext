@@ -4,7 +4,7 @@ import 'jspdf-autotable';
 import { useRouter } from 'next/router';
 import axios from 'axios'; 
 import { toast, ToastContainer } from 'react-toastify';
-import { FiCheckSquare, FiSquare, FiFileText, FiPlus, FiTrash2, FiSearch, FiDownload } from 'react-icons/fi';
+import { FiCheckSquare, FiSquare, FiFileText, FiPlus, FiTrash2, FiSearch, FiDownload, FiEdit3 } from 'react-icons/fi';
 
 const CreateQuote = () => {
     const router = useRouter();
@@ -20,6 +20,9 @@ const CreateQuote = () => {
     const [userQuotes, setUserQuotes] = useState([]);
     const [listSearchTerm, setListSearchTerm] = useState("");
     
+    // --- ESTADO PARA CONTROLAR EDICIÓN/VERSIONADO ---
+    const [originalQuoteLoaded, setOriginalQuoteLoaded] = useState(null);
+
     const [descripcionGeneral, setDescripcionGeneral] = useState("");
     const [observacionesSeleccionadas, setObservacionesSeleccionadas] = useState([]);
 
@@ -44,7 +47,53 @@ const CreateQuote = () => {
     ]);
 
     // ==========================================
-    // CARGA INICIAL DE DATOS
+    // LÓGICA DE VERSIONADO (NUEVA)
+    // ==========================================
+    
+    // Función para cargar una cotización vieja al formulario para "editar"
+    const loadQuoteToForm = (quote) => {
+        setOriginalQuoteLoaded(quote); // Guardamos la referencia original
+        setClientData({
+            companyName: quote.companyName,
+            address: quote.address,
+            attentionTo: quote.attentionTo,
+            department: quote.department || 'COMPRAS',
+            email: quote.email,
+            phone: quote.phone,
+            supervisor: quote.supervisor
+        });
+        setServiceRows(quote.items || []);
+        setDescripcionGeneral(quote.descripcionGeneral || "");
+        setObservacionesSeleccionadas(quote.observaciones || []);
+        
+        // Desplazar hacia arriba para que el usuario vea el formulario cargado
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        toast.info(`Cotización #${quote.quoteNumber} cargada para modificar`);
+    };
+
+    // Función para comparar si hubo cambios reales
+    const hasChanges = () => {
+        if (!originalQuoteLoaded) return true; // Si es nueva, siempre cuenta como "cambio"
+
+        const currentData = {
+            companyName: clientData.companyName,
+            items: JSON.stringify(serviceRows),
+            desc: descripcionGeneral,
+            obs: JSON.stringify(observacionesSeleccionadas.sort())
+        };
+
+        const originalData = {
+            companyName: originalQuoteLoaded.companyName,
+            items: JSON.stringify(originalQuoteLoaded.items),
+            desc: originalQuoteLoaded.descripcionGeneral,
+            obs: JSON.stringify((originalQuoteLoaded.observaciones || []).sort())
+        };
+
+        return JSON.stringify(currentData) !== JSON.stringify(originalData);
+    };
+
+    // ==========================================
+    // CARGA INICIAL Y OTROS
     // ==========================================
     useEffect(() => {
         fetchInitialData();
@@ -63,42 +112,27 @@ const CreateQuote = () => {
             ]);
             setAllClients(clientsRes.data);
             setUserQuotes(quotesRes.data);
-        } catch (err) {
-            console.error("Error cargando datos", err);
-        }
+        } catch (err) { console.error(err); }
     };
 
-    // ==========================================
-    // LÓGICA DE BÚSQUEDA Y FILTRADO (LISTADO)
-    // ==========================================
     const filteredQuotes = userQuotes
         .filter(quote => {
             const search = listSearchTerm.toLowerCase();
-            const matchCompany = quote.companyName?.toLowerCase().includes(search);
-            const matchProducts = quote.items?.some(item => 
-                item.description?.toLowerCase().includes(search)
-            );
-            return matchCompany || matchProducts;
+            return quote.companyName?.toLowerCase().includes(search) || 
+                   quote.items?.some(item => item.description?.toLowerCase().includes(search));
         })
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     const displayedQuotes = listSearchTerm ? filteredQuotes : filteredQuotes.slice(0, 5);
 
-    // ==========================================
-    // FUNCIONES DEL FORMULARIO
-    // ==========================================
     const handleClientInputChange = (e) => {
         const { name, value } = e.target;
         setClientData(prev => ({ ...prev, [name]: value }));
         if (name === 'companyName' && value.length > 1) {
-            const filtered = allClients.filter(client =>
-                (client.companyName || client.fullName || "").toLowerCase().includes(value.toLowerCase())
-            );
+            const filtered = allClients.filter(c => (c.companyName || c.fullName || "").toLowerCase().includes(value.toLowerCase()));
             setFilteredClients(filtered);
             setShowSuggestions(true);
-        } else if (name === 'companyName') {
-            setShowSuggestions(false);
-        }
+        } else if (name === 'companyName') setShowSuggestions(false);
     };
 
     const selectClient = (client) => {
@@ -118,32 +152,22 @@ const CreateQuote = () => {
         const { name, value } = e.target;
         const updatedRows = [...serviceRows];
         updatedRows[index][name] = value;
-
         if (name === 'cantidad' || name === 'pu') {
-            const cant = parseFloat(updatedRows[index].cantidad) || 0;
-            const precio = parseFloat(updatedRows[index].pu) || 0;
-            const subtotal = cant * precio;
-            const iva = subtotal * 0.16; 
-            const total = subtotal + iva;
-
+            const subtotal = (parseFloat(updatedRows[index].cantidad) || 0) * (parseFloat(updatedRows[index].pu) || 0);
             updatedRows[index].subtotal = subtotal.toFixed(2);
-            updatedRows[index].iva = iva.toFixed(2);
-            updatedRows[index].total = total.toFixed(2);
+            updatedRows[index].iva = (subtotal * 0.16).toFixed(2);
+            updatedRows[index].total = (subtotal * 1.16).toFixed(2);
         }
         setServiceRows(updatedRows);
     };
 
-    const addRow = () => {
-        setServiceRows([...serviceRows, { description: '', cantidad: 1, um: 'SERVICIO', pu: 0, subtotal: 0, iva: 0, total: 0, comments: '' }]);
-    };
-
-    const removeRow = (index) => {
-        if (serviceRows.length > 1) setServiceRows(serviceRows.filter((_, i) => i !== index));
-    };
+    const addRow = () => setServiceRows([...serviceRows, { description: '', cantidad: 1, um: 'SERVICIO', pu: 0, subtotal: 0, iva: 0, total: 0, comments: '' }]);
+    const removeRow = (index) => { if (serviceRows.length > 1) setServiceRows(serviceRows.filter((_, i) => i !== index)); };
+    const toggleObservacion = (op) => setObservacionesSeleccionadas(prev => prev.includes(op) ? prev.filter(i => i !== op) : [...prev, op]);
 
     const globalSubtotal = serviceRows.reduce((acc, row) => acc + parseFloat(row.subtotal || 0), 0).toFixed(2);
-    const globalIva = serviceRows.reduce((acc, row) => acc + parseFloat(row.iva || 0), 0).toFixed(2);
-    const globalTotal = serviceRows.reduce((acc, row) => acc + parseFloat(row.total || 0), 0).toFixed(2);
+    const globalIva = (globalSubtotal * 0.16).toFixed(2);
+    const globalTotal = (globalSubtotal * 1.16).toFixed(2);
 
     // ==========================================
     // LÓGICA DE PDF (MAESTRA)
@@ -151,104 +175,45 @@ const CreateQuote = () => {
     const renderPDFContent = (doc, client, rows, quoteNum, dateStr, descGen, obsSel) => {
         const image = new Image();
         image.src = '/logo_mr.png';
-
         image.onload = () => {
-            // Encabezado
             doc.addImage(image, 'PNG', 17, 7, 35, 0);
-            doc.setFontSize(22);
-            doc.setTextColor(0, 0, 0); 
-            doc.setFont("helvetica", "bold");
+            doc.setFontSize(22); doc.setTextColor(0, 0, 0); doc.setFont("helvetica", "bold");
             doc.text("Cotización", 195, 20, { align: 'right' });
-            doc.setFontSize(11);
-            doc.text(`NUM: ${String(quoteNum).padStart(3, '0')}`, 195, 28, { align: 'right' });
-
-            // Emisor y Cliente
-            doc.setFontSize(8);
-            doc.text("EMISOR:", 15, 45);
-            doc.setFont("helvetica", "normal");
+            doc.setFontSize(11); doc.text(`NUM: ${String(quoteNum).padStart(3, '0')}`, 195, 28, { align: 'right' });
+            doc.setFontSize(8); doc.text("EMISOR:", 15, 45); doc.setFont("helvetica", "normal");
             doc.text("Materiales Reutilizables SA de CV\nBenito Juárez 112 sur\nCol. 1° de Mayo, Lerdo. Dgo\nC.P. 35169", 15, 50);
-            doc.setFont("helvetica", "bold");
-            doc.text(`SUPERVISOR: ${client.supervisor || "N/A"}`, 15, 70);
-            doc.text(`FECHA: ${dateStr}`, 15, 75);
-
-            const rightCol = 110;
-            doc.text("CLIENTE:", rightCol, 45);
-            doc.setFont("helvetica", "normal");
+            doc.setFont("helvetica", "bold"); doc.text(`SUPERVISOR: ${client.supervisor || "N/A"}`, 15, 70); doc.text(`FECHA: ${dateStr}`, 15, 75);
+            const rightCol = 110; doc.text("CLIENTE:", rightCol, 45); doc.setFont("helvetica", "normal");
             doc.text((client.companyName || "").toUpperCase(), rightCol + 15, 45);
             doc.text(`ATENCIÓN A: ${(client.attentionTo || "").toUpperCase()}`, rightCol, 52);
             doc.text(`DEPARTAMENTO: ${(client.department || "COMPRAS").toUpperCase()}`, rightCol, 59);
             const splitAddress = doc.splitTextToSize((client.address || "").toUpperCase(), 70);
-            doc.text("DOMICILIO: ", rightCol, 66);
-            doc.text(splitAddress, rightCol + 18, 66);
-            doc.text(`CELULAR: ${client.phone || "N/A"}`, rightCol, 82);
-            doc.text(`CORREO: ${client.email || "N/A"}`, rightCol, 88);
-
+            doc.text("DOMICILIO: ", rightCol, 66); doc.text(splitAddress, rightCol + 18, 66);
+            doc.text(`CELULAR: ${client.phone || "N/A"}`, rightCol, 82); doc.text(`CORREO: ${client.email || "N/A"}`, rightCol, 88);
             let currentY = 95;
             if (descGen) {
-                doc.setFont("helvetica", "bold");
-                doc.text("DESCRIPCIÓN DEL SERVICIO / PRODUCTO:", 15, currentY);
-                doc.setFont("helvetica", "normal");
-                const splitDesc = doc.splitTextToSize(descGen, 180); // Respetamos formato original (minúsculas)
-                doc.text(splitDesc, 15, currentY + 5);
-                currentY += 10 + (splitDesc.length * 4);
+                doc.setFont("helvetica", "bold"); doc.text("DESCRIPCIÓN DEL SERVICIO / PRODUCTO:", 15, currentY);
+                doc.setFont("helvetica", "normal"); const splitDesc = doc.splitTextToSize(descGen, 180);
+                doc.text(splitDesc, 15, currentY + 5); currentY += 10 + (splitDesc.length * 4);
             }
-
-            // Tabla de productos
-            const tableData = rows.map(row => [
-                row.cantidad,
-                (row.um || "SERVICIO").toUpperCase(),
-                row.description, // Respetamos formato original
-                (row.comments || "S/NOTAS").toUpperCase(),
-                `$${Number(row.pu).toLocaleString('es-MX', {minimumFractionDigits: 2})}`,
-                `$${Number(row.subtotal).toLocaleString('es-MX', {minimumFractionDigits: 2})}`
-            ]);
-
+            const tableData = rows.map(row => [row.cantidad, (row.um || "SERVICIO").toUpperCase(), row.description, (row.comments || "S/NOTAS").toUpperCase(), `$${Number(row.pu).toLocaleString('es-MX', {minimumFractionDigits: 2})}`, `$${Number(row.subtotal).toLocaleString('es-MX', {minimumFractionDigits: 2})}`]);
             doc.autoTable({
-                startY: currentY,
-                head: [['CANT', 'UNIDAD', 'DESCRIPCIÓN', 'Notas', 'P. UNITARIO', 'IMPORTE']],
-                body: tableData,
-                theme: 'grid',
+                startY: currentY, head: [['CANT', 'UNIDAD', 'DESCRIPCIÓN', 'Notas', 'P. UNITARIO', 'IMPORTE']], body: tableData, theme: 'grid',
                 headStyles: { fillColor: [255, 204, 0], textColor: [0, 0, 0], fontSize: 8, halign: 'center' },
                 styles: { fontSize: 7, cellPadding: 2 },
-                columnStyles: {
-                    0: { halign: 'center', cellWidth: 12 },
-                    1: { halign: 'center', cellWidth: 18 },
-                    4: { halign: 'right', cellWidth: 22 },
-                    5: { halign: 'right', cellWidth: 22 },
-                }
+                columnStyles: { 0: { halign: 'center', cellWidth: 12 }, 1: { halign: 'center', cellWidth: 18 }, 4: { halign: 'right', cellWidth: 22 }, 5: { halign: 'right', cellWidth: 22 } }
             });
-
-            // Totales alineados
             const finalY = doc.lastAutoTable.finalY;
             const sub = rows.reduce((acc, r) => acc + parseFloat(r.subtotal || 0), 0);
             doc.autoTable({
-                startY: finalY + 1,
-                body: [
-                    ['SUBTOTAL:', `$${sub.toLocaleString('es-MX', {minimumFractionDigits: 2})}`],
-                    ['IVA (16%):', `$${(sub * 0.16).toLocaleString('es-MX', {minimumFractionDigits: 2})}`],
-                    ['TOTAL:', `$${(sub * 1.16).toLocaleString('es-MX', {minimumFractionDigits: 2})}`]
-                ],
-                theme: 'grid',
-                styles: { fontSize: 8, halign: 'right', fontStyle: 'bold' },
-                columnStyles: { 0: { cellWidth: 22, fillColor: [245, 245, 245] }, 1: { cellWidth: 22 } },
-                margin: { left: 152 },
-                didParseCell: (data) => {
-                    if (data.row.index === 2) {
-                        data.cell.styles.fillColor = [255, 204, 0];
-                        data.cell.styles.textColor = [0, 0, 0];
-                    }
-                }
+                startY: finalY + 1, body: [['SUBTOTAL:', `$${sub.toLocaleString('es-MX', {minimumFractionDigits: 2})}`], ['IVA (16%):', `$${(sub * 0.16).toLocaleString('es-MX', {minimumFractionDigits: 2})}`], ['TOTAL:', `$${(sub * 1.16).toLocaleString('es-MX', {minimumFractionDigits: 2})}`]],
+                theme: 'grid', styles: { fontSize: 8, halign: 'right', fontStyle: 'bold' },
+                columnStyles: { 0: { cellWidth: 22, fillColor: [245, 245, 245] }, 1: { cellWidth: 22 } }, margin: { left: 152 },
+                didParseCell: (data) => { if (data.row.index === 2) { data.cell.styles.fillColor = [255, 204, 0]; data.cell.styles.textColor = [0, 0, 0]; } }
             });
-
-            // Notas y condiciones
             let notesY = doc.lastAutoTable.finalY + 10;
-            doc.setFont("helvetica", "bold");
-            doc.text("NOTAS Y CONDICIONES", 15, notesY);
-            doc.setFont("helvetica", "normal");
-            obsSel.forEach((obs, index) => {
-                doc.text(`• ${obs}`, 15, notesY + 6 + (index * 5));
-            });
-
+            doc.setFont("helvetica", "bold"); doc.text("NOTAS Y CONDICIONES", 15, notesY); doc.setFont("helvetica", "normal");
+            obsSel.forEach((obs, index) => doc.text(`• ${obs}`, 15, notesY + 6 + (index * 5)));
             doc.save(`Cotizacion_${client.companyName || 'Sin_Nombre'}.pdf`);
         };
     };
@@ -260,18 +225,41 @@ const CreateQuote = () => {
 
     const generatePDF = async () => {
         if (!clientData.companyName) return alert("Por favor ingresa el nombre de la empresa");
+        
         setIsSaving(true);
         try {
             const token = localStorage.getItem('token');
-            await axios.post('/api/quotes', {
-                ...clientData, quoteNumber, total: globalTotal, items: serviceRows, descripcionGeneral, observaciones: observacionesSeleccionadas
-            }, { headers: { Authorization: `Bearer ${token}` } });
+            const changed = hasChanges();
+            
+            // Si hay cambios o es nueva, generamos un FOLIO NUEVO
+            const finalQuoteNumber = changed ? quoteNumber : originalQuoteLoaded.quoteNumber;
+
+            if (changed) {
+                // GUARDAR NUEVA VERSIÓN
+                await axios.post('/api/quotes', {
+                    ...clientData, 
+                    quoteNumber: finalQuoteNumber, 
+                    total: globalTotal, 
+                    items: serviceRows, 
+                    descripcionGeneral, 
+                    observaciones: observacionesSeleccionadas
+                }, { headers: { Authorization: `Bearer ${token}` } });
+                
+                toast.success("Nueva versión de cotización generada.");
+            } else {
+                toast.info("Sin cambios detectados, descargando original.");
+            }
 
             const doc = new jsPDF();
-            renderPDFContent(doc, clientData, serviceRows, quoteNumber, currentDate, descripcionGeneral, observacionesSeleccionadas);
+            renderPDFContent(doc, clientData, serviceRows, finalQuoteNumber, currentDate, descripcionGeneral, observacionesSeleccionadas);
             
-            localStorage.setItem('quoteNumber', quoteNumber);
+            if (changed) {
+                setQuoteNumber(prev => prev + 1);
+                localStorage.setItem('quoteNumber', finalQuoteNumber);
+            }
+            
             setIsSaving(false);
+            setOriginalQuoteLoaded(null); // Resetear estado de edición
             fetchInitialData();
         } catch (error) {
             console.error(error);
@@ -283,12 +271,13 @@ const CreateQuote = () => {
         <div className="min-h-screen bg-[#0e1624] text-white p-4 md:p-8 font-sans flex flex-col gap-10">
             <ToastContainer theme="dark" position="bottom-right" />
             
-            {/* FORMULARIO DE GENERACIÓN */}
             <div className="max-w-7xl mx-auto w-full bg-[#1f2937] p-6 rounded-3xl border border-gray-700 shadow-2xl">
                 <h1 className="text-2xl font-black text-blue-400 uppercase mb-8 border-b border-gray-700 pb-4 flex justify-between items-center">
-                    Generador de Cotización <span className="text-yellow-500 font-mono">#{quoteNumber}</span>
+                    {originalQuoteLoaded ? "Editando Cotización" : "Generador de Cotización"} 
+                    <span className="text-yellow-500 font-mono">#{originalQuoteLoaded ? originalQuoteLoaded.quoteNumber : quoteNumber}</span>
                 </h1>
 
+                {/* Formulario (Misma UI de antes) */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
                     <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="flex flex-col gap-1 relative" ref={suggestionsRef}>
@@ -322,6 +311,7 @@ const CreateQuote = () => {
                     </div>
                 </div>
 
+                {/* Tabla de Productos (Misma UI de antes) */}
                 <div className="space-y-4 mb-8">
                     <h2 className="text-sm font-black text-white uppercase tracking-widest">Producto/Servicio de la Cotización</h2>
                     {serviceRows.map((row, index) => (
@@ -383,8 +373,13 @@ const CreateQuote = () => {
                 </div>
 
                 <div className="mt-8 flex justify-end gap-4">
+                    {originalQuoteLoaded && (
+                        <button onClick={() => { setOriginalQuoteLoaded(null); setServiceRows([{ description: '', cantidad: 1, um: 'SERVICIO', pu: 0, subtotal: 0, iva: 0, total: 0, comments: '' }]); }} className="px-8 py-4 bg-red-600/10 text-red-500 rounded-2xl font-black text-xs uppercase transition-all">
+                            Cancelar Edición
+                        </button>
+                    )}
                     <button onClick={generatePDF} disabled={isSaving} className="bg-blue-600 hover:bg-blue-700 px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all">
-                        {isSaving ? "Guardando..." : "Descargar PDF y Guardar"}
+                        {isSaving ? "Guardando..." : originalQuoteLoaded ? "Guardar Cambios (Crea Nueva si hay cambios)" : "Descargar y Guardar"}
                     </button>
                     <button onClick={() => router.back()} className="px-8 py-4 bg-gray-800 hover:bg-gray-700 rounded-2xl font-black text-xs uppercase text-gray-500">Cerrar</button>
                 </div>
@@ -419,9 +414,12 @@ const CreateQuote = () => {
                                         <td className="p-4 font-bold uppercase">{q.companyName}</td>
                                         <td className="p-4 text-gray-400">{new Date(q.createdAt).toLocaleDateString()}</td>
                                         <td className="p-4 text-green-500 font-black">${q.total}</td>
-                                        <td className="p-4 text-center">
-                                            <button className="p-2 bg-blue-600/10 text-blue-500 rounded-lg hover:bg-blue-600 hover:text-white transition-all" onClick={() => downloadExistingPDF(q)}>
+                                        <td className="p-4 text-center flex justify-center gap-2">
+                                            <button className="p-2 bg-blue-600/10 text-blue-500 rounded-lg hover:bg-blue-600 hover:text-white transition-all" onClick={() => downloadExistingPDF(q)} title="Descargar PDF">
                                                 <FiDownload />
+                                            </button>
+                                            <button className="p-2 bg-yellow-600/10 text-yellow-500 rounded-lg hover:bg-yellow-600 hover:text-white transition-all" onClick={() => loadQuoteToForm(q)} title="Editar y Versión">
+                                                <FiEdit3 />
                                             </button>
                                         </td>
                                     </tr>
