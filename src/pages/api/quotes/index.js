@@ -19,14 +19,46 @@ export default async function handler(req, res) {
             }
 
             if (method === 'POST') {
-                const { companyName, attentionTo, email, phone, total, quoteNumber } = req.body;
+                // RECIBIMOS LOS NUEVOS CAMPOS DEL BODY
+                const { 
+                    companyName, 
+                    attentionTo, 
+                    email, 
+                    phone, 
+                    total, 
+                    quoteNumber,
+                    address,          // <--- NUEVO
+                    department,       // <--- NUEVO
+                    supervisor,       // <--- NUEVO
+                    descripcionGeneral, // <--- NUEVO
+                    items,            // <--- NUEVO
+                    observaciones     // <--- NUEVO
+                } = req.body;
+
                 const newQuote = await Quotes.create({
-                    quoteNumber, companyName, attentionTo, email, phone, total,
+                    quoteNumber, 
+                    companyName, 
+                    address,          // Guardamos domicilio
+                    attentionTo, 
+                    department,       // Guardamos departamento
+                    email, 
+                    phone, 
+                    supervisor,       // Guardamos asesor
+                    descripcionGeneral, // Guardamos descripción larga
+                    items,            // Sequelize hará el JSON.stringify automáticamente por el modelo
+                    observaciones,    // Sequelize hará el JSON.stringify automáticamente por el modelo
+                    total,
                     userId: loggedUserId
                 });
+                
                 return res.status(201).json(newQuote);
             }
+
+            // Opcional: Manejar otros métodos
+            return res.status(405).json({ message: "Method not allowed" });
+
         } catch (error) {
+            console.error("API ERROR:", error);
             return res.status(500).json({ message: error.message });
         }
     });
