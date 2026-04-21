@@ -339,6 +339,17 @@ const CreateQuote = () => {
                                 <label className="text-[9px] font-bold text-gray-600 uppercase text-right">Total</label>
                                 <div className="bg-[#1f2937]/50 p-2 rounded-lg text-sm font-black text-green-500 text-right border border-green-900/30">$ {row.total}</div>
                             </div>
+                            <div className="md:col-span-3 flex flex-col gap-1">
+                                <label className="text-[9px] font-bold text-yellow-600/60 uppercase">Notas del producto</label>
+                                <input 
+                                type="text" 
+                                name="comments" 
+                                placeholder="Eje: Entrega inmediata..."
+                                value={row.comments || ''} 
+                                onChange={(e) => handleRowChange(index, e)} 
+                                className="bg-[#1f2937] p-2 rounded-lg border border-gray-700 text-xs text-gray-300 outline-none focus:border-yellow-500/50 transition-all" 
+                                />
+                            </div>
                             <div className="md:col-span-1 flex flex-col gap-1">
                                 <button type="button" onClick={() => removeRow(index)} className="w-full bg-red-600/10 text-red-500 p-2 rounded-lg hover:bg-red-600 hover:text-white transition-all"><FiTrash2 size={16}/></button>
                             </div>
