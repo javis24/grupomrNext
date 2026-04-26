@@ -31,6 +31,21 @@ const CalendarCard = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [userRole, setUserRole] = useState('');
 
+  const [darkMode, setDarkMode] = useState(false);
+
+  useEffect(() => {
+  const isDark = document.documentElement.classList.contains('dark');
+  setDarkMode(isDark);
+  
+  // Opcional: Escuchar cambios en tiempo real si el usuario switchea desde el sidebar
+  const observer = new MutationObserver(() => {
+    setDarkMode(document.documentElement.classList.contains('dark'));
+  });
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+  
+  return () => observer.disconnect();
+}, []);
+
 const fetchData = useCallback(async () => {
     setLoading(true);
     try {
@@ -185,106 +200,153 @@ const fetchData = useCallback(async () => {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row p-2 md:p-6 bg-[#0e1624] gap-6 min-h-screen text-white font-sans">
+    /* 1. CONTENEDOR PRINCIPAL: Adaptable */
+    <div className="flex flex-col lg:flex-row p-2 md:p-6 bg-gray-50 dark:bg-[#0e1624] gap-6 min-h-screen text-gray-900 dark:text-white font-sans transition-colors duration-300">
+      
       <div className="w-full lg:w-7/12 space-y-6">
-        <div className="bg-[#1f2937] p-4 rounded-xl border border-gray-700 shadow-xl">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">📅 Calendario de Actividades</h2>
-          <Suspense fallback={<div className="h-64 animate-pulse bg-gray-700 rounded-lg"></div>}>
-            <Calendar onChange={setDate} value={date} locale="es-ES" className="w-full rounded-lg border-none text-black shadow-inner" />
+        
+        {/* 2. CARD CALENDARIO */}
+        <div className="bg-white dark:bg-[#1f2937] p-4 rounded-xl border border-gray-200 dark:border-gray-700 shadow-xl transition-colors">
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-gray-800 dark:text-white">📅 Calendario de Actividades</h2>
+          <Suspense fallback={<div className="h-64 animate-pulse bg-gray-200 dark:bg-gray-700 rounded-lg"></div>}>
+            {/* El calendario requiere clases adicionales en tu CSS para que los textos no se pierdan en blanco */}
+            <Calendar 
+              onChange={setDate} 
+              value={date} 
+              locale="es-ES" 
+              className="w-full rounded-lg border-none shadow-inner bg-white dark:bg-gray-800 dark:text-white" 
+            />
           </Suspense>
         </div>
 
-        <div className="bg-[#1f2937] p-6 rounded-xl border border-gray-700 shadow-lg">
-          <h3 className="text-lg font-semibold mb-4 text-blue-400">
+        {/* 3. CARD FORMULARIO (NUEVA CITA) */}
+        <div className="bg-white dark:bg-[#1f2937] p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg transition-colors">
+          <h3 className="text-lg font-semibold mb-4 text-blue-600 dark:text-blue-400">
             {editingAppointment ? '✏️ Modificar Cita' : '➕ Nueva Cita'}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex flex-col relative">
-              <label className="text-[10px] font-black text-gray-500 uppercase ml-1 mb-1">Cliente</label>
-              <input type="text" value={clientName} onChange={(e) => setClientName(e.target.value)} onFocus={() => clientName.length >= 2 && setShowSuggestions(true)} onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} className="bg-[#374151] border border-gray-600 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500" />
+              <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-1 mb-1">Cliente</label>
+              <input 
+                type="text" 
+                value={clientName} 
+                onChange={(e) => setClientName(e.target.value)} 
+                onFocus={() => clientName.length >= 2 && setShowSuggestions(true)} 
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)} 
+                className="bg-gray-50 dark:bg-[#374151] border border-gray-300 dark:border-gray-600 rounded-lg p-3 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" 
+              />
               {showSuggestions && (
-                <ul className="absolute z-50 w-full top-full mt-1 bg-[#1f2937] border border-gray-600 rounded-lg shadow-2xl max-h-40 overflow-y-auto">
-                  {clientSuggestions.map(c => <li key={c.id} onClick={() => { setClientName(c.fullName); setShowSuggestions(false); }} className="p-2 hover:bg-blue-600 cursor-pointer text-sm border-b border-gray-700 uppercase">{c.fullName}</li>)}
+                <ul className="absolute z-50 w-full top-full mt-1 bg-white dark:bg-[#1f2937] border border-gray-200 dark:border-gray-600 rounded-lg shadow-2xl max-h-40 overflow-y-auto">
+                  {clientSuggestions.map(c => (
+                    <li key={c.id} onClick={() => { setClientName(c.fullName); setShowSuggestions(false); }} className="p-2 hover:bg-blue-600 hover:text-white cursor-pointer text-sm border-b border-gray-100 dark:border-gray-700 uppercase text-gray-700 dark:text-gray-200">
+                      {c.fullName}
+                    </li>
+                  ))}
                 </ul>
               )}
             </div>
+
             <div className="flex flex-col">
-              <label className="text-[10px] font-black text-gray-500 uppercase ml-1 mb-1">Asesor</label>
-              <select value={selectedUser} onChange={(e) => setSelectedUser(e.target.value)} className="bg-[#374151] border border-gray-600 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500">
+              <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-1 mb-1">Asesor</label>
+              <select 
+                value={selectedUser} 
+                onChange={(e) => setSelectedUser(e.target.value)} 
+                className="bg-gray-50 dark:bg-[#374151] border border-gray-300 dark:border-gray-600 rounded-lg p-3 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+              >
                 <option value="">Seleccionar...</option>
                 {users.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
               </select>
             </div>
+
             <div className="flex flex-col">
-                <label className="text-[10px] font-black text-gray-500 uppercase ml-1 mb-1">Horario</label>
-                <input type="time" value={appointmentTime} onChange={(e) => setAppointmentTime(e.target.value)} className="bg-[#374151] border border-gray-600 rounded-lg p-3 text-white" />
+                <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-1 mb-1">Horario</label>
+                <input 
+                  type="time" 
+                  value={appointmentTime} 
+                  onChange={(e) => setAppointmentTime(e.target.value)} 
+                  className="bg-gray-50 dark:bg-[#374151] border border-gray-300 dark:border-gray-600 rounded-lg p-3 text-gray-900 dark:text-white" 
+                />
             </div>
+
             <div className="flex flex-col">
-                <label className="text-[10px] font-black text-gray-500 uppercase ml-1 mb-1">Status</label>
-                <input type="text" value={clientStatus} onChange={(e) => setClientStatus(e.target.value)} className="bg-[#374151] border border-gray-600 rounded-lg p-3 outline-none focus:ring-2 focus:ring-blue-500" />
+                <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-1 mb-1">Status</label>
+                <input 
+                  type="text" 
+                  value={clientStatus} 
+                  onChange={(e) => setClientStatus(e.target.value)} 
+                  className="bg-gray-50 dark:bg-[#374151] border border-gray-300 dark:border-gray-600 rounded-lg p-3 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" 
+                />
             </div>
+
             <div className="flex flex-col md:col-span-2">
-                <label className="text-[10px] font-black text-gray-500 uppercase ml-1 mb-1">Notas</label>
-                <textarea value={comments} onChange={(e) => setComments(e.target.value)} className="bg-[#374151] border border-gray-600 rounded-lg p-3 outline-none h-20 resize-none" />
+                <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-1 mb-1">Notas</label>
+                <textarea 
+                  value={comments} 
+                  onChange={(e) => setComments(e.target.value)} 
+                  className="bg-gray-50 dark:bg-[#374151] border border-gray-300 dark:border-gray-600 rounded-lg p-3 text-gray-900 dark:text-white outline-none h-20 resize-none" 
+                />
             </div>
             
             <div className="md:col-span-2 flex flex-col gap-2">
               <button 
                 onClick={handleSaveAppointment} 
-                className={`p-3 rounded-lg font-bold transition-all ${editingAppointment ? 'bg-yellow-500 text-black hover:bg-yellow-600' : 'bg-blue-600 hover:bg-blue-700'}`}
+                className={`p-3 rounded-lg font-bold transition-all shadow-md ${editingAppointment ? 'bg-yellow-500 text-black hover:bg-yellow-600' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
               >
                 {editingAppointment ? 'Guardar Cambios' : 'Confirmar Cita'}
               </button>
               {editingAppointment && (
-                <button onClick={resetForm} className="text-gray-400 hover:text-white underline text-sm">Cancelar Edición</button>
+                <button onClick={resetForm} className="text-gray-500 dark:text-gray-400 hover:text-red-500 underline text-sm transition-colors">Cancelar Edición</button>
               )}
             </div>
           </div>
         </div>
       </div>
 
+      {/* 4. SECCIÓN PRÓXIMAS CITAS */}
       <div className="w-full lg:w-5/12">
-        <div className="bg-[#1f2937] p-4 rounded-xl border border-gray-700 h-full max-h-[85vh] overflow-hidden flex flex-col shadow-2xl">
-          <h2 className="text-xl font-bold mb-4">Próximas Citas</h2>
+        <div className="bg-white dark:bg-[#1f2937] p-4 rounded-xl border border-gray-200 dark:border-gray-700 h-full max-h-[85vh] overflow-hidden flex flex-col shadow-2xl transition-colors">
+          <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-white">Próximas Citas</h2>
           <div className="space-y-4 overflow-y-auto pr-2 flex-1 custom-scrollbar">
             {appointments.length === 0 ? (
-                <div className="text-center py-10 text-gray-500 italic text-sm border border-dashed border-gray-700 rounded-lg">No hay citas registradas.</div>
+                <div className="text-center py-10 text-gray-400 italic text-sm border border-dashed border-gray-300 dark:border-gray-700 rounded-lg">No hay citas registradas.</div>
             ) : [...appointments].reverse().map(appo => (
-              <div key={appo.id} className="p-4 bg-[#2d3748] rounded-lg border-l-4 border-blue-500 group shadow-md transition-all hover:bg-[#323d4e]">
+              /* ITEM DE CITA */
+              <div key={appo.id} className="p-4 bg-gray-50 dark:bg-[#2d3748] rounded-lg border-l-4 border-blue-500 group shadow-md transition-all hover:bg-blue-50 dark:hover:bg-[#323d4e]">
                 <div className="flex justify-between items-start">
                   <div>
                     <div className="flex items-center gap-2">
-                        <p className="text-xs text-blue-400 font-bold">{format(new Date(appo.date), "eeee d 'de' MMMM", { locale: es })}</p>
-                        {appo.appointmentTime && <span className="text-[10px] bg-blue-600/30 text-blue-300 px-2 rounded">🕒 {appo.appointmentTime}</span>}
+                        <p className="text-xs text-blue-600 dark:text-blue-400 font-bold">{format(new Date(appo.date), "eeee d 'de' MMMM", { locale: es })}</p>
+                        {appo.appointmentTime && <span className="text-[10px] bg-blue-100 dark:bg-blue-600/30 text-blue-700 dark:text-blue-300 px-2 rounded font-bold">🕒 {appo.appointmentTime}</span>}
                     </div>
-                    <h4 className="font-bold text-lg mt-1 uppercase leading-tight">{appo.clientName}</h4>
-                    <p className="text-xs text-gray-400">👤 {appo.assignedUser?.name || 'Sin asesor'}</p>
-                    {appo.comments && <p className="text-[11px] text-gray-500 mt-2 italic line-clamp-2">"{appo.comments}"</p>}
+                    <h4 className="font-bold text-lg mt-1 uppercase leading-tight text-gray-900 dark:text-white">{appo.clientName}</h4>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">👤 {appo.assignedUser?.name || 'Sin asesor'}</p>
+                    {appo.comments && <p className="text-[11px] text-gray-600 dark:text-gray-500 mt-2 italic line-clamp-2">"{appo.comments}"</p>}
                   </div>
-                  <span className="text-[9px] uppercase font-black bg-gray-900 px-2 py-1 rounded text-blue-300 border border-blue-500/30">{appo.clientStatus}</span>
+                  <span className="text-[9px] uppercase font-black bg-white dark:bg-gray-900 px-2 py-1 rounded text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30">{appo.clientStatus}</span>
                 </div>
                 
-                <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-gray-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => loadToEdit(appo)} className="text-[10px] text-yellow-500 font-bold uppercase hover:underline">Editar</button>
-                  <button onClick={() => handleDeleteAppointment(appo.id)} className="text-[10px] text-red-500 font-bold uppercase hover:underline">Eliminar</button>
-                  <button onClick={() => exportToPDF(appo)} className="text-[10px] text-blue-500 font-bold uppercase hover:underline">PDF</button>
+                {/* ACCIONES (OPACIDAD ADAPTABLE) */}
+                <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-gray-200 dark:border-gray-600 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => loadToEdit(appo)} className="text-[10px] text-yellow-600 dark:text-yellow-500 font-bold uppercase hover:underline">Editar</button>
+                  <button onClick={() => handleDeleteAppointment(appo.id)} className="text-[10px] text-red-600 dark:text-red-500 font-bold uppercase hover:underline">Eliminar</button>
+                  <button onClick={() => exportToPDF(appo)} className="text-[10px] text-blue-600 dark:text-blue-500 font-bold uppercase hover:underline">PDF</button>
 
                   {appo.datosCliente?.contactPhone && (
                     <a 
                         href={`https://wa.me/52${appo.datosCliente.contactPhone.replace(/\D/g, '')}?text=Hola%20${encodeURIComponent(appo.clientName)}...`} 
                         target="_blank" 
-                        className="text-[10px] text-green-400 font-bold uppercase hover:underline"
+                        className="text-[10px] text-green-600 dark:text-green-400 font-bold uppercase hover:underline"
                     >WhatsApp</a>
                   )}
 
                   <button 
                     onClick={() => router.push({ pathname: '/prospectos', query: { name: appo.clientName, phone: appo.datosCliente?.contactPhone || '' } })}
-                    className="text-[10px] bg-purple-600/20 text-purple-400 border border-purple-500/30 px-2 py-0.5 rounded hover:bg-purple-600 hover:text-white transition-all font-bold uppercase"
+                    className="text-[10px] bg-purple-100 dark:bg-purple-600/20 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-500/30 px-2 py-0.5 rounded hover:bg-purple-600 hover:text-white transition-all font-bold uppercase"
                   >+ Prospecto</button>
 
                   <button 
                     onClick={() => router.push({ pathname: '/cotizacion', query: { client: appo.clientName, phone: appo.datosCliente?.contactPhone || '' } })}
-                    className="text-[10px] bg-orange-600/20 text-orange-400 border border-orange-500/30 px-2 py-0.5 rounded hover:bg-orange-600 hover:text-white transition-all font-bold uppercase"
+                    className="text-[10px] bg-orange-100 dark:bg-orange-600/20 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-500/30 px-2 py-0.5 rounded hover:bg-orange-600 hover:text-white transition-all font-bold uppercase"
                   >+ Cotizar</button>
                 </div>
               </div>
@@ -292,9 +354,10 @@ const fetchData = useCallback(async () => {
           </div>
         </div>
       </div>
-      <ToastContainer theme="dark" position="bottom-right" />
+      <ToastContainer theme={darkMode ? "dark" : "light"} position="bottom-right" />
     </div>
   );
-};
+
+}
 
 export default CalendarCard;
