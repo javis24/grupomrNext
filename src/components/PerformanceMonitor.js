@@ -194,19 +194,20 @@ const AdvisorReports = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0e1624] text-white font-sans flex flex-col lg:flex-row">
-      <ToastContainer theme="dark" />
+    /* 1. CONTENEDOR PRINCIPAL: Adaptable */
+    <div className="min-h-screen bg-gray-50 dark:bg-[#0e1624] text-gray-900 dark:text-white font-sans flex flex-col lg:flex-row transition-colors duration-300">
+      <ToastContainer theme="colored" />
       
-      {/* SIDEBAR */}
-      <aside className="w-full lg:w-72 bg-[#1f2937] border-b lg:border-r border-gray-800 lg:h-screen sticky top-0 z-30 flex flex-col">
-        <div className="p-6 hidden lg:flex items-center gap-3 border-b border-gray-800 text-white">
-          <div className="p-2 bg-blue-500/20 rounded-lg text-blue-500"><FiBriefcase size={20}/></div>
+      {/* SIDEBAR INTERNO */}
+      <aside className="w-full lg:w-72 bg-white dark:bg-[#1f2937] border-b lg:border-r border-gray-200 dark:border-gray-800 lg:h-screen sticky top-0 z-30 flex flex-col shadow-sm">
+        <div className="p-6 hidden lg:flex items-center gap-3 border-b border-gray-100 dark:border-gray-800 text-gray-800 dark:text-white">
+          <div className="p-2 bg-blue-500/10 rounded-lg text-blue-600 dark:text-blue-500"><FiBriefcase size={20}/></div>
           <h2 className="font-black uppercase tracking-tighter text-lg italic">Admin Hub</h2>
         </div>
         <nav className="p-4 flex lg:flex-col gap-2 overflow-x-auto no-scrollbar">
           {reportTypes.map((item) => (
             <button key={item.id} onClick={() => setActiveTab(item.id)}
-              className={`flex items-center gap-3 px-5 py-3 rounded-xl transition-all whitespace-nowrap text-[10px] font-black uppercase tracking-[0.1em] flex-shrink-0 ${activeTab === item.id ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-400 hover:bg-gray-800'}`}>
+              className={`flex items-center gap-3 px-5 py-3 rounded-xl transition-all whitespace-nowrap text-[10px] font-black uppercase tracking-[0.1em] flex-shrink-0 ${activeTab === item.id ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}>
               <span className="text-lg">{item.icon}</span> <span>{item.label}</span>
             </button>
           ))}
@@ -215,20 +216,20 @@ const AdvisorReports = () => {
 
       <main className="flex-1 p-4 md:p-8 space-y-6 overflow-y-auto">
         {/* BARRA FILTROS */}
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 bg-[#1f2937] p-6 rounded-[2.5rem] border border-gray-800 shadow-2xl">
+        <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 bg-white dark:bg-[#1f2937] p-6 rounded-[2.5rem] border border-gray-200 dark:border-gray-800 shadow-xl transition-colors">
           <div className="relative xl:col-span-2">
-            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
-            <input type="text" placeholder="Buscar registros..." className="w-full bg-[#0e1624] border border-gray-700 rounded-2xl p-4 pl-12 text-sm outline-none focus:border-blue-500 transition-all text-white" value={searchTerm} onChange={(e)=>setSearchTerm(e.target.value)} />
+            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input type="text" placeholder="Buscar registros..." className="w-full bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 pl-12 text-sm outline-none focus:border-blue-500 transition-all text-gray-900 dark:text-white" value={searchTerm} onChange={(e)=>setSearchTerm(e.target.value)} />
           </div>
-          <select value={selectedAdvisor} onChange={(e)=>setSelectedAdvisor(e.target.value)} className="bg-[#0e1624] border border-gray-700 rounded-2xl p-4 text-sm text-gray-300 outline-none focus:border-blue-500 cursor-pointer">
+          <select value={selectedAdvisor} onChange={(e)=>setSelectedAdvisor(e.target.value)} className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-700 dark:text-gray-300 outline-none focus:border-blue-500 cursor-pointer">
             <option value="all">📊 Todos los Asesores</option>
             {advisors.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
           </select>
           <div className="xl:col-span-2 flex gap-3">
-            <button onClick={fetchData} className="flex-1 bg-gray-800 hover:bg-gray-700 p-4 rounded-2xl text-blue-500 flex items-center justify-center gap-3 text-[10px] font-black uppercase transition-all border border-gray-700">
+            <button onClick={fetchData} className="flex-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 p-4 rounded-2xl text-blue-600 dark:text-blue-500 flex items-center justify-center gap-3 text-[10px] font-black uppercase transition-all border border-gray-200 dark:border-gray-700">
               <FiRefreshCw className={isLoading ? "animate-spin" : ""}/> Sync
             </button>
-            <button onClick={() => handleExportPDF(true)} className="flex-1 bg-red-600/10 hover:bg-red-600/20 p-4 rounded-2xl text-red-500 flex items-center justify-center gap-3 text-[10px] font-black uppercase border border-red-500/20 shadow-lg">
+            <button onClick={() => handleExportPDF(true)} className="flex-1 bg-red-50 dark:bg-red-600/10 hover:bg-red-100 dark:hover:bg-red-600/20 p-4 rounded-2xl text-red-600 dark:text-red-500 flex items-center justify-center gap-3 text-[10px] font-black uppercase border border-red-200 dark:border-red-500/20 shadow-lg">
               <FiDownload size={18}/> PDF
             </button>
           </div>
@@ -237,28 +238,29 @@ const AdvisorReports = () => {
         {/* SECCIÓN DE GRÁFICAS */}
         {(activeTab === 'clientes' || activeTab === 'ventas') && chartData.units.length > 0 && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in zoom-in duration-500">
-            <div className="bg-[#1f2937] p-6 rounded-[2.5rem] border border-gray-800 shadow-xl">
-              <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-6 flex items-center gap-2"><FiPieChart/> Venta por Planta</h4>
+            <div className="bg-white dark:bg-[#1f2937] p-6 rounded-[2.5rem] border border-gray-200 dark:border-gray-800 shadow-xl">
+              <h4 className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-6 flex items-center gap-2"><FiPieChart/> Venta por Planta</h4>
               <div className="h-[250px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie data={chartData.units} dataKey="total" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
                       {chartData.units.map((entry, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
                     </Pie>
-                    <Tooltip contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '10px', fontSize: '10px' }} />
-                    <Legend verticalAlign="bottom" wrapperStyle={{ fontSize: '10px', textTransform: 'uppercase' }}/>
+                    <Tooltip contentStyle={{ backgroundColor: '#ffffff', color: '#000000', border: '1px solid #e2e8f0', borderRadius: '10px', fontSize: '10px' }} 
+                             itemStyle={{ color: '#000000' }} />
+                    <Legend verticalAlign="bottom" wrapperStyle={{ fontSize: '10px', textTransform: 'uppercase', color: '#64748b' }}/>
                   </PieChart>
                 </ResponsiveContainer>
               </div>
             </div>
-            <div className="bg-[#1f2937] p-6 rounded-[2.5rem] border border-gray-800 shadow-xl">
-              <h4 className="text-[10px] font-black text-green-400 uppercase tracking-widest mb-6 flex items-center gap-2"><FiBarChart2/> Top 5 Productos</h4>
+            <div className="bg-white dark:bg-[#1f2937] p-6 rounded-[2.5rem] border border-gray-200 dark:border-gray-800 shadow-xl">
+              <h4 className="text-[10px] font-black text-green-600 dark:text-green-400 uppercase tracking-widest mb-6 flex items-center gap-2"><FiBarChart2/> Top 5 Productos</h4>
               <div className="h-[250px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData.products} layout="vertical" margin={{ left: 30, right: 30 }}>
                     <XAxis type="number" hide />
-                    <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 9, fill: '#9ca3af', fontWeight: 'bold' }} />
-                    <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '10px', fontSize: '10px' }} />
+                    <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} />
+                    <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '10px', fontSize: '10px' }} />
                     <Bar dataKey="total" fill="#3b82f6" radius={[0, 10, 10, 0]} barSize={20}>
                         {chartData.products.map((entry, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
                     </Bar>
@@ -270,18 +272,18 @@ const AdvisorReports = () => {
         )}
 
         {/* TABLA PRINCIPAL */}
-        <div className="bg-[#1f2937] rounded-[2.5rem] border border-gray-800 shadow-2xl overflow-hidden">
-          <div className="p-8 bg-gray-800/20 border-b border-gray-800 flex justify-between items-center">
+        <div className="bg-white dark:bg-[#1f2937] rounded-[2.5rem] border border-gray-200 dark:border-gray-800 shadow-2xl overflow-hidden transition-colors">
+          <div className="p-8 bg-gray-50 dark:bg-gray-800/20 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
             <div>
-                <h3 className="text-2xl font-black uppercase italic tracking-tighter text-white">Listado de {activeTab}</h3>
-                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">{filteredData.length} Registros</p>
+                <h3 className="text-2xl font-black uppercase italic tracking-tighter text-gray-800 dark:text-white">Listado de {activeTab}</h3>
+                <p className="text-[10px] text-gray-400 dark:text-gray-500 font-bold uppercase tracking-widest mt-1">{filteredData.length} Registros</p>
             </div>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="text-[10px] text-gray-400 uppercase tracking-[0.2em] bg-[#0e1624]/40">
+                <tr className="text-[10px] text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em] bg-gray-50 dark:bg-[#0e1624]/40">
                   <th className="px-8 py-5">Fecha / Antigüedad</th>
                   <th className="px-8 py-5">Asesor</th>
                   <th className="px-8 py-5">Empresa / Concepto</th>
@@ -289,38 +291,38 @@ const AdvisorReports = () => {
                   <th className="px-8 py-5 text-right">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-800/50">
+              <tbody className="divide-y divide-gray-100 dark:divide-gray-800/50">
                 {isLoading ? (
-                  <tr><td colSpan="5" className="py-32 text-center animate-pulse italic text-gray-700 uppercase font-black">Sincronizando...</td></tr>
+                  <tr><td colSpan="5" className="py-32 text-center animate-pulse italic text-gray-400 uppercase font-black">Sincronizando...</td></tr>
                 ) : paginatedData.map((item) => (
-                  <tr key={item.id} className="hover:bg-white/5 transition-colors group">
+                  <tr key={item.id} className="hover:bg-blue-50 dark:hover:bg-white/5 transition-colors group">
                     <td className="px-8 py-6">
-                      <p className="text-sm font-bold text-gray-200">{safeFormatDate(item.createdAt || item.date || item.fechaOperacion || item.incidentDate)}</p>
-                      {activeTab === 'clientes' && <span className="text-[10px] text-blue-500 font-black flex items-center gap-1 mt-1 font-mono uppercase tracking-tighter"><FiClock/> {item.antigüedad}</span>}
+                      <p className="text-sm font-bold text-gray-700 dark:text-gray-200">{safeFormatDate(item.createdAt || item.date || item.fechaOperacion || item.incidentDate)}</p>
+                      {activeTab === 'clientes' && <span className="text-[10px] text-blue-600 dark:text-blue-500 font-black flex items-center gap-1 mt-1 font-mono uppercase tracking-tighter"><FiClock/> {item.antigüedad}</span>}
                     </td>
                     <td className="px-8 py-6">
-                       <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-blue-500/10 rounded-xl flex items-center justify-center text-[10px] text-blue-500 font-black border border-blue-500/20 uppercase">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 bg-blue-100 dark:bg-blue-500/10 rounded-xl flex items-center justify-center text-[10px] text-blue-600 dark:text-blue-500 font-black border border-blue-200 dark:border-blue-500/20 uppercase">
                             {(advisors.find(a => a.id === (item.userId || item.assignedTo))?.name?.substring(0,2) || "S").toUpperCase()}
                           </div>
-                          <span className="text-sm font-bold text-gray-300">{advisors.find(a => a.id === (item.userId || item.assignedTo))?.name || 'Sistema'}</span>
-                       </div>
+                          <span className="text-sm font-bold text-gray-600 dark:text-gray-300">{advisors.find(a => a.id === (item.userId || item.assignedTo))?.name || 'Sistema'}</span>
+                        </div>
                     </td>
                     <td className="px-8 py-6">
-                      <p className="text-sm font-black uppercase text-white truncate max-w-[280px]">
+                      <p className="text-sm font-black uppercase text-gray-800 dark:text-white truncate max-w-[280px]">
                         {item.companyName || item.fullName || item.title || item.concepto || item.clientName}
                       </p>
                       {activeTab === 'clientes' && (
-                        <p className="text-[10px] font-black text-green-500 mt-1 uppercase tracking-widest">Total Ventas: ${item.ventaTotal?.toLocaleString('es-MX')}</p>
+                        <p className="text-[10px] font-black text-green-600 dark:text-green-500 mt-1 uppercase tracking-widest">Total Ventas: ${item.ventaTotal?.toLocaleString('es-MX')}</p>
                       )}
                     </td>
                     <td className="px-8 py-6 text-center">
-                      <span className={`px-4 py-1.5 text-[9px] font-black uppercase rounded-lg border ${ (item.status === 'Aprobado' || item.saleProcess === 'Cerrado') ? 'bg-green-500/10 text-green-500 border-green-500/30' : 'bg-blue-500/10 text-blue-400 border-blue-500/30'}`}>
+                      <span className={`px-4 py-1.5 text-[9px] font-black uppercase rounded-lg border ${ (item.status === 'Aprobado' || item.saleProcess === 'Cerrado') ? 'bg-green-100 dark:bg-green-500/10 text-green-700 dark:text-green-500 border-green-200 dark:border-green-500/30' : 'bg-blue-100 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/30'}`}>
                         {item.status || item.clientStatus || item.saleProcess || 'Activo'}
                       </span>
                     </td>
                     <td className="px-8 py-6 text-right">
-                      <button onClick={()=>handleExportPDF(false, item)} className="p-3 bg-[#0e1624] rounded-2xl text-gray-500 hover:text-red-500 border border-gray-800 transition-all hover:scale-110 shadow-lg">
+                      <button onClick={()=>handleExportPDF(false, item)} className="p-3 bg-gray-50 dark:bg-[#0e1624] rounded-2xl text-gray-400 hover:text-red-600 dark:hover:text-red-500 border border-gray-200 dark:border-gray-800 transition-all hover:scale-110 shadow-sm">
                         <FiFileText size={18} />
                       </button>
                     </td>
@@ -331,16 +333,17 @@ const AdvisorReports = () => {
           </div>
           
           {filteredData.length > itemsPerPage && (
-            <div className="p-6 bg-[#0e1624]/20 border-t border-gray-800 flex justify-between items-center">
-               <button disabled={currentPage === 1} onClick={() => {setCurrentPage(p => p - 1); window.scrollTo({top:0, behavior:'smooth'})}} className="p-2.5 bg-gray-800 rounded-xl disabled:opacity-20 text-white hover:bg-blue-600 transition-all"><FiChevronLeft/></button>
-               <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest italic">Página {currentPage} de {totalPages}</span>
-               <button disabled={currentPage === totalPages} onClick={() => {setCurrentPage(p => p + 1); window.scrollTo({top:0, behavior:'smooth'})}} className="p-2.5 bg-gray-800 rounded-xl disabled:opacity-20 text-white hover:bg-blue-600 transition-all"><FiChevronRight/></button>
+            <div className="p-6 bg-gray-50 dark:bg-[#0e1624]/20 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                <button disabled={currentPage === 1} onClick={() => {setCurrentPage(p => p - 1); window.scrollTo({top:0, behavior:'smooth'})}} className="p-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl disabled:opacity-20 text-gray-600 dark:text-white hover:bg-blue-600 hover:text-white transition-all"><FiChevronLeft/></button>
+                <span className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-widest italic">Página {currentPage} de {totalPages}</span>
+                <button disabled={currentPage === totalPages} onClick={() => {setCurrentPage(p => p + 1); window.scrollTo({top:0, behavior:'smooth'})}} className="p-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl disabled:opacity-20 text-gray-600 dark:text-white hover:bg-blue-600 hover:text-white transition-all"><FiChevronRight/></button>
             </div>
           )}
         </div>
       </main>
     </div>
   );
+
 };
 
 export default AdvisorReports;
