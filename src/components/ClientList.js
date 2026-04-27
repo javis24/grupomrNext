@@ -181,22 +181,22 @@ export default function ClientList() {
         </div>
     );
 
-    return (
-        <div className="p-4 md:p-8 bg-[#0e1624] min-h-screen text-white font-sans">
-            <ToastContainer theme="dark" />
+ return (
+        <div className="p-4 md:p-8 bg-gray-50 dark:bg-[#0e1624] min-h-screen text-gray-900 dark:text-white font-sans transition-colors duration-300">
+            <ToastContainer theme="colored" />
             
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
                 <div className="flex items-center gap-4">
                     {view === 'listado' && (
-                        <button onClick={() => setView('unidades')} className="bg-[#1f2937] p-3 rounded-2xl hover:bg-blue-600 transition-all border border-gray-700">
+                        <button onClick={() => setView('unidades')} className="bg-white dark:bg-[#1f2937] p-3 rounded-2xl hover:bg-blue-600 hover:text-white transition-all border border-gray-200 dark:border-gray-700 shadow-sm">
                             <FiArrowLeft size={20} />
                         </button>
                     )}
-                    <h1 className="text-3xl md:text-5xl font-black uppercase italic tracking-tighter">
+                    <h1 className="text-3xl md:text-5xl font-black uppercase italic tracking-tighter text-gray-800 dark:text-white">
                         {view === 'unidades' ? 'Cartera de Clientes' : selectedUnit}
                     </h1>
                 </div>
-                <button onClick={() => openModal()} className="bg-blue-600 hover:bg-blue-500 px-6 py-3 rounded-2xl font-bold transition-all shadow-lg flex items-center gap-2">
+                <button onClick={() => openModal()} className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg flex items-center gap-2">
                     <FiPlus /> Nuevo Cliente
                 </button>
             </div>
@@ -207,48 +207,48 @@ export default function ClientList() {
                         const count = clients.filter(c => (c.planta || '').trim().toLowerCase() === u.name.toLowerCase()).length;
                         return (
                             <div key={u.name} onClick={() => { setSelectedUnit(u.name); setView('listado'); }}
-                                className="bg-[#1f2937] p-8 rounded-[2.5rem] border border-gray-700 hover:border-blue-500 cursor-pointer transition-all hover:bg-[#252f3f] group shadow-2xl relative overflow-hidden h-64 flex flex-col justify-center"
+                                className="bg-white dark:bg-[#1f2937] p-8 rounded-[2.5rem] border border-gray-200 dark:border-gray-700 hover:border-blue-500 cursor-pointer transition-all hover:translate-y-[-4px] group shadow-xl relative overflow-hidden h-64 flex flex-col justify-center"
                             >
                                 <div className={`absolute -right-10 -top-10 w-40 h-40 bg-gradient-to-br ${u.color} opacity-10 rounded-full group-hover:scale-150 transition-transform duration-700`}></div>
                                 <div className="relative z-10">
                                     <div className="w-16 h-16 mb-6 flex items-center justify-center text-6xl">
-                                        {typeof u.icon === 'string' ? u.icon : <div className="text-blue-500 scale-90">{u.icon}</div>}
+                                        {typeof u.icon === 'string' ? u.icon : <div className="text-blue-600 dark:text-blue-500 scale-90">{u.icon}</div>}
                                     </div>
-                                    <h2 className="text-3xl font-black uppercase text-white">{u.name}</h2>
+                                    <h2 className="text-3xl font-black uppercase text-gray-800 dark:text-white">{u.name}</h2>
                                     <div className="flex items-center gap-2 mt-2">
                                         <div className="h-1 w-8 bg-blue-500 rounded-full"></div>
-                                        <span className="text-blue-400 font-bold text-xs uppercase tracking-widest">{count} Registros</span>
+                                        <span className="text-blue-600 dark:text-blue-400 font-bold text-xs uppercase tracking-widest">{count} Registros</span>
                                     </div>
                                 </div>
-                                <FiChevronRight className="absolute right-8 bottom-8 text-gray-700 group-hover:text-blue-500 group-hover:translate-x-2 transition-all" size={30} />
+                                <FiChevronRight className="absolute right-8 bottom-8 text-gray-300 dark:text-gray-700 group-hover:text-blue-500 group-hover:translate-x-2 transition-all" size={30} />
                             </div>
                         );
                     })}
                 </div>
             ) : (
                 <div className="max-w-7xl mx-auto space-y-6">
-                    <div className="bg-[#1f2937] p-4 rounded-3xl border border-gray-700 flex items-center shadow-xl">
-                        <FiSearch className="text-gray-500 mx-4" size={20} />
-                        <input type="text" placeholder={`Buscar en ${selectedUnit}...`} className="bg-transparent w-full outline-none text-white" value={search} onChange={(e) => setSearch(e.target.value)} />
+                    <div className="bg-white dark:bg-[#1f2937] p-4 rounded-3xl border border-gray-200 dark:border-gray-700 flex items-center shadow-lg transition-colors">
+                        <FiSearch className="text-gray-400 dark:text-gray-500 mx-4" size={20} />
+                        <input type="text" placeholder={`Buscar en ${selectedUnit}...`} className="bg-transparent w-full outline-none text-gray-900 dark:text-white placeholder:text-gray-400" value={search} onChange={(e) => setSearch(e.target.value)} />
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {currentClients.map((client) => (
-                            <div key={client.id} className="bg-[#1f2937] rounded-[2.5rem] border border-gray-700 p-8 hover:border-blue-500/50 transition-all shadow-lg group relative">
+                            <div key={client.id} className="bg-white dark:bg-[#1f2937] rounded-[2.5rem] border border-gray-200 dark:border-gray-700 p-8 hover:border-blue-500/50 transition-all shadow-lg group relative">
                                 <div className="flex justify-between items-start mb-6">
-                                    <div className="w-14 h-14 bg-blue-600/10 rounded-2xl flex items-center justify-center text-3xl text-blue-500">👤</div>
-                                    <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">ID: {client.id}</span>
+                                    <div className="w-14 h-14 bg-blue-600/10 rounded-2xl flex items-center justify-center text-3xl text-blue-600 dark:text-blue-500">👤</div>
+                                    <span className="text-[9px] font-black text-gray-400 dark:text-gray-600 uppercase tracking-widest">ID: {client.id}</span>
                                 </div>
-                                <h3 className="text-2xl font-black uppercase truncate text-white mb-4">{client.companyName}</h3>
-                                <div className="space-y-2 mb-8 text-xs text-gray-400 border-t border-gray-800 pt-4">
+                                <h3 className="text-2xl font-black uppercase truncate text-gray-800 dark:text-white mb-4 group-hover:text-blue-600 transition-colors">{client.companyName}</h3>
+                                <div className="space-y-2 mb-8 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-100 dark:border-gray-800 pt-4">
                                     <div className="flex items-center gap-3"><FiUser className="text-blue-500" /> {client.contactName}</div>
                                     <div className="flex items-center gap-3"><FiMapPin className="text-blue-500" /> {client.address}</div>
                                 </div>
-                                <div className="grid grid-cols-3 gap-2 pt-4 border-t border-gray-800">
-                                    <button onClick={() => openModal(client)} className="bg-gray-800 hover:bg-blue-600 p-3 rounded-xl transition-all flex justify-center text-white"><FiEdit2 size={16}/></button>
-                                    <button className="bg-gray-800 hover:bg-yellow-600 p-3 rounded-xl transition-all flex justify-center text-white"><FiFileText size={16}/></button>
+                                <div className="grid grid-cols-3 gap-2 pt-4 border-t border-gray-100 dark:border-gray-800">
+                                    <button onClick={() => openModal(client)} className="bg-gray-100 dark:bg-gray-800 hover:bg-blue-600 p-3 rounded-xl transition-all flex justify-center text-gray-600 dark:text-white hover:text-white"><FiEdit2 size={16}/></button>
+                                    <button className="bg-gray-100 dark:bg-gray-800 hover:bg-yellow-600 p-3 rounded-xl transition-all flex justify-center text-gray-600 dark:text-white hover:text-white"><FiFileText size={16}/></button>
                                     {currentUser.role === 'admin' && (
-                                        <button onClick={() => handleDelete(client.id)} className="bg-gray-800 hover:bg-red-600 p-3 rounded-xl transition-all flex justify-center text-white"><FiTrash2 size={16}/></button>
+                                        <button onClick={() => handleDelete(client.id)} className="bg-gray-100 dark:bg-gray-800 hover:bg-red-600 p-3 rounded-xl transition-all flex justify-center text-gray-600 dark:text-white hover:text-white"><FiTrash2 size={16}/></button>
                                     )}
                                 </div>
                             </div>
@@ -257,74 +257,76 @@ export default function ClientList() {
 
                     {totalPages > 1 && (
                         <div className="flex justify-center items-center gap-4 mt-10">
-                            <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="bg-[#1f2937] p-3 rounded-xl disabled:opacity-20 border border-gray-700"><FiChevronLeft /></button>
-                            <span className="text-xs font-black uppercase text-gray-500">Página {currentPage} / {totalPages}</span>
-                            <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} className="bg-[#1f2937] p-3 rounded-xl disabled:opacity-20 border border-gray-700"><FiChevronRight /></button>
+                            <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="bg-white dark:bg-[#1f2937] p-3 rounded-xl disabled:opacity-20 border border-gray-200 dark:border-gray-700 shadow-sm text-gray-600 dark:text-white"><FiChevronLeft /></button>
+                            <span className="text-xs font-black uppercase text-gray-400 dark:text-gray-500">Página {currentPage} / {totalPages}</span>
+                            <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} className="bg-white dark:bg-[#1f2937] p-3 rounded-xl disabled:opacity-20 border border-gray-200 dark:border-gray-700 shadow-sm text-gray-600 dark:text-white"><FiChevronRight /></button>
                         </div>
                     )}
                 </div>
             )}
 
             <Modal isOpen={modalIsOpen} onRequestClose={closeModal} style={customStyles}>
-                <div className="flex justify-between items-center mb-6 border-b border-gray-800 pb-4">
-                    <h2 className="text-2xl font-black uppercase italic">{selectedClient ? '✏️ Editar' : '🚀 Nuevo'} Cliente</h2>
-                    <button onClick={closeModal} className="text-gray-400 hover:text-white"><FiX size={28} /></button>
-                </div>
+                <div className="bg-white dark:bg-[#1f2937] p-8 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-2xl transition-colors max-h-[90vh] overflow-hidden flex flex-col">
+                    <div className="flex justify-between items-center mb-6 border-b border-gray-100 dark:border-gray-800 pb-4">
+                        <h2 className="text-2xl font-black uppercase italic text-blue-600 dark:text-blue-500">{selectedClient ? '✏️ Editar' : '🚀 Nuevo'} Cliente</h2>
+                        <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 dark:hover:text-white transition-colors"><FiX size={28} /></button>
+                    </div>
 
-                <form onSubmit={handleSubmit} className="overflow-y-auto max-h-[70vh] pr-2 custom-scrollbar">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div className="space-y-4">
-                            <h3 className="text-blue-500 text-[10px] font-black uppercase tracking-widest">Empresa</h3>
-                            <ModalInput label="Razón Social" value={newClient.fullName} onChange={(v) => setNewClient({...newClient, fullName: v})} required />
-                            <ModalInput label="Nombre Comercial" value={newClient.companyName} onChange={(v) => setNewClient({...newClient, companyName: v})} required />
-                            <ModalInput label="Giro" value={newClient.businessTurn} onChange={(v) => setNewClient({...newClient, businessTurn: v})} required />
-                            <ModalInput label="Dirección" value={newClient.address} onChange={(v) => setNewClient({...newClient, address: v})} required />
-                        </div>
+                    <form onSubmit={handleSubmit} className="overflow-y-auto pr-2 custom-scrollbar space-y-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div className="space-y-4">
+                                <h3 className="text-blue-600 dark:text-blue-500 text-[10px] font-black uppercase tracking-widest border-l-4 border-blue-500 pl-2">Empresa</h3>
+                                <ModalInput label="Razón Social" value={newClient.fullName} onChange={(v) => setNewClient({...newClient, fullName: v})} required />
+                                <ModalInput label="Nombre Comercial" value={newClient.companyName} onChange={(v) => setNewClient({...newClient, companyName: v})} required />
+                                <ModalInput label="Giro" value={newClient.businessTurn} onChange={(v) => setNewClient({...newClient, businessTurn: v})} required />
+                                <ModalInput label="Dirección" value={newClient.address} onChange={(v) => setNewClient({...newClient, address: v})} required />
+                            </div>
 
-                        <div className="space-y-4">
-                            <h3 className="text-green-500 text-[10px] font-black uppercase tracking-widest">Contacto</h3>
-                            <ModalInput label="Nombre Contacto" value={newClient.contactName} onChange={(v) => setNewClient({...newClient, contactName: v})} />
-                            <ModalInput label="Cargo" value={newClient.position} onChange={(v) => setNewClient({...newClient, position: v})} />
-                            <ModalInput label="Email" type="email" value={newClient.email} onChange={(v) => setNewClient({...newClient, email: v})} />
-                            
-                            <div className="grid grid-cols-2 gap-2">
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase ml-1">Vendedor</label>
-                                    <select 
-                                        disabled={currentUser.role !== 'admin'}
-                                        value={newClient.assignedUser} 
-                                        onChange={(e) => setNewClient({...newClient, assignedUser: e.target.value})}
-                                        className="bg-[#0e1624] border border-gray-700 rounded-xl p-3 text-sm text-white"
-                                    >
-                                        <option value="">Seleccionar...</option>
-                                        {activeUsers.map(u => <option key={u.id} value={u.email}>{u.name}</option>)}
-                                    </select>
+                            <div className="space-y-4">
+                                <h3 className="text-green-600 dark:text-green-500 text-[10px] font-black uppercase tracking-widest border-l-4 border-green-500 pl-2">Contacto</h3>
+                                <ModalInput label="Nombre Contacto" value={newClient.contactName} onChange={(v) => setNewClient({...newClient, contactName: v})} />
+                                <ModalInput label="Cargo" value={newClient.position} onChange={(v) => setNewClient({...newClient, position: v})} />
+                                <ModalInput label="Email" type="email" value={newClient.email} onChange={(v) => setNewClient({...newClient, email: v})} />
+                                
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase ml-1">Vendedor</label>
+                                        <select 
+                                            disabled={currentUser.role !== 'admin'}
+                                            value={newClient.assignedUser} 
+                                            onChange={(e) => setNewClient({...newClient, assignedUser: e.target.value})}
+                                            className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20"
+                                        >
+                                            <option value="">Seleccionar...</option>
+                                            {activeUsers.map(u => <option key={u.id} value={u.email}>{u.name}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="flex flex-col gap-1">
+                                        <label className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase ml-1">Planta</label>
+                                        <select value={newClient.planta} onChange={(e) => setNewClient({...newClient, planta: e.target.value})} className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20">
+                                            <option value="">Planta...</option>
+                                            {unidadesNegocio.map(u => <option key={u.name} value={u.name}>{u.name}</option>)}
+                                        </select>
+                                    </div>
                                 </div>
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase ml-1">Planta</label>
-                                    <select value={newClient.planta} onChange={(e) => setNewClient({...newClient, planta: e.target.value})} className="bg-[#0e1624] border border-gray-700 rounded-xl p-3 text-sm text-white">
-                                        <option value="">Planta...</option>
-                                        {unidadesNegocio.map(u => <option key={u.name} value={u.name}>{u.name}</option>)}
-                                    </select>
-                                </div>
+                            </div>
+
+                            <div className="space-y-4 bg-gray-50 dark:bg-gray-800/20 p-4 rounded-2xl border border-gray-100 dark:border-gray-700 transition-colors">
+                                <h3 className="text-yellow-600 dark:text-yellow-500 text-[10px] font-black uppercase tracking-widest border-l-4 border-yellow-500 pl-2">Facturación</h3>
+                                <ModalInput label="Días Crédito" value={newClient.billingDepartment} onChange={(v) => setNewClient({...newClient, billingDepartment: v})} />
+                                <ModalInput label="Uso CFDI" value={newClient.usoCFDI} onChange={(v) => setNewClient({...newClient, usoCFDI: v})} />
+                                <ModalInput label="Método Pago" value={newClient.paymentMethod} onChange={(v) => setNewClient({...newClient, paymentMethod: v})} />
                             </div>
                         </div>
 
-                        <div className="space-y-4 bg-gray-800/20 p-4 rounded-2xl border border-gray-700">
-                            <h3 className="text-yellow-500 text-[10px] font-black uppercase tracking-widest">Facturación</h3>
-                            <ModalInput label="Días Crédito" value={newClient.billingDepartment} onChange={(v) => setNewClient({...newClient, billingDepartment: v})} />
-                            <ModalInput label="Uso CFDI" value={newClient.usoCFDI} onChange={(v) => setNewClient({...newClient, usoCFDI: v})} />
-                            <ModalInput label="Método Pago" value={newClient.paymentMethod} onChange={(v) => setNewClient({...newClient, paymentMethod: v})} />
+                        <div className="mt-8 flex gap-3 pt-6 border-t border-gray-100 dark:border-gray-800">
+                            <button type="button" onClick={closeModal} className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-white py-4 rounded-2xl font-bold hover:bg-gray-200 dark:hover:bg-gray-700 transition-all">Cancelar</button>
+                            <button type="submit" className="flex-[2] bg-blue-600 text-white py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg hover:bg-blue-500 transition-all">
+                                {selectedClient ? 'Guardar Cambios' : 'Registrar Cliente'}
+                            </button>
                         </div>
-                    </div>
-
-                    <div className="mt-8 flex gap-3">
-                        <button type="button" onClick={closeModal} className="flex-1 bg-gray-800 py-4 rounded-2xl font-bold">Cancelar</button>
-                        <button type="submit" className="flex-[2] bg-blue-600 py-4 rounded-2xl font-black uppercase tracking-widest shadow-lg">
-                            {selectedClient ? 'Guardar Cambios' : 'Registrar Cliente'}
-                        </button>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </Modal>
         </div>
     );
@@ -332,7 +334,7 @@ export default function ClientList() {
 
 const ModalInput = ({ label, value, onChange, type = "text", required = false }) => (
     <div className="flex flex-col gap-1">
-        <label className="text-[10px] font-black text-gray-400 uppercase ml-1">
+        <label className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase ml-1">
             {label} {required && <span className="text-red-500">*</span>}
         </label>
         <input 
@@ -340,7 +342,7 @@ const ModalInput = ({ label, value, onChange, type = "text", required = false })
             value={value || ''}
             onChange={(e) => onChange(e.target.value)}
             required={required}
-            className="bg-[#0e1624] border border-gray-700 rounded-xl p-3 text-sm text-white outline-none focus:border-blue-500"
+            className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:border-blue-500 transition-all placeholder:text-gray-400"
         />
     </div>
 );
