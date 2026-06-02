@@ -285,8 +285,6 @@ if (userRole !== 'admin' && userRole !== 'gerencia') {
               <option value="">Seleccionar Rol</option>
               <option value="admin">Administrador</option>
               <option value="vendedor">Vendedor</option>
-              <option value="gerencia">Gerencia</option>
-              <option value="coordinador">Coordinador</option>
             </select>
           </div>
 
