@@ -152,17 +152,33 @@ const fetchData = useCallback(async () => {
     }
   };
 
-  const handleDeleteAppointment = async (id) => {
-    if (!confirm('¿Estás seguro de eliminar esta cita?')) return;
-    try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`/api/appointments/${id}`, { 
-        headers: { Authorization: `Bearer ${token}` } 
-      });
-      setAppointments(prev => prev.filter(a => a.id !== id));
-      toast.info('Cita eliminada');
-    } catch (e) { toast.error('No se pudo eliminar'); }
-  };
+const handleDeleteAppointment = async (id) => {
+  if (!id) {
+    toast.error('No se encontró el ID de la cita');
+    return;
+  }
+
+  if (!confirm('¿Estás seguro de eliminar esta cita?')) return;
+
+  try {
+    const token = localStorage.getItem('token');
+
+    await axios.delete(`/api/appointments?id=${id}`, { 
+      headers: { Authorization: `Bearer ${token}` } 
+    });
+
+    setAppointments(prev => prev.filter(a => a.id !== id));
+    toast.success('Cita eliminada correctamente');
+  } catch (error) {
+    console.error('Error eliminando cita:', error.response?.data || error);
+
+    toast.error(
+      error.response?.data?.message ||
+      error.response?.data?.error ||
+      'No se pudo eliminar la cita'
+    );
+  }
+};
 
   const loadToEdit = (appo) => {
     setEditingAppointment(appo);
@@ -328,7 +344,13 @@ const fetchData = useCallback(async () => {
                 {/* ACCIONES (OPACIDAD ADAPTABLE) */}
                 <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-gray-200 dark:border-gray-600 md:opacity-0 group-hover:opacity-100 transition-opacity">
                   <button onClick={() => loadToEdit(appo)} className="text-[10px] text-yellow-600 dark:text-yellow-500 font-bold uppercase hover:underline">Editar</button>
-                  <button onClick={() => handleDeleteAppointment(appo.id)} className="text-[10px] text-red-600 dark:text-red-500 font-bold uppercase hover:underline">Eliminar</button>
+                  <button 
+                    onClick={() => handleDeleteAppointment(appo.id)}
+                    disabled={!appo.id}
+                    className="text-[10px] text-red-600 dark:text-red-500 font-bold uppercase hover:underline disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Eliminar
+                  </button>
                   <button onClick={() => exportToPDF(appo)} className="text-[10px] text-blue-600 dark:text-blue-500 font-bold uppercase hover:underline">PDF</button>
 
                   {appo.datosCliente?.contactPhone && (

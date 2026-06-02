@@ -105,27 +105,41 @@ export default function ClientList() {
         } catch (e) { console.error("Error usuarios", e); }
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        const token = localStorage.getItem('token');
-        try {
-            if (selectedClient) {
-                await axios.put(`/api/clients/${selectedClient.id}`, newClient, {
-                    headers: { 'Authorization': `Bearer ${token}` },
-                });
-                toast.success("Cliente actualizado");
-            } else {
-                await axios.post('/api/clients', newClient, {
-                    headers: { 'Authorization': `Bearer ${token}` },
-                });
-                toast.success("Nuevo cliente registrado");
-            }
-            fetchClients();
-            closeModal();
-        } catch (error) {
-            toast.error("Error al procesar la solicitud");
-        }
+ const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const token = localStorage.getItem('token');
+
+    const payload = {
+        ...newClient,
+        contactPhone: newClient.contactPhone ? String(newClient.contactPhone).trim() : '',
     };
+
+    try {
+        if (selectedClient) {
+            await axios.put(`/api/clients/${selectedClient.id}`, payload, {
+                headers: { 'Authorization': `Bearer ${token}` },
+            });
+            toast.success("Cliente actualizado");
+        } else {
+            await axios.post('/api/clients', payload, {
+                headers: { 'Authorization': `Bearer ${token}` },
+            });
+            toast.success("Nuevo cliente registrado");
+        }
+
+        fetchClients();
+        closeModal();
+    } catch (error) {
+        console.error('Error actualizando cliente:', error.response?.data || error);
+
+        toast.error(
+            error.response?.data?.message ||
+            error.response?.data?.error ||
+            "Error al procesar la solicitud"
+        );
+    }
+};
 
     const handleDelete = async (id) => {
         if (currentUser.role !== 'admin') return toast.error("Solo administradores pueden eliminar");
