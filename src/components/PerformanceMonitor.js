@@ -25,8 +25,20 @@ const AdvisorReports = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [darkMode, setDarkMode] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState('all');
 
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
+
+  const appointmentStatuses = [
+  'Programada',
+  'Confirmada',
+  'Realizada',
+  'Reprogramada',
+  'Cancelada',
+  'No asistió el cliente',
+  'No asistió el asesor',
+  'Pendiente de seguimiento',
+];
 
   useEffect(() => {
   const isDark = document.documentElement.classList.contains('dark');
@@ -145,19 +157,39 @@ const AdvisorReports = () => {
 
   useEffect(() => { fetchData(); }, [activeTab]);
 
-  // --- FILTROS Y PAGINACIÓN ---
-  const filteredData = useMemo(() => {
-    return data.filter(item => {
-      const advisorId = item.userId || item.assignedTo;
-      const matchesAdvisor = selectedAdvisor === 'all' || advisorId?.toString() === selectedAdvisor;
-      const searchStr = searchTerm.toLowerCase();
-      const matchesSearch = (
-        (item.clientName || "") + (item.fullName || "") + (item.companyName || "") + 
-        (item.title || "") + (item.entityName || "") + (item.concepto || "")
-      ).toLowerCase().includes(searchStr);
-      return matchesAdvisor && matchesSearch;
-    });
-  }, [data, selectedAdvisor, searchTerm]);
+  useEffect(() => {
+  setCurrentPage(1);
+}, [activeTab, selectedAdvisor, selectedStatus, searchTerm]);
+
+const filteredData = useMemo(() => {
+  return data.filter(item => {
+    const advisorId = item.userId || item.assignedTo;
+
+    const matchesAdvisor =
+      selectedAdvisor === 'all' || advisorId?.toString() === selectedAdvisor;
+
+    const matchesStatus =
+      activeTab !== 'calendario' ||
+      selectedStatus === 'all' ||
+      item.clientStatus === selectedStatus;
+
+    const searchStr = searchTerm.toLowerCase();
+
+    const matchesSearch = (
+      (item.clientName || '') +
+      (item.fullName || '') +
+      (item.companyName || '') +
+      (item.title || '') +
+      (item.entityName || '') +
+      (item.concepto || '') +
+      (item.clientStatus || '') +
+      (item.saleProcess || '') +
+      (item.status || '')
+    ).toLowerCase().includes(searchStr);
+
+    return matchesAdvisor && matchesStatus && matchesSearch;
+  });
+}, [data, selectedAdvisor, selectedStatus, searchTerm, activeTab]);
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const paginatedData = useMemo(() => {
@@ -233,8 +265,8 @@ const AdvisorReports = () => {
 
       <main className="flex-1 p-4 md:p-8 space-y-6 overflow-y-auto">
         {/* BARRA FILTROS */}
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 bg-white dark:bg-[#1f2937] p-6 rounded-[2.5rem] border border-gray-200 dark:border-gray-800 shadow-xl transition-colors">
-          <div className="relative xl:col-span-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4 bg-white dark:bg-[#1f2937] p-6 rounded-[2.5rem] border border-gray-200 dark:border-gray-800 shadow-xl transition-colors">
+          <div className="relative md:col-span-2">
             <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
             <input type="text" placeholder="Buscar registros..." className="w-full bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 pl-12 text-sm outline-none focus:border-blue-500 transition-all text-gray-900 dark:text-white" value={searchTerm} onChange={(e)=>setSearchTerm(e.target.value)} />
           </div>
@@ -242,6 +274,20 @@ const AdvisorReports = () => {
             <option value="all">📊 Todos los Asesores</option>
             {advisors.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
           </select>
+          {activeTab === 'calendario' && (
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-700 dark:text-gray-300 outline-none focus:border-blue-500 cursor-pointer"
+              >
+                <option value="all">📌 Todos los estatus</option>
+                {appointmentStatuses.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </select>
+            )}
           <div className="xl:col-span-2 flex gap-3">
             <button onClick={fetchData} className="flex-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 p-4 rounded-2xl text-blue-600 dark:text-blue-500 flex items-center justify-center gap-3 text-[10px] font-black uppercase transition-all border border-gray-200 dark:border-gray-700">
               <FiRefreshCw className={isLoading ? "animate-spin" : ""}/> Sync

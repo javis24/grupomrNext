@@ -20,7 +20,7 @@ const CalendarCard = () => {
  const [date, setDate] = useState(new Date());
   const [appointments, setAppointments] = useState([]);
   const [clientName, setClientName] = useState('');
-  const [clientStatus, setClientStatus] = useState('');
+  const [clientStatus, setClientStatus] = useState('Programada');
   const [appointmentTime, setAppointmentTime] = useState('');
   const [comments, setComments] = useState('');
   const [editingAppointment, setEditingAppointment] = useState(null);
@@ -192,7 +192,7 @@ const handleDeleteAppointment = async (id) => {
   };
 
  const resetForm = () => {
-    setClientName(''); setClientStatus(''); 
+    setClientName(''); setClientStatus('Programada'); 
     if (userRole === 'admin') setSelectedUser('');
     setAppointmentTime(''); setComments(''); setEditingAppointment(null);
   };
@@ -284,15 +284,27 @@ const handleDeleteAppointment = async (id) => {
                 />
             </div>
 
-            <div className="flex flex-col">
-                <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-1 mb-1">Status</label>
-                <input 
-                  type="text" 
-                  value={clientStatus} 
-                  onChange={(e) => setClientStatus(e.target.value)} 
-                  className="bg-gray-50 dark:bg-[#374151] border border-gray-300 dark:border-gray-600 rounded-lg p-3 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" 
-                />
-            </div>
+      <div className="flex flex-col">
+  <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-1 mb-1">
+    Status
+  </label>
+
+  <select
+    value={clientStatus}
+    onChange={(e) => setClientStatus(e.target.value)}
+    className="bg-gray-50 dark:bg-[#374151] border border-gray-300 dark:border-gray-600 rounded-lg p-3 text-gray-900 dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+  >
+    <option value="">Seleccionar status...</option>
+    <option value="Programada">Programada</option>
+    <option value="Confirmada">Confirmada</option>
+    <option value="Realizada">Realizada</option>
+    <option value="Reprogramada">Reprogramada</option>
+    <option value="Cancelada">Cancelada</option>
+    <option value="No asistió el cliente">No asistió el cliente</option>
+    <option value="No asistió el asesor">No asistió el asesor</option>
+    <option value="Pendiente de seguimiento">Pendiente de seguimiento</option>
+  </select>
+</div>
 
             <div className="flex flex-col md:col-span-2">
                 <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-1 mb-1">Notas</label>
