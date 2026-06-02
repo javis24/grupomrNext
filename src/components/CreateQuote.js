@@ -19,6 +19,9 @@ const CreateQuote = () => {
 
     const [userQuotes, setUserQuotes] = useState([]);
     const [listSearchTerm, setListSearchTerm] = useState("");
+
+    const [historyPage, setHistoryPage] = useState(1);
+    const historyItemsPerPage = 5;
     
     const [originalQuoteLoaded, setOriginalQuoteLoaded] = useState(null);
     const [descripcionGeneral, setDescripcionGeneral] = useState("");
@@ -100,6 +103,10 @@ const CreateQuote = () => {
         setCurrentDate(new Date().toLocaleDateString('es-MX'));
     }, []);
 
+    useEffect(() => {
+    setHistoryPage(1);
+}, [listSearchTerm]);
+
     const fetchInitialData = async () => {
         try {
             const token = localStorage.getItem('token');
@@ -122,7 +129,12 @@ const CreateQuote = () => {
         })
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    const displayedQuotes = listSearchTerm ? filteredQuotes : filteredQuotes.slice(0, 5);
+    const totalHistoryPages = Math.ceil(filteredQuotes.length / historyItemsPerPage);
+
+        const displayedQuotes = filteredQuotes.slice(
+            (historyPage - 1) * historyItemsPerPage,
+            historyPage * historyItemsPerPage
+        );
 
     // ==========================================
     // MANEJADORES DE INPUTS
@@ -445,7 +457,9 @@ const CreateQuote = () => {
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800 text-gray-700 dark:text-gray-300">
               {displayedQuotes.map((q) => (
                 <tr key={q.id} className="hover:bg-gray-50 dark:hover:bg-[#111827] transition-colors">
-                  <td className="p-4 font-mono text-yellow-600 dark:text-yellow-500">#{String(q.quoteNumber).padStart(3, '0')}</td>
+                  <td className="p-4 font-mono text-yellow-600 dark:text-yellow-500">
+                    #{String(q.quoteNumber || q.id).padStart(3, '0')}
+                  </td>
                   <td className="p-4 font-bold uppercase">{q.companyName}</td>
                   <td className="p-4">{new Date(q.createdAt).toLocaleDateString()}</td>
                   <td className="p-4 text-green-600 dark:text-green-500 font-black">${q.total}</td>
@@ -465,6 +479,37 @@ const CreateQuote = () => {
             </tbody>
           </table>
         </div>
+
+        {totalHistoryPages > 1 && (
+  <div className="flex flex-col md:flex-row justify-between items-center gap-4 mt-6">
+    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-gray-500">
+      Mostrando {displayedQuotes.length} de {filteredQuotes.length} cotizaciones
+    </p>
+
+    <div className="flex items-center gap-3">
+      <button
+        disabled={historyPage === 1}
+        onClick={() => setHistoryPage((prev) => Math.max(prev - 1, 1))}
+        className="p-3 bg-gray-100 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-xl text-gray-600 dark:text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-blue-600 hover:text-white transition-all"
+      >
+        Anterior
+      </button>
+
+      <span className="text-xs font-black uppercase text-gray-500 dark:text-gray-400">
+        Página {historyPage} de {totalHistoryPages}
+      </span>
+
+      <button
+        disabled={historyPage === totalHistoryPages}
+        onClick={() => setHistoryPage((prev) => Math.min(prev + 1, totalHistoryPages))}
+        className="p-3 bg-gray-100 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-xl text-gray-600 dark:text-white disabled:opacity-30 disabled:cursor-not-allowed hover:bg-blue-600 hover:text-white transition-all"
+      >
+        Siguiente
+      </button>
+    </div>
+  </div>
+)}
+
       </div>
     </div>
   );
