@@ -24,8 +24,25 @@ const AdvisorReports = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const [darkMode, setDarkMode] = useState(false);
 
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
+
+  useEffect(() => {
+  const isDark = document.documentElement.classList.contains('dark');
+  setDarkMode(isDark);
+
+  const observer = new MutationObserver(() => {
+    setDarkMode(document.documentElement.classList.contains('dark'));
+  });
+
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['class'],
+  });
+
+  return () => observer.disconnect();
+}, []);
 
   // --- LÓGICA DE APOYO ---
   const getClientAntiquity = (dateValue) => {
@@ -196,7 +213,7 @@ const AdvisorReports = () => {
   return (
     /* 1. CONTENEDOR PRINCIPAL: Adaptable */
     <div className="min-h-screen bg-gray-50 dark:bg-[#0e1624] text-gray-900 dark:text-white font-sans flex flex-col lg:flex-row transition-colors duration-300">
-      <ToastContainer theme="colored" />
+      <ToastContainer theme={darkMode ? 'dark' : 'light'} position="bottom-right" />
       
       {/* SIDEBAR INTERNO */}
       <aside className="w-full lg:w-72 bg-white dark:bg-[#1f2937] border-b lg:border-r border-gray-200 dark:border-gray-800 lg:h-screen sticky top-0 z-30 flex flex-col shadow-sm">
@@ -246,9 +263,26 @@ const AdvisorReports = () => {
                     <Pie data={chartData.units} dataKey="total" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
                       {chartData.units.map((entry, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
                     </Pie>
-                    <Tooltip contentStyle={{ backgroundColor: '#ffffff', color: '#000000', border: '1px solid #e2e8f0', borderRadius: '10px', fontSize: '10px' }} 
-                             itemStyle={{ color: '#000000' }} />
-                    <Legend verticalAlign="bottom" wrapperStyle={{ fontSize: '10px', textTransform: 'uppercase', color: '#64748b' }}/>
+                   <Tooltip
+                      contentStyle={{
+                        backgroundColor: darkMode ? '#111827' : '#ffffff',
+                        color: darkMode ? '#ffffff' : '#000000',
+                        border: darkMode ? '1px solid #374151' : '1px solid #e2e8f0',
+                        borderRadius: '10px',
+                        fontSize: '10px',
+                      }}
+                      itemStyle={{
+                        color: darkMode ? '#ffffff' : '#000000',
+                      }}
+                    />
+                    <Legend
+                        verticalAlign="bottom"
+                        wrapperStyle={{
+                          fontSize: '10px',
+                          textTransform: 'uppercase',
+                          color: darkMode ? '#cbd5e1' : '#64748b',
+                        }}
+                      />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -259,8 +293,29 @@ const AdvisorReports = () => {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData.products} layout="vertical" margin={{ left: 30, right: 30 }}>
                     <XAxis type="number" hide />
-                    <YAxis dataKey="name" type="category" width={100} tick={{ fontSize: 9, fill: '#64748b', fontWeight: 'bold' }} />
-                    <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '10px', fontSize: '10px' }} />
+                    <YAxis
+                      dataKey="name"
+                      type="category"
+                      width={100}
+                      tick={{
+                        fontSize: 9,
+                        fill: darkMode ? '#cbd5e1' : '#64748b',
+                        fontWeight: 'bold',
+                      }}
+                    />
+                    <Tooltip
+                        cursor={{ fill: 'transparent' }}
+                        contentStyle={{
+                          backgroundColor: darkMode ? '#111827' : '#ffffff',
+                          color: darkMode ? '#ffffff' : '#000000',
+                          border: darkMode ? '1px solid #374151' : '1px solid #e2e8f0',
+                          borderRadius: '10px',
+                          fontSize: '10px',
+                        }}
+                        itemStyle={{
+                          color: darkMode ? '#ffffff' : '#000000',
+                        }}
+                      />
                     <Bar dataKey="total" fill="#3b82f6" radius={[0, 10, 10, 0]} barSize={20}>
                         {chartData.products.map((entry, index) => <Cell key={index} fill={COLORS[index % COLORS.length]} />)}
                     </Bar>
