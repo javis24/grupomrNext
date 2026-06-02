@@ -7,6 +7,41 @@ const { DataTypes } = Sequelize;
 
 const SalesBusiness = db.define('SalesBusiness', {
     unitBusiness: { type: DataTypes.STRING, allowNull: false },
+  noRemision: {
+  type: DataTypes.STRING,
+  allowNull: true,
+  unique: true,
+  validate: {
+    len: [0, 50],
+  },
+},
+requiereFactura: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: 'Pendiente',
+    validate: {
+        isIn: [['Sí', 'No', 'Pendiente']],
+    },
+},
+numeroFactura: {
+    type: DataTypes.STRING,
+    allowNull: true,
+},
+
+plazoCredito: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+},
+
+fechaEstimadaPago: {
+    type: DataTypes.DATEONLY,
+    allowNull: true,
+},
+
+diasRestantes: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+},
     concepto: { type: DataTypes.STRING, allowNull: false },
     equipo: { type: DataTypes.STRING, allowNull: true },
     cantidad: { type: DataTypes.FLOAT, allowNull: false },

@@ -3,49 +3,62 @@ import axios from 'axios';
 import { ToastContainer, toast } from 'react-toastify';
 import jwt from 'jsonwebtoken';
 
-import { 
-    FiArrowLeft, FiChevronRight, FiSearch, FiUser, 
-    FiCheckCircle, FiDollarSign, FiCalendar, FiTruck,
-    FiEdit2, FiTrash2, FiList, FiPlus, FiMessageSquare
+import {
+    FiArrowLeft,
+    FiChevronRight,
+    FiSearch,
+    FiUser,
+    FiDollarSign,
+    FiEdit2,
+    FiTrash2,
+    FiList,
+    FiPlus,
 } from 'react-icons/fi';
 
 const PalletIcon = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10">
-    <path d="M2 20h20M2 16h20M2 12h20" />
-    <path d="M4 12v8M12 12v8M20 12v8" />
-    <path d="M2 12v8M22 12v8" />
-  </svg>
+    <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="w-10 h-10"
+    >
+        <path d="M2 20h20M2 16h20M2 12h20" />
+        <path d="M4 12v8M12 12v8M20 12v8" />
+        <path d="M2 12v8M22 12v8" />
+    </svg>
 );
 
 const SalesPage = () => {
     const [clients, setClients] = useState([]);
     const [sales, setSales] = useState([]);
-    const [view, setView] = useState('units'); // 'units', 'form', 'history'
+    const [view, setView] = useState('units');
     const [selectedClient, setSelectedClient] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
-
-    const canDelete = currentUser?.role === 'admin' || currentUser?.role === 'gerencia';
-
-    const filteredClientsByUnit = clients.filter(client => {
-        // Normalizamos los textos para evitar errores por espacios o mayúsculas
-        const clientUnit = (client.planta || '').trim().toLowerCase();
-        const categoryUnit = (selectedCategory || '').trim().toLowerCase();
-        
-        const matchesUnit = clientUnit === categoryUnit;
-        const matchesSearch = client.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                             client.companyName?.toLowerCase().includes(searchTerm.toLowerCase());
-        
-        return matchesUnit && matchesSearch;
-    });
+    const [remisionLocked, setRemisionLocked] = useState(false);
 
     const [formValues, setFormValues] = useState({
-        concepto: '', equipo: '', cantidad: '', precioUnitario: '',
-        transporte: '', estadoPago: '', fechaOperacion: '', observaciones: ''
+        noRemision: '',
+        requiereFactura: '',
+        numeroFactura: '',
+        plazoCredito: '',
+        concepto: '',
+        equipo: '',
+        cantidad: '',
+        precioUnitario: '',
+        transporte: '',
+        estadoPago: '',
+        fechaOperacion: '',
+        observaciones: '',
     });
+
+    const canDelete = currentUser?.role === 'admin' || currentUser?.role === 'gerencia';
 
     const units = [
         { name: 'Servicios', icon: '🚛', color: 'from-blue-500 to-indigo-600' },
@@ -53,109 +66,245 @@ const SalesPage = () => {
         { name: 'Tarimas', icon: <PalletIcon />, color: 'from-amber-600 to-yellow-700' },
         { name: 'Alimentos', icon: '🐖', color: 'from-green-400 to-emerald-600' },
         { name: 'Plasticos', icon: '♻️', color: 'from-cyan-500 to-blue-600' },
-        { name: 'Composta', icon: '🌱', color: 'from-lime-500 to-green-700' }
+        { name: 'Composta', icon: '🌱', color: 'from-lime-500 to-green-700' },
     ];
 
-    const conceptosServicios = ["Renta de equipo", "Recolección", "Disposición final", "Destrucción"];
-    const equiposServicios = ["Ruta 3 mts cúbicos", "Ruta 6 mts cúbicos", "Contenedor 30 mts cúbicos", "Contenedor 15 mts cúbicos", "Contenedor 8 mts cúbicos", "Compactador", "Jaula"];
-    const opcionesTransporte = ["Entrega a domicilio sin costo", "Entrega a domicilio con costo", "Recolección por el cliente"];
-    const opcionesPago = ["Anticipado", "Contado", "Crédito", "Pago parcial", "Sin costo"];
+    const conceptosServicios = [
+        'Renta de equipo',
+        'Recolección',
+        'Disposición final',
+        'Destrucción',
+    ];
 
-    useEffect(() => { 
-    const token = localStorage.getItem('token');
-    if (token) {
-        try {
-            const decoded = jwt.decode(token);
-            if (decoded) {
-                setCurrentUser(decoded);
-                console.log("Usuario autenticado:", decoded.name);
+    const opcionesTransporte = [
+        'Entrega a domicilio sin costo',
+        'Entrega a domicilio con costo',
+        'Recolección por el cliente',
+    ];
+
+    const opcionesPago = [
+        'Anticipado',
+        'Contado',
+        'Crédito',
+        'Pago parcial',
+        'Sin costo',
+    ];
+
+    const filteredClientsByUnit = clients.filter((client) => {
+        const clientUnit = (client.planta || '').trim().toLowerCase();
+        const categoryUnit = (selectedCategory || '').trim().toLowerCase();
+
+        const matchesUnit = clientUnit === categoryUnit;
+
+        const matchesSearch =
+            client.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            client.companyName?.toLowerCase().includes(searchTerm.toLowerCase());
+
+        return matchesUnit && matchesSearch;
+    });
+
+    const calcularFechaEstimada = (fechaOperacion, plazoCredito) => {
+        if (!fechaOperacion || !plazoCredito) return '';
+
+        const fecha = new Date(`${fechaOperacion}T00:00:00`);
+        fecha.setDate(fecha.getDate() + parseInt(plazoCredito));
+
+        return fecha.toISOString().split('T')[0];
+    };
+
+    const calcularDiasRestantes = (fechaOperacion, plazoCredito) => {
+        if (!fechaOperacion || !plazoCredito) return null;
+
+        const fechaBase = fechaOperacion.includes('T')
+            ? fechaOperacion.split('T')[0]
+            : fechaOperacion;
+
+        const fechaEstimada = new Date(
+            `${calcularFechaEstimada(fechaBase, plazoCredito)}T00:00:00`
+        );
+
+        const hoy = new Date();
+
+        fechaEstimada.setHours(0, 0, 0, 0);
+        hoy.setHours(0, 0, 0, 0);
+
+        const diferenciaMs = fechaEstimada - hoy;
+
+        return Math.ceil(diferenciaMs / (1000 * 60 * 60 * 24));
+    };
+
+    const fechaEstimadaPago = calcularFechaEstimada(
+        formValues.fechaOperacion,
+        formValues.plazoCredito
+    );
+
+    const diasRestantes = calcularDiasRestantes(
+        formValues.fechaOperacion,
+        formValues.plazoCredito
+    );
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+
+        if (token) {
+            try {
+                const decoded = jwt.decode(token);
+
+                if (decoded) {
+                    setCurrentUser(decoded);
+                }
+            } catch (e) {
+                console.error('Error al leer el token:', e);
             }
-        } catch (e) { 
-            console.error("Error al leer el token:", e); 
         }
-    }
-    fetchClients(); 
-    fetchSales();
-}, []);
+
+        fetchClients();
+        fetchSales();
+    }, []);
 
     const fetchClients = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get('/api/clients', { headers: { Authorization: `Bearer ${token}` } });
+
+            const res = await axios.get('/api/clients', {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
             setClients(res.data);
-        } catch (err) { toast.error("Error al cargar clientes"); }
+        } catch (err) {
+            toast.error('Error al cargar clientes');
+        }
     };
 
     const fetchSales = async () => {
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.get('/api/salesbussines', { headers: { Authorization: `Bearer ${token}` } });
+
+            const res = await axios.get('/api/salesbussines', {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
             setSales(res.data);
-        } catch (err) { console.error("Error al cargar ventas"); }
+        } catch (err) {
+            console.error('Error al cargar ventas');
+        }
     };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormValues({ ...formValues, [name]: value });
+
+        setFormValues({
+            ...formValues,
+            [name]: value,
+        });
     };
 
     const handleEdit = (sale) => {
         setIsEditing(true);
         setEditingId(sale.id);
         setSelectedCategory(sale.unitBusiness);
-        
-        // Cargar cliente vinculado
-        const client = clients.find(c => c.id === sale.clientId);
-        setSelectedClient(client || { id: sale.clientId, fullName: 'Cliente actual' });
-        
+        setRemisionLocked(!!sale.noRemision);
+
+        const client = clients.find((c) => c.id === sale.clientId);
+
+        setSelectedClient(
+            client || {
+                id: sale.clientId,
+                fullName: 'Cliente actual',
+            }
+        );
+
         setFormValues({
-            concepto: sale.concepto,
+            noRemision: sale.noRemision || '',
+            requiereFactura: sale.requiereFactura || '',
+            numeroFactura: sale.numeroFactura || '',
+            plazoCredito: sale.plazoCredito || client?.billingDepartment || '',
+            concepto: sale.concepto || '',
             equipo: sale.equipo || '',
-            cantidad: sale.cantidad,
-            precioUnitario: sale.precioUnitario,
-            transporte: sale.transporte,
-            estadoPago: sale.estadoPago,
-            fechaOperacion: sale.fechaOperacion ? sale.fechaOperacion.split('T')[0] : '',
-            observaciones: sale.observaciones || ''
+            cantidad: sale.cantidad || '',
+            precioUnitario: sale.precioUnitario || '',
+            transporte: sale.transporte || '',
+            estadoPago: sale.estadoPago || '',
+            fechaOperacion: sale.fechaOperacion
+                ? sale.fechaOperacion.split('T')[0]
+                : '',
+            observaciones: sale.observaciones || '',
         });
+
         setView('form');
     };
 
-   const handleDelete = async (id) => {
-        
-        if (!canDelete) return toast.error("No tienes permisos para eliminar ventas.");
-        
-        if (!window.confirm("¿Estás seguro de eliminar este registro?")) return;
+    const handleDelete = async (id) => {
+        if (!canDelete) {
+            return toast.error('No tienes permisos para eliminar ventas.');
+        }
+
+        if (!window.confirm('¿Estás seguro de eliminar este registro?')) return;
+
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`/api/salesbussines/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-            toast.info("Venta eliminada");
+
+            await axios.delete(`/api/salesbussines/${id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
+            toast.info('Venta eliminada');
             fetchSales();
-        } catch (err) { toast.error("Error al eliminar"); }
+        } catch (err) {
+            toast.error('Error al eliminar');
+        }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const token = localStorage.getItem('token');
-        if (!selectedClient) return toast.error("Seleccione un cliente");
 
-        const dataToSend = { 
-            ...formValues, 
-            unitBusiness: selectedCategory, 
-            clientId: selectedClient.id 
+        const token = localStorage.getItem('token');
+
+        if (!selectedClient) {
+            return toast.error('Seleccione un cliente');
+        }
+
+        if (!formValues.requiereFactura) {
+            return toast.error('Indica si la venta se va a facturar');
+        }
+
+        const dataToSend = {
+            ...formValues,
+            noRemision: formValues.noRemision
+                ? formValues.noRemision.trim()
+                : '',
+            numeroFactura: formValues.numeroFactura
+                ? formValues.numeroFactura.trim()
+                : '',
+            plazoCredito: formValues.plazoCredito
+                ? parseInt(formValues.plazoCredito)
+                : null,
+            fechaEstimadaPago: fechaEstimadaPago || null,
+            diasRestantes: diasRestantes ?? null,
+            unitBusiness: selectedCategory,
+            clientId: selectedClient.id,
         };
 
         try {
             if (isEditing) {
-                await axios.put(`/api/salesbussines/${editingId}`, dataToSend, { headers: { Authorization: `Bearer ${token}` } });
-                toast.success("¡Venta actualizada!");
+                await axios.put(`/api/salesbussines/${editingId}`, dataToSend, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+
+                toast.success('¡Venta actualizada!');
             } else {
-                await axios.post('/api/salesbussines', dataToSend, { headers: { Authorization: `Bearer ${token}` } });
-                toast.success("¡Venta registrada!");
+                await axios.post('/api/salesbussines', dataToSend, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+
+                toast.success('¡Venta registrada!');
             }
+
             resetAll();
             fetchSales();
-        } catch (err) { toast.error(err.response?.data?.message || "Error en la operación"); }
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Error en la operación');
+        }
     };
 
     const resetAll = () => {
@@ -164,163 +313,498 @@ const SalesPage = () => {
         setSelectedClient(null);
         setIsEditing(false);
         setEditingId(null);
-        setFormValues({ concepto: '', equipo: '', cantidad: '', precioUnitario: '', transporte: '', estadoPago: '', fechaOperacion: '', observaciones: '' });
+        setRemisionLocked(false);
+
+        setFormValues({
+            noRemision: '',
+            requiereFactura: '',
+            numeroFactura: '',
+            plazoCredito: '',
+            concepto: '',
+            equipo: '',
+            cantidad: '',
+            precioUnitario: '',
+            transporte: '',
+            estadoPago: '',
+            fechaOperacion: '',
+            observaciones: '',
+        });
     };
 
-   return (
+    return (
         <div className="min-h-screen bg-gray-50 dark:bg-[#0e1624] text-gray-900 dark:text-white p-4 md:p-8 font-sans transition-colors duration-300">
             <ToastContainer theme="colored" />
+
             <div className="max-w-7xl mx-auto">
-                
-                {/* HEADER DINÁMICO */}
+
+                {/* HEADER */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
                     <div>
                         <h1 className="text-4xl md:text-5xl font-black uppercase italic tracking-tighter text-blue-600 dark:text-blue-500">
                             {view === 'history' ? 'Historial de Ventas' : 'Nueva Operación'}
                         </h1>
+
                         <p className="text-blue-500 dark:text-blue-400 text-xs font-bold tracking-[0.3em] uppercase">
                             Sesión: {currentUser?.name || 'Usuario'} | {currentUser?.role || 'Asesor'}
                         </p>
                     </div>
+
                     <div className="flex gap-3 w-full md:w-auto">
-                        <button onClick={() => { resetAll(); setView('units'); }} 
-                            className={`flex-1 md:flex-none px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${view !== 'history' ? 'bg-blue-600 text-white shadow-lg' : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}>
+                        <button
+                            onClick={() => {
+                                resetAll();
+                                setView('units');
+                            }}
+                            className={`flex-1 md:flex-none px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
+                                view !== 'history'
+                                    ? 'bg-blue-600 text-white shadow-lg'
+                                    : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-300'
+                            }`}
+                        >
                             <FiPlus /> Registrar
                         </button>
-                        <button onClick={() => setView('history')} 
-                            className={`flex-1 md:flex-none px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${view === 'history' ? 'bg-blue-600 text-white shadow-lg' : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-300'}`}>
+
+                        <button
+                            onClick={() => setView('history')}
+                            className={`flex-1 md:flex-none px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${
+                                view === 'history'
+                                    ? 'bg-blue-600 text-white shadow-lg'
+                                    : 'bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-300'
+                            }`}
+                        >
                             <FiList /> Mis Ventas
                         </button>
                     </div>
                 </div>
 
-                {/* VISTA 1: CATEGORÍAS */}
+                {/* VISTA CATEGORÍAS */}
                 {view === 'units' && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 animate-in fade-in duration-500">
                         {units.map((u) => (
-                            <div key={u.name} onClick={() => { setSelectedCategory(u.name); setView('form'); }}
+                            <div
+                                key={u.name}
+                                onClick={() => {
+                                    setSelectedCategory(u.name);
+                                    setView('form');
+                                }}
                                 className="bg-white dark:bg-[#1f2937] p-10 rounded-[2.5rem] border border-gray-200 dark:border-gray-700 hover:border-blue-500 cursor-pointer transition-all hover:translate-y-[-8px] shadow-xl dark:shadow-2xl group relative overflow-hidden"
                             >
-                                <div className={`absolute -right-10 -top-10 w-40 h-40 bg-gradient-to-br ${u.color} opacity-10 rounded-full group-hover:scale-150 transition-transform duration-700`}></div>
+                                <div
+                                    className={`absolute -right-10 -top-10 w-40 h-40 bg-gradient-to-br ${u.color} opacity-10 rounded-full group-hover:scale-150 transition-transform duration-700`}
+                                ></div>
+
                                 <div className="relative z-10">
-                                    <div className="w-16 h-16 mb-6 flex items-center justify-center text-6xl group-hover:scale-110 transition-transform">{u.icon}</div>
-                                    <h2 className="text-3xl font-black uppercase text-gray-800 dark:text-white mb-2">{u.name}</h2>
+                                    <div className="w-16 h-16 mb-6 flex items-center justify-center text-6xl group-hover:scale-110 transition-transform">
+                                        {u.icon}
+                                    </div>
+
+                                    <h2 className="text-3xl font-black uppercase text-gray-800 dark:text-white mb-2">
+                                        {u.name}
+                                    </h2>
+
                                     <div className="flex items-center gap-3">
                                         <div className="h-1 w-12 bg-blue-500 rounded-full"></div>
-                                        <span className="text-blue-600 dark:text-blue-400 font-bold text-xs uppercase tracking-widest">Seleccionar</span>
+
+                                        <span className="text-blue-600 dark:text-blue-400 font-bold text-xs uppercase tracking-widest">
+                                            Seleccionar
+                                        </span>
                                     </div>
                                 </div>
-                                <FiChevronRight className="absolute right-8 bottom-8 text-gray-300 dark:text-gray-700 group-hover:text-blue-500 transition-all" size={32} />
+
+                                <FiChevronRight
+                                    className="absolute right-8 bottom-8 text-gray-300 dark:text-gray-700 group-hover:text-blue-500 transition-all"
+                                    size={32}
+                                />
                             </div>
                         ))}
                     </div>
                 )}
 
-                {/* VISTA 2: FORMULARIO */}
-               {view === 'form' && (
+                {/* VISTA FORMULARIO */}
+                {view === 'form' && (
                     <div className="flex flex-col lg:flex-row gap-8 animate-in slide-in-from-bottom-5">
-                        
-                        {/* Selector de Cliente */}
+
+                        {/* CLIENTES */}
                         <div className="w-full lg:w-1/3">
                             <div className="bg-white dark:bg-[#1f2937] p-8 rounded-[2.5rem] border border-gray-200 dark:border-gray-700 shadow-2xl transition-colors">
                                 <div className="flex justify-between items-center mb-6">
-                                    <button 
-                                        onClick={() => { setView('units'); setSelectedCategory(null); setSelectedClient(null); }}
+                                    <button
+                                        onClick={() => {
+                                            setView('units');
+                                            setSelectedCategory(null);
+                                            setSelectedClient(null);
+                                        }}
                                         className="p-3 bg-gray-100 dark:bg-[#0e1624] hover:bg-blue-600 rounded-2xl text-blue-600 dark:text-blue-400 hover:text-white transition-all border border-gray-200 dark:border-gray-800 shadow-sm"
                                     >
                                         <FiArrowLeft size={20} />
                                     </button>
+
                                     <h2 className="text-sm font-black text-blue-600 dark:text-blue-500 uppercase tracking-widest flex items-center gap-2">
                                         <FiUser /> Clientes {selectedCategory}
                                     </h2>
                                 </div>
-                                
+
                                 <div className="relative mb-6">
                                     <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                                    <input 
-                                        type="text" 
-                                        placeholder="Buscar cliente..." 
-                                        className="w-full bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 pl-12 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20" 
+
+                                    <input
+                                        type="text"
+                                        placeholder="Buscar cliente..."
+                                        className="w-full bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 pl-12 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20"
                                         value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)} 
+                                        onChange={(e) => setSearchTerm(e.target.value)}
                                     />
                                 </div>
 
                                 <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                                    {filteredClientsByUnit.map(client => (
-                                        <div key={client.id} onClick={() => setSelectedClient(client)} 
-                                            className={`p-5 rounded-2xl cursor-pointer transition-all border ${selectedClient?.id === client.id ? 'bg-blue-600 border-blue-400 text-white shadow-lg' : 'bg-gray-50 dark:bg-[#0e1624] border-gray-100 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-600 text-gray-700 dark:text-gray-300'}`}>
-                                            <p className="font-black text-xs uppercase">{client.fullName}</p>
-                                            <p className={`text-[9px] uppercase ${selectedClient?.id === client.id ? 'text-blue-100' : 'text-gray-400'}`}>{client.companyName}</p>
+                                    {filteredClientsByUnit.map((client) => (
+                                        <div
+                                            key={client.id}
+                                            onClick={() => {
+    setSelectedClient(client);
+
+    setFormValues((prev) => ({
+        ...prev,
+        plazoCredito: client.billingDepartment || '',
+    }));
+}}
+                                            className={`p-5 rounded-2xl cursor-pointer transition-all border ${
+                                                selectedClient?.id === client.id
+                                                    ? 'bg-blue-600 border-blue-400 text-white shadow-lg'
+                                                    : 'bg-gray-50 dark:bg-[#0e1624] border-gray-100 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-600 text-gray-700 dark:text-gray-300'
+                                            }`}
+                                        >
+                                            <p className="font-black text-xs uppercase">
+                                                {client.fullName}
+                                            </p>
+
+                                            <p
+                                                className={`text-[9px] uppercase ${
+                                                    selectedClient?.id === client.id
+                                                        ? 'text-blue-100'
+                                                        : 'text-gray-400'
+                                                }`}
+                                            >
+                                                {client.companyName}
+                                            </p>
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         </div>
 
-                        {/* Campos del Formulario */}
+                        {/* FORMULARIO */}
                         <div className="flex-1">
                             {selectedClient ? (
-                                <form onSubmit={handleSubmit} className="bg-white dark:bg-[#1f2937] p-10 rounded-[2.5rem] border border-gray-200 dark:border-gray-700 shadow-2xl space-y-6 transition-colors">
+                                <form
+                                    onSubmit={handleSubmit}
+                                    className="bg-white dark:bg-[#1f2937] p-10 rounded-[2.5rem] border border-gray-200 dark:border-gray-700 shadow-2xl space-y-6 transition-colors"
+                                >
                                     <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-800 pb-6">
-                                        <h3 className="text-xl font-black uppercase italic text-gray-800 dark:text-white">{isEditing ? '✏️ Editando' : '📝 Nueva'} Venta</h3>
-                                        <span className="px-4 py-1 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-full text-[10px] font-bold uppercase tracking-widest">{selectedCategory}</span>
+                                        <h3 className="text-xl font-black uppercase italic text-gray-800 dark:text-white">
+                                            {isEditing ? '✏️ Editando' : '📝 Nueva'} Venta
+                                        </h3>
+
+                                        <span className="px-4 py-1 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-full text-[10px] font-bold uppercase tracking-widest">
+                                            {selectedCategory}
+                                        </span>
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                                        {/* NO REMISIÓN */}
                                         <div className="flex flex-col gap-2">
-                                            <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2">Concepto</label>
-                                            {selectedCategory === "Servicios" ? (
-                                                <select name="concepto" value={formValues.concepto} onChange={handleInputChange} className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20" required>
+                                            <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2">
+                                                No. Remisión
+                                            </label>
+
+                                            <input
+                                                type="text"
+                                                name="noRemision"
+                                                value={formValues.noRemision}
+                                                onChange={handleInputChange}
+                                                disabled={remisionLocked}
+                                                className={`bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20 ${
+                                                    remisionLocked
+                                                        ? 'opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-800'
+                                                        : ''
+                                                }`}
+                                                placeholder="Ej: REM-0001, A123, R-2026-0007"
+                                            />
+
+                                            {remisionLocked && (
+                                                <span className="text-[9px] text-gray-400 dark:text-gray-500 uppercase font-bold ml-2">
+                                                    Este campo ya no se puede modificar
+                                                </span>
+                                            )}
+
+                                            {isEditing && !remisionLocked && (
+                                                <span className="text-[9px] text-yellow-600 dark:text-yellow-500 uppercase font-bold ml-2">
+                                                    Puedes capturarlo una sola vez
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* FACTURACIÓN */}
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2">
+                                                ¿Se va a facturar?
+                                            </label>
+
+                                            <select
+                                                name="requiereFactura"
+                                                value={formValues.requiereFactura}
+                                                onChange={handleInputChange}
+                                                className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20"
+                                                required
+                                            >
+                                                <option value="">Seleccionar...</option>
+                                                <option value="Sí">Sí</option>
+                                                <option value="No">No</option>
+                                                <option value="Pendiente">Pendiente</option>
+                                            </select>
+                                        </div>
+
+                                        {/* NÚMERO FACTURA */}
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2">
+                                               Folio de Factura
+                                            </label>
+
+                                            <input
+                                                type="text"
+                                                name="numeroFactura"
+                                                value={formValues.numeroFactura}
+                                                onChange={handleInputChange}
+                                                className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20"
+                                                placeholder="Ej: FAC-2026-001"
+                                            />
+                                        </div>
+
+                                  <div className="flex flex-col gap-2">
+    <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2">
+        Plazo de Crédito en días
+    </label>
+
+    <input
+        type="number"
+        name="plazoCredito"
+        value={formValues.plazoCredito}
+        readOnly
+        className="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-500 dark:text-gray-400 outline-none cursor-not-allowed"
+        placeholder="Se toma del cliente"
+        min="0"
+    />
+
+    <span className="text-[9px] text-gray-400 dark:text-gray-500 uppercase font-bold ml-2">
+        Este dato viene del campo Días Crédito del cliente
+    </span>
+</div>
+
+                                        {/* CONCEPTO */}
+                                        <div className="flex flex-col gap-2">
+                                            <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2">
+                                                Concepto
+                                            </label>
+
+                                            {selectedCategory === 'Servicios' ? (
+                                                <select
+                                                    name="concepto"
+                                                    value={formValues.concepto}
+                                                    onChange={handleInputChange}
+                                                    className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20"
+                                                    required
+                                                >
                                                     <option value="">Seleccionar...</option>
-                                                    {conceptosServicios.map(c => <option key={c} value={c}>{c}</option>)}
+                                                    {conceptosServicios.map((c) => (
+                                                        <option key={c} value={c}>
+                                                            {c}
+                                                        </option>
+                                                    ))}
                                                 </select>
-                                            ) : <input type="text" name="concepto" value={formValues.concepto} onChange={handleInputChange} className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20" placeholder="Ej: Tarima Reforzada" required />}
+                                            ) : (
+                                                <input
+                                                    type="text"
+                                                    name="concepto"
+                                                    value={formValues.concepto}
+                                                    onChange={handleInputChange}
+                                                    className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20"
+                                                    placeholder="Ej: Tarima Reforzada"
+                                                    required
+                                                />
+                                            )}
                                         </div>
 
+                                        {/* CANTIDAD */}
                                         <div className="flex flex-col gap-2">
-                                            <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2">Cantidad</label>
-                                            <input type="number" name="cantidad" value={formValues.cantidad} onChange={handleInputChange} className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20" required />
+                                            <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2">
+                                                Cantidad
+                                            </label>
+
+                                            <input
+                                                type="number"
+                                                name="cantidad"
+                                                value={formValues.cantidad}
+                                                onChange={handleInputChange}
+                                                className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20"
+                                                required
+                                            />
                                         </div>
 
+                                        {/* PRECIO */}
                                         <div className="flex flex-col gap-2">
-                                            <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2">Precio Unitario</label>
+                                            <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2">
+                                                Precio Unitario
+                                            </label>
+
                                             <div className="relative">
                                                 <FiDollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-green-600 dark:text-green-500" />
-                                                <input type="number" step="0.01" name="precioUnitario" value={formValues.precioUnitario} onChange={handleInputChange} className="w-full bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 pl-10 text-sm text-green-600 dark:text-green-400 font-bold outline-none focus:ring-2 ring-blue-500/20" required />
+
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    name="precioUnitario"
+                                                    value={formValues.precioUnitario}
+                                                    onChange={handleInputChange}
+                                                    className="w-full bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 pl-10 text-sm text-green-600 dark:text-green-400 font-bold outline-none focus:ring-2 ring-blue-500/20"
+                                                    required
+                                                />
                                             </div>
                                         </div>
 
+                                        {/* ESTADO DE PAGO */}
                                         <div className="flex flex-col gap-2">
-                                            <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2">Estado de Pago</label>
-                                            <select name="estadoPago" value={formValues.estadoPago} onChange={handleInputChange} className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20" required>
+                                            <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2">
+                                                Estado de Pago
+                                            </label>
+
+                                            <select
+                                                name="estadoPago"
+                                                value={formValues.estadoPago}
+                                                onChange={handleInputChange}
+                                                className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20"
+                                                required
+                                            >
                                                 <option value="">Seleccionar...</option>
-                                                {opcionesPago.map(p => <option key={p} value={p}>{p}</option>)}
+
+                                                {opcionesPago.map((p) => (
+                                                    <option key={p} value={p}>
+                                                        {p}
+                                                    </option>
+                                                ))}
                                             </select>
                                         </div>
 
+                                        {/* FECHA OPERACIÓN */}
                                         <div className="flex flex-col gap-2">
-                                            <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2">Fecha Operación</label>
-                                            <input type="date" name="fechaOperacion" value={formValues.fechaOperacion} onChange={handleInputChange} className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20" required />
+                                            <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2">
+                                                Fecha Operación
+                                            </label>
+
+                                            <input
+                                                type="date"
+                                                name="fechaOperacion"
+                                                value={formValues.fechaOperacion}
+                                                onChange={handleInputChange}
+                                                className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20"
+                                                required
+                                            />
                                         </div>
 
+                                        {/* TRANSPORTE */}
                                         <div className="flex flex-col gap-2">
-                                            <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2">Transporte</label>
-                                            <select name="transporte" value={formValues.transporte} onChange={handleInputChange} className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20" required>
+                                            <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2">
+                                                Transporte
+                                            </label>
+
+                                            <select
+                                                name="transporte"
+                                                value={formValues.transporte}
+                                                onChange={handleInputChange}
+                                                className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20"
+                                                required
+                                            >
                                                 <option value="">Seleccionar...</option>
-                                                {opcionesTransporte.map(t => <option key={t} value={t}>{t}</option>)}
+
+                                                {opcionesTransporte.map((t) => (
+                                                    <option key={t} value={t}>
+                                                        {t}
+                                                    </option>
+                                                ))}
                                             </select>
                                         </div>
                                     </div>
 
+                                    {/* RESUMEN DE CRÉDITO */}
+                                    {formValues.fechaOperacion && formValues.plazoCredito && (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="bg-blue-50 dark:bg-blue-600/10 border border-blue-200 dark:border-blue-500/20 p-4 rounded-2xl">
+                                                <p className="text-[9px] font-black uppercase text-blue-600 dark:text-blue-400">
+                                                    Fecha estimada de pago
+                                                </p>
+
+                                                <p className="text-lg font-black text-gray-900 dark:text-white">
+                                                    {new Date(
+                                                        `${fechaEstimadaPago}T00:00:00`
+                                                    ).toLocaleDateString('es-MX')}
+                                                </p>
+                                            </div>
+
+                                            <div
+                                                className={`p-4 rounded-2xl border ${
+                                                    diasRestantes < 0
+                                                        ? 'bg-red-50 dark:bg-red-600/10 border-red-200 dark:border-red-500/20'
+                                                        : 'bg-green-50 dark:bg-green-600/10 border-green-200 dark:border-green-500/20'
+                                                }`}
+                                            >
+                                                <p
+                                                    className={`text-[9px] font-black uppercase ${
+                                                        diasRestantes < 0
+                                                            ? 'text-red-600 dark:text-red-400'
+                                                            : 'text-green-600 dark:text-green-400'
+                                                    }`}
+                                                >
+                                                    Estado del plazo
+                                                </p>
+
+                                                <p className="text-lg font-black text-gray-900 dark:text-white">
+                                                    {diasRestantes > 0 && `Faltan ${diasRestantes} días`}
+                                                    {diasRestantes === 0 && 'Vence hoy'}
+                                                    {diasRestantes < 0 &&
+                                                        `Vencido hace ${Math.abs(diasRestantes)} días`}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* OBSERVACIONES */}
                                     <div className="flex flex-col gap-2">
-                                        <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2">Observaciones</label>
-                                        <textarea name="observaciones" value={formValues.observaciones} onChange={handleInputChange} className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white resize-none h-24 outline-none focus:ring-2 ring-blue-500/20" placeholder="Notas adicionales..." />
+                                        <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2">
+                                            Observaciones
+                                        </label>
+
+                                        <textarea
+                                            name="observaciones"
+                                            value={formValues.observaciones}
+                                            onChange={handleInputChange}
+                                            className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white resize-none h-24 outline-none focus:ring-2 ring-blue-500/20"
+                                            placeholder="Notas adicionales..."
+                                        />
                                     </div>
 
                                     <div className="pt-6 flex gap-4">
-                                        <button type="button" onClick={resetAll} className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-gray-700 transition-all">Cancelar</button>
-                                        <button type="submit" className="flex-[2] bg-blue-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-blue-900/20">
+                                        <button
+                                            type="button"
+                                            onClick={resetAll}
+                                            className="flex-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
+                                        >
+                                            Cancelar
+                                        </button>
+
+                                        <button
+                                            type="submit"
+                                            className="flex-[2] bg-blue-600 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-blue-900/20"
+                                        >
                                             {isEditing ? 'Actualizar Registro' : 'Finalizar Venta'}
                                         </button>
                                     </div>
@@ -328,50 +812,150 @@ const SalesPage = () => {
                             ) : (
                                 <div className="h-full flex flex-col items-center justify-center bg-white dark:bg-[#1f2937]/30 rounded-[2.5rem] border-2 border-dashed border-gray-200 dark:border-gray-800 text-gray-400 dark:text-gray-600 transition-colors">
                                     <FiUser size={48} className="mb-4 opacity-20" />
-                                    <p className="uppercase font-black text-xs tracking-widest">Selecciona un cliente de la lista</p>
+                                    <p className="uppercase font-black text-xs tracking-widest">
+                                        Selecciona un cliente de la lista
+                                    </p>
                                 </div>
                             )}
                         </div>
                     </div>
                 )}
 
-                {/* VISTA 3: HISTORIAL */}
+                {/* HISTORIAL */}
                 {view === 'history' && (
                     <div className="animate-in fade-in duration-500">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {sales.map(sale => (
-                                <div key={sale.id} className="bg-white dark:bg-[#1f2937] p-8 rounded-[2.5rem] border border-gray-200 dark:border-gray-700 shadow-xl hover:border-blue-500/50 transition-all group">
-                                    <div className="flex justify-between items-start mb-6">
-                                        <div className="p-3 bg-blue-100 dark:bg-blue-500/10 text-blue-600 dark:text-blue-500 rounded-2xl text-2xl">
-                                            {units.find(u => u.name === sale.unitBusiness)?.icon || '💰'}
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <button onClick={() => handleEdit(sale)} className="p-3 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-xl hover:text-green-600 dark:hover:text-green-400 transition-colors shadow-sm">
-                                                <FiEdit2 size={16}/>
-                                            </button>
-                                            {canDelete && (
-                                                <button onClick={() => handleDelete(sale.id)} className="p-3 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-xl hover:text-red-600 dark:hover:text-red-400 transition-colors shadow-sm">
-                                                    <FiTrash2 size={16}/>
+                            {sales.map((sale) => {
+                                const fechaOperacionHistorial = sale.fechaOperacion
+                                    ? sale.fechaOperacion.split('T')[0]
+                                    : '';
+
+                                const fechaEstimadaHistorial =
+                                    sale.fechaEstimadaPago ||
+                                    calcularFechaEstimada(
+                                        fechaOperacionHistorial,
+                                        sale.plazoCredito
+                                    );
+
+                                const diasActualizados = calcularDiasRestantes(
+                                    fechaOperacionHistorial,
+                                    sale.plazoCredito
+                                );
+
+                                return (
+                                    <div
+                                        key={sale.id}
+                                        className="bg-white dark:bg-[#1f2937] p-8 rounded-[2.5rem] border border-gray-200 dark:border-gray-700 shadow-xl hover:border-blue-500/50 transition-all group"
+                                    >
+                                        <div className="flex justify-between items-start mb-6">
+                                            <div className="p-3 bg-blue-100 dark:bg-blue-500/10 text-blue-600 dark:text-blue-500 rounded-2xl text-2xl">
+                                                {units.find((u) => u.name === sale.unitBusiness)?.icon || '💰'}
+                                            </div>
+
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => handleEdit(sale)}
+                                                    className="p-3 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-xl hover:text-green-600 dark:hover:text-green-400 transition-colors shadow-sm"
+                                                >
+                                                    <FiEdit2 size={16} />
                                                 </button>
-                                            )}
+
+                                                {canDelete && (
+                                                    <button
+                                                        onClick={() => handleDelete(sale.id)}
+                                                        className="p-3 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-xl hover:text-red-600 dark:hover:text-red-400 transition-colors shadow-sm"
+                                                    >
+                                                        <FiTrash2 size={16} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <h4 className="text-xl font-black uppercase text-gray-800 dark:text-white truncate group-hover:text-blue-600 transition-colors">
+                                            {sale.concepto}
+                                        </h4>
+
+                                        <p className="text-[10px] font-bold text-blue-600 dark:text-blue-500 uppercase tracking-widest mb-2">
+                                            Unidad: {sale.unitBusiness}
+                                        </p>
+
+                                        <p className="text-[10px] font-black text-yellow-600 dark:text-yellow-500 uppercase tracking-widest mb-2">
+                                            No. Remisión: {sale.noRemision || 'Sin remisión'}
+                                        </p>
+
+                                        <p className="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-widest mb-2">
+                                            Facturación: {sale.requiereFactura || 'Sin definir'}
+                                        </p>
+
+                                        <p className="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-widest mb-2">
+                                            Factura: {sale.numeroFactura || 'Sin factura'}
+                                        </p>
+
+                                        <p className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-4">
+                                            Plazo crédito:{' '}
+                                            {sale.plazoCredito ? `${sale.plazoCredito} días` : 'Sin plazo'}
+                                        </p>
+
+                                        <div className="grid grid-cols-2 gap-4 border-t border-gray-100 dark:border-gray-800 pt-6">
+                                            <div className="bg-gray-50 dark:bg-[#0e1624] p-3 rounded-2xl border border-gray-100 dark:border-gray-800">
+                                                <p className="text-[8px] text-gray-400 dark:text-gray-600 font-black uppercase">
+                                                    Monto Total
+                                                </p>
+
+                                                <p className="text-lg font-black text-green-600 dark:text-green-400">
+                                                    $
+                                                    {(
+                                                        Number(sale.cantidad || 0) *
+                                                        Number(sale.precioUnitario || 0)
+                                                    ).toLocaleString('es-MX')}
+                                                </p>
+                                            </div>
+
+                                            <div className="bg-gray-50 dark:bg-[#0e1624] p-3 rounded-2xl border border-gray-100 dark:border-gray-800 text-center">
+                                                <p className="text-[8px] text-gray-400 dark:text-gray-600 font-black uppercase">
+                                                    Estado
+                                                </p>
+
+                                                <p className="text-[10px] font-bold text-gray-600 dark:text-gray-300 mt-1 uppercase">
+                                                    {sale.estadoPago}
+                                                </p>
+                                            </div>
+
+                                            <div className="bg-gray-50 dark:bg-[#0e1624] p-3 rounded-2xl border border-gray-100 dark:border-gray-800 col-span-2">
+                                                <p className="text-[8px] text-gray-400 dark:text-gray-600 font-black uppercase">
+                                                    Fecha estimada de pago
+                                                </p>
+
+                                                <p className="text-[11px] font-bold text-gray-700 dark:text-gray-300 uppercase">
+                                                    {fechaEstimadaHistorial
+                                                        ? new Date(
+                                                              `${fechaEstimadaHistorial}T00:00:00`
+                                                          ).toLocaleDateString('es-MX')
+                                                        : 'Sin fecha'}
+                                                </p>
+
+                                                {diasActualizados !== null && diasActualizados !== undefined && (
+                                                    <p
+                                                        className={`text-[10px] font-black mt-1 ${
+                                                            diasActualizados < 0
+                                                                ? 'text-red-600 dark:text-red-400'
+                                                                : 'text-green-600 dark:text-green-400'
+                                                        }`}
+                                                    >
+                                                        {diasActualizados > 0 &&
+                                                            `Faltan ${diasActualizados} días`}
+                                                        {diasActualizados === 0 && 'Vence hoy'}
+                                                        {diasActualizados < 0 &&
+                                                            `Vencido hace ${Math.abs(
+                                                                diasActualizados
+                                                            )} días`}
+                                                    </p>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
-                                    
-                                    <h4 className="text-xl font-black uppercase text-gray-800 dark:text-white truncate group-hover:text-blue-600 transition-colors">{sale.concepto}</h4>
-                                    <p className="text-[10px] font-bold text-blue-600 dark:text-blue-500 uppercase tracking-widest mb-4">Unidad: {sale.unitBusiness}</p>
-                                    
-                                    <div className="grid grid-cols-2 gap-4 border-t border-gray-100 dark:border-gray-800 pt-6">
-                                        <div className="bg-gray-50 dark:bg-[#0e1624] p-3 rounded-2xl border border-gray-100 dark:border-gray-800">
-                                            <p className="text-[8px] text-gray-400 dark:text-gray-600 font-black uppercase">Monto Total</p>
-                                            <p className="text-lg font-black text-green-600 dark:text-green-400">${(sale.cantidad * sale.precioUnitario).toLocaleString()}</p>
-                                        </div>
-                                        <div className="bg-gray-50 dark:bg-[#0e1624] p-3 rounded-2xl border border-gray-100 dark:border-gray-800 text-center">
-                                            <p className="text-[8px] text-gray-400 dark:text-gray-600 font-black uppercase">Estado</p>
-                                            <p className="text-[10px] font-bold text-gray-600 dark:text-gray-300 mt-1 uppercase">{sale.estadoPago}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 )}
