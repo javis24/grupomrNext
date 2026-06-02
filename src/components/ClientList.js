@@ -4,7 +4,8 @@ import Modal from 'react-modal';
 import jwt from 'jsonwebtoken';
 import { 
     FiSearch, FiPlus, FiEdit2, FiTrash2, FiArrowLeft,
-    FiChevronRight, FiUser, FiMapPin, FiBriefcase, FiX, FiFileText, FiChevronLeft 
+    FiChevronRight, FiUser, FiMapPin, FiBriefcase, FiX, FiFileText, FiChevronLeft,
+    FiPhone 
 } from 'react-icons/fi';
 import { toast, ToastContainer } from 'react-toastify';
 
@@ -241,8 +242,20 @@ export default function ClientList() {
                                 </div>
                                 <h3 className="text-2xl font-black uppercase truncate text-gray-800 dark:text-white mb-4 group-hover:text-blue-600 transition-colors">{client.companyName}</h3>
                                 <div className="space-y-2 mb-8 text-xs text-gray-500 dark:text-gray-400 border-t border-gray-100 dark:border-gray-800 pt-4">
-                                    <div className="flex items-center gap-3"><FiUser className="text-blue-500" /> {client.contactName}</div>
-                                    <div className="flex items-center gap-3"><FiMapPin className="text-blue-500" /> {client.address}</div>
+                                    <div className="flex items-center gap-3">
+                                        <FiUser className="text-blue-500" /> 
+                                        {client.contactName || 'Sin contacto'}
+                                    </div>
+
+                                    <div className="flex items-center gap-3">
+                                        <FiPhone className="text-blue-500" /> 
+                                        {client.contactPhone || 'Sin teléfono'}
+                                    </div>
+
+                                    <div className="flex items-center gap-3">
+                                        <FiMapPin className="text-blue-500" /> 
+                                        {client.address || 'Sin dirección'}
+                                    </div>
                                 </div>
                                 <div className="grid grid-cols-3 gap-2 pt-4 border-t border-gray-100 dark:border-gray-800">
                                     <button onClick={() => openModal(client)} className="bg-gray-100 dark:bg-gray-800 hover:bg-blue-600 p-3 rounded-xl transition-all flex justify-center text-gray-600 dark:text-white hover:text-white"><FiEdit2 size={16}/></button>
@@ -285,6 +298,11 @@ export default function ClientList() {
                             <div className="space-y-4">
                                 <h3 className="text-green-600 dark:text-green-500 text-[10px] font-black uppercase tracking-widest border-l-4 border-green-500 pl-2">Contacto</h3>
                                 <ModalInput label="Nombre Contacto" value={newClient.contactName} onChange={(v) => setNewClient({...newClient, contactName: v})} />
+                               <ModalInput 
+                                    label="Teléfono del Contacto" 
+                                    value={newClient.contactPhone} 
+                                    onChange={(v) => setNewClient({...newClient, contactPhone: v})} 
+                                />
                                 <ModalInput label="Cargo" value={newClient.position} onChange={(v) => setNewClient({...newClient, position: v})} />
                                 <ModalInput label="Email" type="email" value={newClient.email} onChange={(v) => setNewClient({...newClient, email: v})} />
                                 
