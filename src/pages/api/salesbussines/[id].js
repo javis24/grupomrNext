@@ -17,7 +17,9 @@ export default async function handler(req, res) {
 
             // Solo el dueño de la venta o admin/gerencia pueden modificar/eliminar
             if (sale.userId !== loggedUserId && role !== 'admin' && role !== 'gerencia') {
-                return res.status(403).json({ message: "No tienes permiso para modificar esta venta" });
+                return res.status(403).json({
+                    message: "No tienes permiso para modificar esta venta"
+                });
             }
 
             if (method === 'PUT') {
@@ -26,6 +28,7 @@ export default async function handler(req, res) {
                     requiereFactura,
                     numeroFactura,
                     plazoCredito,
+                    fechaCotizacion,
                     fechaEstimadaPago,
                     diasRestantes,
                     unitBusiness,
@@ -80,14 +83,22 @@ export default async function handler(req, res) {
 
                 await sale.update({
                     noRemision: noRemisionFinal,
+
                     requiereFactura: requiereFactura || 'Pendiente',
+
                     numeroFactura:
                         numeroFactura && String(numeroFactura).trim() !== ''
                             ? String(numeroFactura).trim()
                             : null,
+
                     plazoCredito: plazoCredito ? parseInt(plazoCredito) : null,
+
+                    fechaCotizacion: fechaCotizacion || null,
+
                     fechaEstimadaPago: fechaEstimadaPago || null,
+
                     diasRestantes: diasRestantes ?? null,
+
                     unitBusiness,
                     concepto,
                     equipo: equipo || null,

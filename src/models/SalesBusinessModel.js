@@ -27,6 +27,10 @@ numeroFactura: {
     type: DataTypes.STRING,
     allowNull: true,
 },
+fechaCotizacion: {
+    type: DataTypes.DATEONLY,
+    allowNull: true,
+},
 
 plazoCredito: {
     type: DataTypes.INTEGER,

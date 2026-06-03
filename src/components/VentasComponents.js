@@ -42,21 +42,21 @@ const SalesPage = () => {
     const [editingId, setEditingId] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
     const [remisionLocked, setRemisionLocked] = useState(false);
-
-    const [formValues, setFormValues] = useState({
-        noRemision: '',
-        requiereFactura: '',
-        numeroFactura: '',
-        plazoCredito: '',
-        concepto: '',
-        equipo: '',
-        cantidad: '',
-        precioUnitario: '',
-        transporte: '',
-        estadoPago: '',
-        fechaOperacion: '',
-        observaciones: '',
-    });
+        const [formValues, setFormValues] = useState({
+            noRemision: '',
+            requiereFactura: '',
+            numeroFactura: '',
+            plazoCredito: '',
+            fechaCotizacion: '',
+            concepto: '',
+            equipo: '',
+            cantidad: '',
+            precioUnitario: '',
+            transporte: '',
+            estadoPago: '',
+            fechaOperacion: '',
+            observaciones: '',
+        });
 
     const canDelete = currentUser?.role === 'admin' || currentUser?.role === 'gerencia';
 
@@ -133,15 +133,17 @@ const SalesPage = () => {
         return Math.ceil(diferenciaMs / (1000 * 60 * 60 * 24));
     };
 
-    const fechaEstimadaPago = calcularFechaEstimada(
-        formValues.fechaOperacion,
-        formValues.plazoCredito
-    );
+   const fechaBasePlazo = formValues.fechaCotizacion || formValues.fechaOperacion;
 
-    const diasRestantes = calcularDiasRestantes(
-        formValues.fechaOperacion,
-        formValues.plazoCredito
-    );
+const fechaEstimadaPago = calcularFechaEstimada(
+    fechaBasePlazo,
+    formValues.plazoCredito
+);
+
+const diasRestantes = calcularDiasRestantes(
+    fechaBasePlazo,
+    formValues.plazoCredito
+);
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -215,21 +217,22 @@ const SalesPage = () => {
         );
 
         setFormValues({
-            noRemision: sale.noRemision || '',
-            requiereFactura: sale.requiereFactura || '',
-            numeroFactura: sale.numeroFactura || '',
-            plazoCredito: sale.plazoCredito || client?.billingDepartment || '',
-            concepto: sale.concepto || '',
-            equipo: sale.equipo || '',
-            cantidad: sale.cantidad || '',
-            precioUnitario: sale.precioUnitario || '',
-            transporte: sale.transporte || '',
-            estadoPago: sale.estadoPago || '',
-            fechaOperacion: sale.fechaOperacion
-                ? sale.fechaOperacion.split('T')[0]
-                : '',
-            observaciones: sale.observaciones || '',
-        });
+    noRemision: sale.noRemision || '',
+    requiereFactura: sale.requiereFactura || '',
+    numeroFactura: sale.numeroFactura || '',
+    plazoCredito: sale.plazoCredito || client?.billingDepartment || '',
+    fechaCotizacion: sale.fechaCotizacion ? sale.fechaCotizacion.split('T')[0] : '',
+    concepto: sale.concepto || '',
+    equipo: sale.equipo || '',
+    cantidad: sale.cantidad || '',
+    precioUnitario: sale.precioUnitario || '',
+    transporte: sale.transporte || '',
+    estadoPago: sale.estadoPago || '',
+    fechaOperacion: sale.fechaOperacion
+        ? sale.fechaOperacion.split('T')[0]
+        : '',
+    observaciones: sale.observaciones || '',
+});
 
         setView('form');
     };
@@ -267,23 +270,27 @@ const SalesPage = () => {
         if (!formValues.requiereFactura) {
             return toast.error('Indica si la venta se va a facturar');
         }
+        if (!formValues.fechaCotizacion) {
+            return toast.error('Selecciona la fecha de cotización');
+        }
 
         const dataToSend = {
-            ...formValues,
-            noRemision: formValues.noRemision
-                ? formValues.noRemision.trim()
-                : '',
-            numeroFactura: formValues.numeroFactura
-                ? formValues.numeroFactura.trim()
-                : '',
-            plazoCredito: formValues.plazoCredito
-                ? parseInt(formValues.plazoCredito)
-                : null,
-            fechaEstimadaPago: fechaEstimadaPago || null,
-            diasRestantes: diasRestantes ?? null,
-            unitBusiness: selectedCategory,
-            clientId: selectedClient.id,
-        };
+    ...formValues,
+    noRemision: formValues.noRemision
+        ? formValues.noRemision.trim()
+        : '',
+    numeroFactura: formValues.numeroFactura
+        ? formValues.numeroFactura.trim()
+        : '',
+    plazoCredito: formValues.plazoCredito
+        ? parseInt(formValues.plazoCredito)
+        : null,
+    fechaCotizacion: formValues.fechaCotizacion || null,
+    fechaEstimadaPago: fechaEstimadaPago || null,
+    diasRestantes: diasRestantes ?? null,
+    unitBusiness: selectedCategory,
+    clientId: selectedClient.id,
+};
 
         try {
             if (isEditing) {
@@ -307,29 +314,30 @@ const SalesPage = () => {
         }
     };
 
-    const resetAll = () => {
-        setView('units');
-        setSelectedCategory(null);
-        setSelectedClient(null);
-        setIsEditing(false);
-        setEditingId(null);
-        setRemisionLocked(false);
+   const resetAll = () => {
+    setView('units');
+    setSelectedCategory(null);
+    setSelectedClient(null);
+    setIsEditing(false);
+    setEditingId(null);
+    setRemisionLocked(false);
 
-        setFormValues({
-            noRemision: '',
-            requiereFactura: '',
-            numeroFactura: '',
-            plazoCredito: '',
-            concepto: '',
-            equipo: '',
-            cantidad: '',
-            precioUnitario: '',
-            transporte: '',
-            estadoPago: '',
-            fechaOperacion: '',
-            observaciones: '',
-        });
-    };
+    setFormValues({
+        noRemision: '',
+        requiereFactura: '',
+        numeroFactura: '',
+        plazoCredito: '',
+        fechaCotizacion: '',
+        concepto: '',
+        equipo: '',
+        cantidad: '',
+        precioUnitario: '',
+        transporte: '',
+        estadoPago: '',
+        fechaOperacion: '',
+        observaciones: '',
+   });
+};
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-[#0e1624] text-gray-900 dark:text-white p-4 md:p-8 font-sans transition-colors duration-300">
@@ -580,6 +588,23 @@ const SalesPage = () => {
                                                 placeholder="Ej: FAC-2026-001"
                                             />
                                         </div>
+                                        <div className="flex flex-col gap-2">
+    <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2">
+        Fecha de Cotización
+    </label>
+
+    <input
+        type="date"
+        name="fechaCotizacion"
+        value={formValues.fechaCotizacion}
+        onChange={handleInputChange}
+        className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20"
+    />
+
+    <span className="text-[9px] text-gray-400 dark:text-gray-500 uppercase font-bold ml-2">
+        Esta fecha se usará para calcular el estado del plazo
+    </span>
+</div>
 
                                   <div className="flex flex-col gap-2">
     <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2">
@@ -736,46 +761,43 @@ const SalesPage = () => {
                                     </div>
 
                                     {/* RESUMEN DE CRÉDITO */}
-                                    {formValues.fechaOperacion && formValues.plazoCredito && (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div className="bg-blue-50 dark:bg-blue-600/10 border border-blue-200 dark:border-blue-500/20 p-4 rounded-2xl">
-                                                <p className="text-[9px] font-black uppercase text-blue-600 dark:text-blue-400">
-                                                    Fecha estimada de pago
-                                                </p>
+                                  {fechaBasePlazo && formValues.plazoCredito && (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-blue-50 dark:bg-blue-600/10 border border-blue-200 dark:border-blue-500/20 p-4 rounded-2xl">
+            <p className="text-[9px] font-black uppercase text-gray-500 dark:text-gray-400 mb-1">
+                Fecha base: {new Date(`${fechaBasePlazo}T00:00:00`).toLocaleDateString('es-MX')}
+            </p>
 
-                                                <p className="text-lg font-black text-gray-900 dark:text-white">
-                                                    {new Date(
-                                                        `${fechaEstimadaPago}T00:00:00`
-                                                    ).toLocaleDateString('es-MX')}
-                                                </p>
-                                            </div>
+            <p className="text-[9px] font-black uppercase text-blue-600 dark:text-blue-400">
+                Fecha estimada de pago
+            </p>
 
-                                            <div
-                                                className={`p-4 rounded-2xl border ${
-                                                    diasRestantes < 0
-                                                        ? 'bg-red-50 dark:bg-red-600/10 border-red-200 dark:border-red-500/20'
-                                                        : 'bg-green-50 dark:bg-green-600/10 border-green-200 dark:border-green-500/20'
-                                                }`}
-                                            >
-                                                <p
-                                                    className={`text-[9px] font-black uppercase ${
-                                                        diasRestantes < 0
-                                                            ? 'text-red-600 dark:text-red-400'
-                                                            : 'text-green-600 dark:text-green-400'
-                                                    }`}
-                                                >
-                                                    Estado del plazo
-                                                </p>
+            <p className="text-lg font-black text-gray-900 dark:text-white">
+                {new Date(`${fechaEstimadaPago}T00:00:00`).toLocaleDateString('es-MX')}
+            </p>
+        </div>
 
-                                                <p className="text-lg font-black text-gray-900 dark:text-white">
-                                                    {diasRestantes > 0 && `Faltan ${diasRestantes} días`}
-                                                    {diasRestantes === 0 && 'Vence hoy'}
-                                                    {diasRestantes < 0 &&
-                                                        `Vencido hace ${Math.abs(diasRestantes)} días`}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    )}
+        <div className={`p-4 rounded-2xl border ${
+            diasRestantes < 0
+                ? 'bg-red-50 dark:bg-red-600/10 border-red-200 dark:border-red-500/20'
+                : 'bg-green-50 dark:bg-green-600/10 border-green-200 dark:border-green-500/20'
+        }`}>
+            <p className={`text-[9px] font-black uppercase ${
+                diasRestantes < 0
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-green-600 dark:text-green-400'
+            }`}>
+                Estado del plazo
+            </p>
+
+            <p className="text-lg font-black text-gray-900 dark:text-white">
+                {diasRestantes > 0 && `Faltan ${diasRestantes} días`}
+                {diasRestantes === 0 && 'Vence hoy'}
+                {diasRestantes < 0 && `Vencido hace ${Math.abs(diasRestantes)} días`}
+            </p>
+        </div>
+    </div>
+)}
 
                                     {/* OBSERVACIONES */}
                                     <div className="flex flex-col gap-2">
@@ -826,22 +848,27 @@ const SalesPage = () => {
                     <div className="animate-in fade-in duration-500">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {sales.map((sale) => {
-                                const fechaOperacionHistorial = sale.fechaOperacion
-                                    ? sale.fechaOperacion.split('T')[0]
-                                    : '';
+                              const fechaOperacionHistorial = sale.fechaOperacion
+    ? sale.fechaOperacion.split('T')[0]
+    : '';
 
-                                const fechaEstimadaHistorial =
-                                    sale.fechaEstimadaPago ||
-                                    calcularFechaEstimada(
-                                        fechaOperacionHistorial,
-                                        sale.plazoCredito
-                                    );
+const fechaCotizacionHistorial = sale.fechaCotizacion
+    ? sale.fechaCotizacion.split('T')[0]
+    : '';
 
-                                const diasActualizados = calcularDiasRestantes(
-                                    fechaOperacionHistorial,
-                                    sale.plazoCredito
-                                );
+const fechaBaseHistorial = fechaCotizacionHistorial || fechaOperacionHistorial;
 
+const fechaEstimadaHistorial =
+    sale.fechaEstimadaPago ||
+    calcularFechaEstimada(
+        fechaBaseHistorial,
+        sale.plazoCredito
+    );
+
+const diasActualizados = calcularDiasRestantes(
+    fechaBaseHistorial,
+    sale.plazoCredito
+);
                                 return (
                                     <div
                                         key={sale.id}
@@ -881,6 +908,12 @@ const SalesPage = () => {
 
                                         <p className="text-[10px] font-black text-yellow-600 dark:text-yellow-500 uppercase tracking-widest mb-2">
                                             No. Remisión: {sale.noRemision || 'Sin remisión'}
+                                        </p>
+                                        <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-2">
+                                            Fecha cotización:{' '}
+                                            {sale.fechaCotizacion
+                                                ? new Date(`${sale.fechaCotizacion.split('T')[0]}T00:00:00`).toLocaleDateString('es-MX')
+                                                : 'Sin fecha'}
                                         </p>
 
                                         <p className="text-[10px] font-black text-purple-600 dark:text-purple-400 uppercase tracking-widest mb-2">
