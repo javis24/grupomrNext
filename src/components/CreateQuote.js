@@ -210,6 +210,108 @@ setQuoteNumber(maxQuoteNumber + 1);
     // ==========================================
     // LÓGICA DE PDF (COMPARTIDA)
     // ==========================================
+
+    const convertirNumeroALetras = (numero) => {
+    const unidades = [
+        '', 'UNO', 'DOS', 'TRES', 'CUATRO', 'CINCO', 'SEIS', 'SIETE', 'OCHO', 'NUEVE'
+    ];
+
+    const especiales = [
+        'DIEZ', 'ONCE', 'DOCE', 'TRECE', 'CATORCE', 'QUINCE',
+        'DIECISÉIS', 'DIECISIETE', 'DIECIOCHO', 'DIECINUEVE'
+    ];
+
+    const decenas = [
+        '', '', 'VEINTE', 'TREINTA', 'CUARENTA', 'CINCUENTA',
+        'SESENTA', 'SETENTA', 'OCHENTA', 'NOVENTA'
+    ];
+
+    const centenas = [
+        '', 'CIENTO', 'DOSCIENTOS', 'TRESCIENTOS', 'CUATROCIENTOS',
+        'QUINIENTOS', 'SEISCIENTOS', 'SETECIENTOS', 'OCHOCIENTOS', 'NOVECIENTOS'
+    ];
+
+    const convertirCentenas = (num) => {
+        if (num === 0) return '';
+        if (num === 100) return 'CIEN';
+
+        let texto = '';
+
+        const c = Math.floor(num / 100);
+        const d = Math.floor((num % 100) / 10);
+        const u = num % 10;
+        const resto = num % 100;
+
+        if (c > 0) {
+            texto += centenas[c] + ' ';
+        }
+
+        if (resto >= 10 && resto <= 19) {
+            texto += especiales[resto - 10];
+        } else if (resto >= 20 && resto <= 29) {
+            if (resto === 20) {
+                texto += 'VEINTE';
+            } else {
+                texto += 'VEINTI' + unidades[u].toLowerCase().toUpperCase();
+            }
+        } else {
+            if (d > 0) {
+                texto += decenas[d];
+
+                if (u > 0) {
+                    texto += ' Y ';
+                }
+            }
+
+            if (u > 0) {
+                texto += unidades[u];
+            }
+        }
+
+        return texto.trim();
+    };
+
+    const convertirMiles = (num) => {
+        if (num === 0) return 'CERO';
+
+        let texto = '';
+
+        const millones = Math.floor(num / 1000000);
+        const miles = Math.floor((num % 1000000) / 1000);
+        const cientos = num % 1000;
+
+        if (millones > 0) {
+            if (millones === 1) {
+                texto += 'UN MILLÓN ';
+            } else {
+                texto += convertirCentenas(millones) + ' MILLONES ';
+            }
+        }
+
+        if (miles > 0) {
+            if (miles === 1) {
+                texto += 'MIL ';
+            } else {
+                texto += convertirCentenas(miles) + ' MIL ';
+            }
+        }
+
+        if (cientos > 0) {
+            texto += convertirCentenas(cientos);
+        }
+
+        return texto.trim();
+    };
+
+    const numeroLimpio = Number(numero || 0);
+    const entero = Math.floor(numeroLimpio);
+    const centavos = Math.round((numeroLimpio - entero) * 100);
+
+    const letras = convertirMiles(entero);
+
+    return `${letras} PESOS ${String(centavos).padStart(2, '0')}/100 M.N.`;
+};
+
     const renderPDFContent = (doc, client, rows, quoteNum, dateStr, descGen, obsSel) => {
         const image = new Image();
         image.src = '/logo_mr.png';
@@ -255,15 +357,72 @@ setQuoteNumber(maxQuoteNumber + 1);
             });
 
             const finalY = doc.lastAutoTable.finalY;
-            doc.autoTable({
-                startY: finalY + 1,
-                body: [['SUBTOTAL:', `$${Number(globalSubtotal).toLocaleString()}`], ['IVA (16%):', `$${Number(globalIva).toLocaleString()}`], ['TOTAL:', `$${Number(globalTotal).toLocaleString()}`]],
-                theme: 'grid', styles: { fontSize: 8, halign: 'right', fontStyle: 'bold' },
-                columnStyles: { 0: { cellWidth: 22, fillColor: [245, 245, 245] }, 1: { cellWidth: 22 } }, margin: { left: 152 },
-                didParseCell: (data) => { if (data.row.index === 2) { data.cell.styles.fillColor = [255, 204, 0]; data.cell.styles.textColor = [0, 0, 0]; } }
-            });
+           doc.autoTable({
+    startY: finalY + 1,
+    body: [
+        [
+            'SUBTOTAL:',
+            `$${Number(globalSubtotal).toLocaleString('es-MX', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            })}`
+        ],
+        [
+            'IVA (16%):',
+            `$${Number(globalIva).toLocaleString('es-MX', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            })}`
+        ],
+        [
+            'TOTAL:',
+            `$${Number(globalTotal).toLocaleString('es-MX', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            })}`
+        ],
+    ],
+    theme: 'grid',
+    styles: {
+        fontSize: 8,
+        halign: 'right',
+        fontStyle: 'bold',
+        cellPadding: 2,
+    },
+    columnStyles: {
+        0: {
+            cellWidth: 28,
+            fillColor: [245, 245, 245],
+        },
+        1: {
+            cellWidth: 30,
+        },
+    },
+    margin: {
+        left: 137,
+    },
+    didParseCell: (data) => {
+        if (data.row.index === 2) {
+            data.cell.styles.fillColor = [255, 204, 0];
+            data.cell.styles.textColor = [0, 0, 0];
+            data.cell.styles.fontSize = 9;
+        }
+    },
+});
+const totalEnLetra = convertirNumeroALetras(Number(globalTotal));
 
-            let notesY = doc.lastAutoTable.finalY + 10;
+let totalLetraY = doc.lastAutoTable.finalY + 8;
+
+doc.setFont("helvetica", "bold");
+doc.setFontSize(8);
+doc.text("IMPORTE TOTAL CON LETRA:", 15, totalLetraY);
+
+doc.setFont("helvetica", "normal");
+doc.setFontSize(8);
+
+const totalLetraSplit = doc.splitTextToSize(totalEnLetra, 180);
+doc.text(totalLetraSplit, 15, totalLetraY + 5);
+            let notesY = totalLetraY + 12 + (totalLetraSplit.length * 4);
             doc.setFont("helvetica", "bold"); doc.text("NOTAS Y CONDICIONES", 15, notesY); doc.setFont("helvetica", "normal");
             obsSel.forEach((obs, index) => doc.text(`• ${obs}`, 15, notesY + 6 + (index * 5)));
             
