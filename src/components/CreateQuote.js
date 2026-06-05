@@ -27,6 +27,11 @@ const CreateQuote = () => {
     const [descripcionGeneral, setDescripcionGeneral] = useState("");
     const [observacionesSeleccionadas, setObservacionesSeleccionadas] = useState([]);
 
+    const [products, setProducts] = useState([]);
+    const [productSearch, setProductSearch] = useState('');
+    const [selectedBusinessUnit, setSelectedBusinessUnit] = useState('');
+    const [showProductSuggestions, setShowProductSuggestions] = useState(false);
+
     const opcionesObservaciones = [
         "PRECIO DURANTE EL PRESENTE AÑO", "PRECIOS MAS IVA", "PRECIOS ANTES DE IMPUESTOS",
         "INCLUYE GASTOS DE ENTREGA", "LAB NUESTRA BODEGA", "TERMINOS DE ENTREGA 4 SEMANAS",
@@ -37,6 +42,15 @@ const CreateQuote = () => {
         "CONTAMOS CON LOS PERMISOS Y AUORIZACIONES NECESARIOS PARA EL DESARROLLO DE NUESTRAS ACTIVIDADES",
         "INCLUYE ELABORACION Y ENTREGA DE MANIFIESTOS. SOLICITARLO AL CONTRATAR SERVICIOS."
     ];
+
+    const unidadesNegocio = [
+    'Servicios',
+    'Empaques',
+    'Tarimas',
+    'Alimentos',
+    'Plasticos',
+    'Composta'
+];
 
     const [clientData, setClientData] = useState({
         companyName: '', address: '', attentionTo: '', department: '',
@@ -111,12 +125,15 @@ const CreateQuote = () => {
         try {
             const token = localStorage.getItem('token');
             const headers = { Authorization: `Bearer ${token}` };
-            const [clientsRes, quotesRes] = await Promise.all([
-                axios.get('/api/clients', { headers }),
-                axios.get('/api/quotes', { headers })
-            ]);
-            setAllClients(clientsRes.data);
-            setUserQuotes(quotesRes.data);
+            const [clientsRes, quotesRes, productsRes] = await Promise.all([
+            axios.get('/api/clients', { headers }),
+            axios.get('/api/quotes', { headers }),
+            axios.get('/api/products', { headers })
+        ]);
+
+        setAllClients(clientsRes.data);
+        setUserQuotes(quotesRes.data);
+        setProducts(Array.isArray(productsRes.data) ? productsRes.data : []);
         } catch (err) { console.error("Error al cargar datos iniciales", err); }
     };
 
@@ -276,6 +293,51 @@ const CreateQuote = () => {
         }
     };
 
+
+    const filteredProducts = products.filter((product) => {
+    const matchesUnit = selectedBusinessUnit
+        ? (product.businessUnit || '').trim().toLowerCase() === selectedBusinessUnit.trim().toLowerCase()
+        : true;
+
+    const matchesSearch =
+        (product.name || '').toLowerCase().includes(productSearch.toLowerCase()) ||
+        (product.code || '').toLowerCase().includes(productSearch.toLowerCase());
+
+    return matchesUnit && matchesSearch;
+});
+
+const addProductToQuote = (product) => {
+    const price = Number(product.price || 0);
+    const subtotal = price * 1;
+
+    const newRow = {
+        productId: product.id,
+        productCode: product.code || '',
+        description: product.name || '',
+        cantidad: 1,
+        um: product.unitMeasure || 'SERVICIO',
+        pu: price,
+        subtotal: subtotal.toFixed(2),
+        iva: (subtotal * 0.16).toFixed(2),
+        total: (subtotal * 1.16).toFixed(2),
+        comments: product.description || '',
+    };
+
+    setServiceRows((prev) => {
+        if (
+            prev.length === 1 &&
+            !prev[0].description &&
+            Number(prev[0].pu || 0) === 0
+        ) {
+            return [newRow];
+        }
+
+        return [...prev, newRow];
+    });
+
+    setProductSearch('');
+    setShowProductSuggestions(false);
+};
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-[#0e1624] dark:text-white p-4 md:p-8 font-sans flex flex-col gap-10 transition-colors duration-300">
       <ToastContainer theme="dark" position="bottom-right" />
@@ -342,10 +404,78 @@ const CreateQuote = () => {
             />
           </div>
         </div>
+        <div className="mb-8 bg-gray-50 dark:bg-[#0e1624]/40 p-5 rounded-2xl border border-gray-200 dark:border-gray-700">
+    <h2 className="text-sm font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-4">
+        Buscar producto del catálogo
+    </h2>
+
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-1">
+                Unidad de negocio
+            </label>
+
+            <select
+                value={selectedBusinessUnit}
+                onChange={(e) => setSelectedBusinessUnit(e.target.value)}
+                className="bg-white dark:bg-[#1f2937] p-3 rounded-xl border border-gray-300 dark:border-gray-700 text-sm text-gray-900 dark:text-white outline-none"
+            >
+                <option value="">Todas las unidades</option>
+                {unidadesNegocio.map((unidad) => (
+                    <option key={unidad} value={unidad}>
+                        {unidad}
+                    </option>
+                ))}
+            </select>
+        </div>
+
+        <div className="md:col-span-2 flex flex-col gap-1 relative">
+            <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-1">
+                Producto
+            </label>
+
+            <input
+                type="text"
+                value={productSearch}
+                onChange={(e) => {
+                    setProductSearch(e.target.value);
+                    setShowProductSuggestions(true);
+                }}
+                placeholder="Buscar por nombre o código..."
+                className="bg-white dark:bg-[#1f2937] p-3 rounded-xl border border-gray-300 dark:border-gray-700 text-sm text-gray-900 dark:text-white outline-none"
+            />
+
+            {showProductSuggestions && productSearch.length > 0 && filteredProducts.length > 0 && (
+                <div className="absolute top-full left-0 w-full bg-white dark:bg-[#1f2937] border border-gray-200 dark:border-gray-600 rounded-xl mt-1 z-50 shadow-2xl max-h-72 overflow-y-auto">
+                    {filteredProducts.map((product) => (
+                        <div
+                            key={product.id}
+                            onClick={() => addProductToQuote(product)}
+                            className="p-3 hover:bg-blue-600 hover:text-white cursor-pointer border-b border-gray-100 dark:border-gray-700 last:border-0 text-gray-700 dark:text-gray-200"
+                        >
+                            <div className="text-sm font-black uppercase">
+                                {product.name}
+                            </div>
+
+                            <div className="text-[10px] uppercase opacity-70">
+                                Código: {product.code || 'S/C'} | Unidad: {product.businessUnit || 'S/U'} | Precio: ${product.price || 0}
+                            </div>
+
+                            <div className="text-[10px] uppercase opacity-70">
+                                Medida: {product.unitMeasure || 'SERVICIO'} | Lead time: {product.leadTime || 'N/A'}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    </div>
+</div>
 
         {/* TABLA DE PRODUCTOS/SERVICIOS */}
         <div className="space-y-4 mb-8">
           <h2 className="text-sm font-black text-gray-600 dark:text-white uppercase tracking-widest">Detalle de Cotización</h2>
+          
           {serviceRows.map((row, index) => (
             <div key={index} className="bg-gray-50 dark:bg-[#0e1624]/50 p-4 rounded-2xl border border-gray-200 dark:border-gray-800 grid grid-cols-1 md:grid-cols-12 gap-3 items-end transition-colors">
               <div className="md:col-span-3 flex flex-col gap-1">
