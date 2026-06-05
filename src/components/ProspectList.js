@@ -33,6 +33,20 @@ const customStyles = {
 };
 
 const unidadesNegocio = ['Servicios', 'Empaques', 'Tarimas', 'Alimentos', 'Plasticos', 'Composta'];
+const normalizePlantas = (value) => {
+    if (!value) return [];
+
+    if (Array.isArray(value)) return value;
+
+    return String(value)
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
+};
+
+const plantasToString = (plantas) => {
+    return normalizePlantas(plantas).join(', ');
+};
 
 const initialClientState = {
     fullName: "",
@@ -71,6 +85,7 @@ export default function ProspectList() {
         company: "",
         phone: "",
         email: "",
+        planta: [],
     });
     const [editingProspect, setEditingProspect] = useState(null);
     const [newClient, setNewClient] = useState(initialClientState);
@@ -126,30 +141,72 @@ export default function ProspectList() {
         setFormData({ ...formData, [name]: value });
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            const token = localStorage.getItem('token');
-            const dataToSave = { ...formData, userId: loggedUserId };
+    const handlePlantaToggle = (unidad) => {
+    setFormData((prev) => {
+        const actuales = normalizePlantas(prev.planta);
 
-            if (modalType === "editProspect") {
-                await axios.put(`/api/prospects/${editingProspect.id}`, dataToSave, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                toast.success("Prospecto actualizado");
-            } else {
-                await axios.post("/api/prospects", dataToSave, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                toast.success("Prospecto creado");
-            }
-            setModalIsOpen(false);
-            fetchProspects();
-            resetForm();
-        } catch (err) {
-            toast.error("Error al procesar");
+        const nuevas = actuales.includes(unidad)
+            ? actuales.filter((item) => item !== unidad)
+            : [...actuales, unidad];
+
+        return {
+            ...prev,
+            planta: nuevas,
+        };
+    });
+};
+
+        const handleClientPlantaToggle = (unidad) => {
+            setNewClient((prev) => {
+                const actuales = normalizePlantas(prev.planta);
+
+                const nuevas = actuales.includes(unidad)
+                    ? actuales.filter((item) => item !== unidad)
+                    : [...actuales, unidad];
+
+                return {
+                    ...prev,
+                    planta: plantasToString(nuevas),
+                };
+            });
+        };
+        
+
+    const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (normalizePlantas(formData.planta).length === 0) {
+        return toast.warning("Selecciona al menos una unidad de negocio");
+    }
+
+    try {
+        const token = localStorage.getItem('token');
+
+        const dataToSave = {
+            ...formData,
+            planta: plantasToString(formData.planta),
+            userId: loggedUserId,
+        };
+
+        if (modalType === "editProspect") {
+            await axios.put(`/api/prospects/${editingProspect.id}`, dataToSave, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            toast.success("Prospecto actualizado");
+        } else {
+            await axios.post("/api/prospects", dataToSave, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            toast.success("Prospecto creado");
         }
-    };
+
+        setModalIsOpen(false);
+        fetchProspects();
+        resetForm();
+    } catch (err) {
+        toast.error("Error al procesar");
+    }
+};
 
     const handleConvertClick = (prospect) => {
         setNewClient({
@@ -160,6 +217,7 @@ export default function ProspectList() {
             contactPhone: prospect.phone || "",
             companyPhone: prospect.phone || "",
             email: prospect.email || "",
+            planta: prospect.planta || "",
             assignedUser: userRole === 'admin' ? "" : loggedUserEmail 
         });
         setEditingProspect(prospect);
@@ -168,26 +226,35 @@ export default function ProspectList() {
     };
 
     const handleClientSave = async (e) => {
-        e.preventDefault();
-        if (!newClient.planta) return toast.warning("Debes seleccionar una planta/unidad");
-        
-        try {
-            const token = localStorage.getItem('token');
-            // 1. Crear el cliente
-            await axios.post("/api/clients", newClient, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            // 2. Eliminar el prospecto (ya es cliente)
-            await axios.delete(`/api/prospects/${editingProspect.id}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setProspects((prev) => prev.filter((p) => p.id !== editingProspect.id));
-            setModalIsOpen(false);
-            toast.success("🚀 ¡Convertido a Cliente exitosamente!");
-        } catch (err) {
-            toast.error("Error en la conversión");
-        }
-    };
+    e.preventDefault();
+
+    if (normalizePlantas(newClient.planta).length === 0) {
+        return toast.warning("Debes seleccionar al menos una unidad de negocio");
+    }
+
+    try {
+        const token = localStorage.getItem('token');
+
+        const payloadClient = {
+            ...newClient,
+            planta: plantasToString(newClient.planta),
+        };
+
+        await axios.post("/api/clients", payloadClient, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+
+        await axios.delete(`/api/prospects/${editingProspect.id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+
+        setProspects((prev) => prev.filter((p) => p.id !== editingProspect.id));
+        setModalIsOpen(false);
+        toast.success(" ¡Convertido a Cliente exitosamente!");
+    } catch (err) {
+        toast.error("Error en la conversión");
+    }
+};
 
     const handleDelete = async (id) => {
         if (userRole !== 'admin') return toast.error("Acceso denegado");
@@ -203,9 +270,19 @@ export default function ProspectList() {
     };
 
     const resetForm = () => {
-        setFormData({ saleProcess: "", contactName: "", company: "", phone: "", email: "" });
-        setEditingProspect(null);
-    };
+    setFormData({
+        saleProcess: "",
+        contactName: "",
+        company: "",
+        phone: "",
+        email: "",
+        planta: [],
+    });
+
+    setEditingProspect(null);
+};
+
+
 
     const exportToPDF = (prospect) => {
         const doc = new jsPDF();
@@ -269,13 +346,32 @@ export default function ProspectList() {
                                 <div className="flex flex-wrap justify-center md:justify-start gap-4 text-[10px] text-gray-500 font-bold uppercase">
                                     <span className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">⚙️ {prospect.saleProcess}</span>
                                     <span>📞 {prospect.phone}</span>
+
                                     <span>📅 {new Date(prospect.createdAt).toLocaleDateString()}</span>
+                                    <span className="bg-blue-100 dark:bg-blue-600/20 text-blue-700 dark:text-blue-400 px-2 py-1 rounded">
+                                    🏭 {prospect.planta || 'Sin unidad'}
+                                </span>
                                 </div>
                             </div>
                             
                             <div className="flex gap-2">
                                 <button onClick={() => exportToPDF(prospect)} className="p-3 bg-gray-100 dark:bg-gray-800 rounded-xl text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-sm"><FiFileText size={18}/></button>
-                                <button onClick={() => { setEditingProspect(prospect); setFormData({...prospect}); setModalType("editProspect"); setModalIsOpen(true); }} className="p-3 bg-gray-100 dark:bg-gray-800 rounded-xl text-yellow-600 dark:text-yellow-500 hover:bg-yellow-500 hover:text-black transition-all shadow-sm"><FiEdit size={18}/></button>
+                                <button 
+                                    onClick={() => { 
+                                        setEditingProspect(prospect); 
+
+                                        setFormData({
+                                            ...prospect,
+                                            planta: normalizePlantas(prospect.planta),
+                                        }); 
+
+                                        setModalType("editProspect"); 
+                                        setModalIsOpen(true); 
+                                    }} 
+                                    className="p-3 bg-gray-100 dark:bg-gray-800 rounded-xl text-yellow-600 dark:text-yellow-500 hover:bg-yellow-500 hover:text-black transition-all shadow-sm"
+                                >
+                                    <FiEdit size={18}/>
+                                </button>
                                 {userRole === 'admin' && <button onClick={() => handleDelete(prospect.id)} className="p-3 bg-gray-100 dark:bg-gray-800 rounded-xl text-gray-400 hover:bg-red-600 hover:text-white transition-all shadow-sm"><FiX size={18}/></button>}
                                 {prospect.saleProcess === "Cerrado" && (
                                     <button onClick={() => handleConvertClick(prospect)} className="bg-green-600 hover:bg-green-500 text-white px-4 py-3 rounded-xl font-black text-[9px] uppercase tracking-wider flex items-center gap-2 transition-all shadow-lg animate-pulse">
@@ -349,6 +445,36 @@ export default function ProspectList() {
                                 <ModalInput label="Empresa" name="company" value={formData.company} onChange={(v) => setFormData({...formData, company: v})} required />
                                 <ModalInput label="Teléfono" name="phone" value={formData.phone} onChange={(v) => setFormData({...formData, phone: v})} required />
                                 <ModalInput label="Email" name="email" type="email" value={formData.email} onChange={(v) => setFormData({...formData, email: v})} required />
+                                    <div className="md:col-span-2">
+    <label className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase ml-1">
+        Unidad de negocio *
+    </label>
+
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+        {unidadesNegocio.map((unidad) => {
+            const selected = normalizePlantas(formData.planta).includes(unidad);
+
+            return (
+                <button
+                    type="button"
+                    key={unidad}
+                    onClick={() => handlePlantaToggle(unidad)}
+                    className={`p-3 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${
+                        selected
+                            ? 'bg-blue-600 border-blue-500 text-white'
+                            : 'bg-gray-50 dark:bg-[#0e1624] border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-blue-500'
+                    }`}
+                >
+                    {unidad}
+                </button>
+            );
+        })}
+    </div>
+
+    <p className="text-[9px] text-gray-400 dark:text-gray-500 uppercase font-bold mt-2">
+        Puedes seleccionar una o varias unidades.
+    </p>
+</div>
                             </div>
                         )}
 

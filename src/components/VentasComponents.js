@@ -94,7 +94,10 @@ const SalesPage = () => {
         const clientUnit = (client.planta || '').trim().toLowerCase();
         const categoryUnit = (selectedCategory || '').trim().toLowerCase();
 
-        const matchesUnit = clientUnit === categoryUnit;
+        const matchesUnit = clientUnit
+    .split(',')
+    .map((u) => u.trim())
+    .includes(categoryUnit);
 
         const matchesSearch =
             client.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -590,7 +593,7 @@ const diasRestantes = calcularDiasRestantes(
                                         </div>
                                         <div className="flex flex-col gap-2">
     <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2">
-        Fecha de Cotización
+        Fecha de Facturación
     </label>
 
     <input

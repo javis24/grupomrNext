@@ -18,7 +18,7 @@ export default async function handler(req, res) {
           return res.status(200).json(prospects);
 
         case 'POST':
-          const { saleProcess, contactName, company, phone, email } = req.body;
+          const { saleProcess, contactName, company, phone, email, planta, } = req.body;
           if (!saleProcess || !contactName || !company || !phone || !email) {
             return res.status(400).json({ message: 'Todos los campos son obligatorios' });
           }
@@ -29,6 +29,9 @@ export default async function handler(req, res) {
             company,
             phone,
             email,
+            planta: planta && String(planta).trim() !== ''
+              ? String(planta).trim()
+              : null,
             userId: loggedUserId, // Forzamos el ID del token
           });
           return res.status(201).json(newProspect);

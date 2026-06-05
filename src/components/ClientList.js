@@ -74,6 +74,8 @@ export default function ClientList() {
         loadInitialData();
     }, []);
 
+    
+
     // RESET PAGINATION ON SEARCH
     useEffect(() => { setCurrentPage(1); }, [search]);
 
@@ -176,11 +178,44 @@ export default function ClientList() {
         setNewClient(initialClientState);
     };
 
+    const normalizePlantas = (value) => {
+    if (!value) return [];
+
+    if (Array.isArray(value)) return value;
+
+    return String(value)
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
+};
+
+const plantasToString = (plantas) => {
+    return normalizePlantas(plantas).join(', ');
+};
+
+const handleClientPlantaToggle = (unidad) => {
+    setNewClient((prev) => {
+        const actuales = normalizePlantas(prev.planta);
+
+        const nuevas = actuales.includes(unidad)
+            ? actuales.filter((item) => item !== unidad)
+            : [...actuales, unidad];
+
+        return {
+            ...prev,
+            planta: plantasToString(nuevas),
+        };
+    });
+};
+
     const filteredClients = useMemo(() => {
         return clients.filter((c) => {
             const clientUnit = (c.planta || '').trim().toLowerCase();
             const targetUnit = (selectedUnit || '').trim().toLowerCase();
-            const matchUnit = clientUnit === targetUnit;
+            const matchUnit = clientUnit
+            .split(',')
+            .map((u) => u.trim())
+            .includes(targetUnit);
             const matchSearch = (c.companyName || '').toLowerCase().includes(search.toLowerCase()) || 
                               (c.fullName || '').toLowerCase().includes(search.toLowerCase());
             return matchUnit && matchSearch;
@@ -219,7 +254,11 @@ export default function ClientList() {
             {view === 'unidades' ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     {unidadesNegocio.map((u) => {
-                        const count = clients.filter(c => (c.planta || '').trim().toLowerCase() === u.name.toLowerCase()).length;
+                    const count = clients.filter((c) =>
+                        normalizePlantas(c.planta)
+                            .map((p) => p.toLowerCase())
+                            .includes(u.name.toLowerCase())
+                    ).length;
                         return (
                             <div key={u.name} onClick={() => { setSelectedUnit(u.name); setView('listado'); }}
                                 className="bg-white dark:bg-[#1f2937] p-8 rounded-[2.5rem] border border-gray-200 dark:border-gray-700 hover:border-blue-500 cursor-pointer transition-all hover:translate-y-[-4px] group shadow-xl relative overflow-hidden h-64 flex flex-col justify-center"
@@ -334,11 +373,33 @@ export default function ClientList() {
                                         </select>
                                     </div>
                                     <div className="flex flex-col gap-1">
-                                        <label className="text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase ml-1">Planta</label>
-                                        <select value={newClient.planta} onChange={(e) => setNewClient({...newClient, planta: e.target.value})} className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-xl p-3 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20">
-                                            <option value="">Planta...</option>
-                                            {unidadesNegocio.map(u => <option key={u.name} value={u.name}>{u.name}</option>)}
-                                        </select>
+                                        
+                                        <div className="flex flex-col gap-1">
+    <label className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase ml-1">
+        Planta / Unidad *
+    </label>
+
+    <div className="grid grid-cols-2 gap-2">
+        {unidadesNegocio.map((unidad) => {
+    const selected = normalizePlantas(newClient.planta).includes(unidad.name);
+
+    return (
+        <button
+            type="button"
+            key={unidad.name}
+            onClick={() => handleClientPlantaToggle(unidad.name)}
+            className={`p-3 rounded-xl border text-[10px] font-black uppercase transition-all ${
+                selected
+                    ? 'bg-blue-600 border-blue-500 text-white'
+                    : 'bg-gray-50 dark:bg-[#0e1624] border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-blue-500'
+            }`}
+        >
+            {unidad.name}
+        </button>
+    );
+})}
+    </div>
+</div>
                                     </div>
                                 </div>
                             </div>
