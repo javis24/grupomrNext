@@ -2,6 +2,7 @@ import { authenticateToken } from '../../../lib/auth';
 import SalesBusiness from '../../../models/SalesBusinessModel';
 import Clients from '../../../models/ClientModel';
 import Users from '../../../models/UserModel';
+import SalesBusinessItem from '../../../models/SalesBusinessItemModel';
 
 export default async function handler(req, res) {
     authenticateToken(req, res, async () => {
@@ -14,7 +15,8 @@ export default async function handler(req, res) {
                     const queryOptions = {
                         include: [
                             { model: Clients, attributes: ['fullName', 'companyName'] },
-                            { model: Users, attributes: ['name'] }
+                            { model: Users, attributes: ['name'] },
+                            { model: SalesBusinessItem, as: 'items' }
                         ],
                         order: [['createdAt', 'DESC']]
                     };
@@ -46,7 +48,9 @@ export default async function handler(req, res) {
                         estadoPago, 
                         fechaOperacion, 
                         observaciones, 
-                        clientId 
+                        clientId,
+                        items,
+                        totalVenta 
                     } = req.body;
 
                     if (!unitBusiness || !concepto || !cantidad || !precioUnitario || !clientId) {
@@ -73,40 +77,55 @@ export default async function handler(req, res) {
                     }
 
                     const newSale = await SalesBusiness.create({
-                        noRemision: noRemisionLimpio,
+    noRemision: noRemisionLimpio,
+    requiereFactura: requiereFactura || 'Pendiente',
 
-                        requiereFactura: requiereFactura || 'Pendiente',
+    numeroFactura:
+        numeroFactura && String(numeroFactura).trim() !== ''
+            ? String(numeroFactura).trim()
+            : null,
 
-                        numeroFactura:
-                            numeroFactura && String(numeroFactura).trim() !== ''
-                                ? String(numeroFactura).trim()
-                                : null,
+    plazoCredito: plazoCredito ? parseInt(plazoCredito) : null,
+    fechaCotizacion: fechaCotizacion || null,
+    fechaEstimadaPago: fechaEstimadaPago || null,
+    diasRestantes: diasRestantes ?? null,
 
-                        plazoCredito: plazoCredito ? parseInt(plazoCredito) : null,
+    unitBusiness,
+    concepto,
+    equipo: equipo || null,
 
-                        fechaCotizacion: fechaCotizacion || null,
+    cantidad: parseFloat(cantidad || 1),
+    precioUnitario: parseFloat(precioUnitario || 0),
 
-                        fechaEstimadaPago: fechaEstimadaPago || null,
+    totalVenta: totalVenta ? parseFloat(totalVenta) : 0,
 
-                        diasRestantes: diasRestantes ?? null,
+    transporte,
+    estadoPago,
+    fechaOperacion,
+    observaciones,
+    clientId,
+    userId: loggedUserId
+});
 
-                        unitBusiness,
-                        concepto,
-                        equipo: equipo || null,
-                        cantidad: parseFloat(cantidad),
-                        precioUnitario: parseFloat(precioUnitario),
-                        transporte,
-                        estadoPago,
-                        fechaOperacion,
-                        observaciones,
-                        clientId,
-                        userId: loggedUserId
-                    });
+    if (Array.isArray(items) && items.length > 0) {
+    const itemsToCreate = items.map((item) => ({
+        saleId: newSale.id,
+        productId: item.productId || null,
+        productCode: item.productCode || null,
+        productName: item.productName,
+        unitMeasure: item.unitMeasure || null,
+        quantity: parseFloat(item.quantity || 1),
+        unitPrice: parseFloat(item.unitPrice || 0),
+        subtotal: parseFloat(item.subtotal || 0),
+    }));
 
-                    return res.status(201).json({ 
-                        message: "Venta registrada con éxito", 
-                        data: newSale 
-                    });
+    await SalesBusinessItem.bulkCreate(itemsToCreate);
+}
+
+                   return res.status(201).json({ 
+    message: "Venta registrada con éxito", 
+    data: newSale 
+});
                 }
 
                 default:

@@ -46,6 +46,7 @@ diasRestantes: {
     type: DataTypes.INTEGER,
     allowNull: true,
 },
+
     concepto: { type: DataTypes.STRING, allowNull: false },
     equipo: { type: DataTypes.STRING, allowNull: true },
     cantidad: { type: DataTypes.FLOAT, allowNull: false },
@@ -55,6 +56,11 @@ diasRestantes: {
     estadoPago: { type: DataTypes.STRING, allowNull: false },
     fechaOperacion: { type: DataTypes.DATEONLY, allowNull: false },
     observaciones: { type: DataTypes.TEXT, allowNull: true },
+    totalVenta: {
+    type: DataTypes.DECIMAL(10, 2),
+    allowNull: true,
+    defaultValue: 0,
+},
     clientId: { type: DataTypes.INTEGER, allowNull: false },
     userId: { type: DataTypes.INTEGER, allowNull: false }
 }, {

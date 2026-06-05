@@ -434,6 +434,9 @@ diasRestantes:
         : diasRestantes ?? null,
     unitBusiness: selectedCategory,
     clientId: selectedClient.id,
+    
+    items: saleItems,
+    totalVenta,
 };
 
         try {
