@@ -376,7 +376,7 @@ const handleClientPlantaToggle = (unidad) => {
                                         
                                         <div className="flex flex-col gap-1">
     <label className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase ml-1">
-        Planta / Unidad *
+        Unidades de Negocio
     </label>
 
     <div className="grid grid-cols-2 gap-2">

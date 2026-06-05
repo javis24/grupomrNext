@@ -42,6 +42,10 @@ const SalesPage = () => {
     const [editingId, setEditingId] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
     const [remisionLocked, setRemisionLocked] = useState(false);
+    const [products, setProducts] = useState([]);
+    const [selectedProducts, setSelectedProducts] = useState([]);
+    const [productSearch, setProductSearch] = useState('');
+    const [saleItems, setSaleItems] = useState([]);
         const [formValues, setFormValues] = useState({
             noRemision: '',
             requiereFactura: '',
@@ -148,6 +152,20 @@ const diasRestantes = calcularDiasRestantes(
     formValues.plazoCredito
 );
 
+const fetchProducts = async () => {
+    try {
+        const token = localStorage.getItem('token');
+
+        const res = await axios.get('/api/products', {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+
+        setProducts(Array.isArray(res.data) ? res.data : []);
+    } catch (error) {
+        toast.error('Error al cargar productos');
+    }
+};
+
     useEffect(() => {
         const token = localStorage.getItem('token');
 
@@ -165,7 +183,35 @@ const diasRestantes = calcularDiasRestantes(
 
         fetchClients();
         fetchSales();
+        fetchProducts();
     }, []);
+
+
+    const totalVenta = saleItems.reduce(
+    (acc, item) => acc + Number(item.subtotal || 0),
+    0
+);
+
+useEffect(() => {
+    if (saleItems.length > 0) {
+        setFormValues((prev) => ({
+            ...prev,
+            concepto: saleItems.map((item) => item.productName).join(', '),
+            cantidad: 1,
+            precioUnitario: totalVenta,
+            observaciones: saleItems
+                .map((item) => `${item.productCode || 'S/C'} - ${item.productName} x ${item.quantity}`)
+                .join('\n'),
+        }));
+    } else {
+        setFormValues((prev) => ({
+            ...prev,
+            concepto: '',
+            cantidad: '',
+            precioUnitario: '',
+        }));
+    }
+}, [saleItems, totalVenta]);
 
     const fetchClients = async () => {
         try {
@@ -181,6 +227,45 @@ const diasRestantes = calcularDiasRestantes(
         }
     };
 
+        const handleAddProduct = (product) => {
+    const exists = saleItems.find((item) => item.productId === product.id);
+
+    if (exists) {
+        return toast.warning('Este producto ya fue agregado');
+    }
+
+    setSaleItems((prev) => [
+        ...prev,
+        {
+            productId: product.id,
+            productCode: product.code || '',
+            productName: product.name || '',
+            unitMeasure: product.unitMeasure || '',
+            quantity: 1,
+            unitPrice: Number(product.price || 0),
+            subtotal: Number(product.price || 0),
+        },
+    ]);
+};
+
+
+        const handleItemQuantityChange = (productId, quantity) => {
+    setSaleItems((prev) =>
+        prev.map((item) => {
+            if (item.productId !== productId) return item;
+
+            const qty = Number(quantity || 0);
+            const subtotal = qty * Number(item.unitPrice || 0);
+
+            return {
+                ...item,
+                quantity: qty,
+                subtotal,
+            };
+        })
+    );
+};
+
     const fetchSales = async () => {
         try {
             const token = localStorage.getItem('token');
@@ -195,20 +280,63 @@ const diasRestantes = calcularDiasRestantes(
         }
     };
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
+ const handleInputChange = (e) => {
+    const { name, value } = e.target;
 
-        setFormValues({
-            ...formValues,
-            [name]: value,
-        });
-    };
+    if (name === 'requiereFactura') {
+        setFormValues((prev) => ({
+            ...prev,
+            requiereFactura: value,
+            numeroFactura:
+                value === 'No'
+                    ? 'No Aplica'
+                    : prev.numeroFactura === 'No Aplica'
+                        ? ''
+                        : prev.numeroFactura,
+            fechaCotizacion:
+                value === 'No'
+                    ? ''
+                    : prev.fechaCotizacion,
+        }));
+
+        return;
+    }
+
+    setFormValues((prev) => ({
+        ...prev,
+        [name]: value,
+    }));
+};
+
+        const handleProductToggle = (product) => {
+    setSelectedProducts((prev) => {
+        const exists = prev.some((p) => p.id === product.id);
+
+        const updatedProducts = exists
+            ? prev.filter((p) => p.id !== product.id)
+            : [...prev, product];
+
+        setFormValues((current) => ({
+            ...current,
+            concepto: updatedProducts.map((p) => p.name).join(', '),
+
+            precioUnitario:
+                updatedProducts.length === 1
+                    ? updatedProducts[0].price
+                    : updatedProducts.reduce((total, p) => total + Number(p.price || 0), 0),
+        }));
+
+        return updatedProducts;
+    });
+};
 
     const handleEdit = (sale) => {
         setIsEditing(true);
         setEditingId(sale.id);
         setSelectedCategory(sale.unitBusiness);
         setRemisionLocked(!!sale.noRemision);
+        setSelectedProducts([]);
+        setSaleItems([]);
 
         const client = clients.find((c) => c.id === sale.clientId);
 
@@ -270,12 +398,15 @@ const diasRestantes = calcularDiasRestantes(
             return toast.error('Seleccione un cliente');
         }
 
+       if (!isEditing && saleItems.length === 0) {
+    return toast.error(`Selecciona al menos un producto de ${selectedCategory}`);
+}
         if (!formValues.requiereFactura) {
             return toast.error('Indica si la venta se va a facturar');
         }
-        if (!formValues.fechaCotizacion) {
-            return toast.error('Selecciona la fecha de cotización');
-        }
+        if (formValues.requiereFactura !== 'No' && !formValues.fechaCotizacion) {
+    return toast.error('Selecciona la fecha de facturación');
+}
 
         const dataToSend = {
     ...formValues,
@@ -288,9 +419,19 @@ const diasRestantes = calcularDiasRestantes(
     plazoCredito: formValues.plazoCredito
         ? parseInt(formValues.plazoCredito)
         : null,
-    fechaCotizacion: formValues.fechaCotizacion || null,
-    fechaEstimadaPago: fechaEstimadaPago || null,
-    diasRestantes: diasRestantes ?? null,
+    fechaCotizacion:
+    formValues.requiereFactura === 'No'
+        ? null
+        : formValues.fechaCotizacion || null,
+    fechaEstimadaPago:
+    formValues.requiereFactura === 'No'
+        ? null
+        : fechaEstimadaPago || null,
+
+diasRestantes:
+    formValues.requiereFactura === 'No'
+        ? null
+        : diasRestantes ?? null,
     unitBusiness: selectedCategory,
     clientId: selectedClient.id,
 };
@@ -324,6 +465,9 @@ const diasRestantes = calcularDiasRestantes(
     setIsEditing(false);
     setEditingId(null);
     setRemisionLocked(false);
+    setSelectedProducts([]);
+    setProductSearch('');
+    setSaleItems([]);
 
     setFormValues({
         noRemision: '',
@@ -341,6 +485,21 @@ const diasRestantes = calcularDiasRestantes(
         observaciones: '',
    });
 };
+
+
+        const filteredProductsByUnit = products.filter((product) => {
+    const sameUnit =
+        (product.businessUnit || '').trim().toLowerCase() ===
+        (selectedCategory || '').trim().toLowerCase();
+
+    const matchesSearch =
+        product.name?.toLowerCase().includes(productSearch.toLowerCase()) ||
+        product.code?.toLowerCase().includes(productSearch.toLowerCase());
+
+    return sameUnit && matchesSearch;
+});
+
+
 
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-[#0e1624] text-gray-900 dark:text-white p-4 md:p-8 font-sans transition-colors duration-300">
@@ -583,30 +742,47 @@ const diasRestantes = calcularDiasRestantes(
                                             </label>
 
                                             <input
-                                                type="text"
-                                                name="numeroFactura"
-                                                value={formValues.numeroFactura}
-                                                onChange={handleInputChange}
-                                                className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20"
-                                                placeholder="Ej: FAC-2026-001"
-                                            />
-                                        </div>
+                                                    type="text"
+                                                    name="numeroFactura"
+                                                    value={formValues.numeroFactura}
+                                                    onChange={handleInputChange}
+                                                    disabled={formValues.requiereFactura === 'No'}
+                                                    className={`bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20 ${
+                                                        formValues.requiereFactura === 'No'
+                                                            ? 'opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-800'
+                                                            : ''
+                                                    }`}
+                                                    placeholder="Ej: FAC-2026-001"
+                                                />
+                                                {formValues.requiereFactura === 'No' && (
+                                                    <span className="text-[9px] text-gray-400 dark:text-gray-500 uppercase font-bold ml-2">
+                                                        Al no facturarse, el folio queda como No Aplica
+                                                    </span>
+                                                )}
+                                            </div>
                                         <div className="flex flex-col gap-2">
     <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2">
         Fecha de Facturación
     </label>
 
     <input
-        type="date"
-        name="fechaCotizacion"
-        value={formValues.fechaCotizacion}
-        onChange={handleInputChange}
-        className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20"
-    />
+    type="date"
+    name="fechaCotizacion"
+    value={formValues.fechaCotizacion}
+    onChange={handleInputChange}
+    disabled={formValues.requiereFactura === 'No'}
+    className={`bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20 ${
+        formValues.requiereFactura === 'No'
+            ? 'opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-800'
+            : ''
+    }`}
+/>
 
+{formValues.requiereFactura === 'No' && (
     <span className="text-[9px] text-gray-400 dark:text-gray-500 uppercase font-bold ml-2">
-        Esta fecha se usará para calcular el estado del plazo
+        Al no facturarse, no aplica fecha de facturación
     </span>
+)}
 </div>
 
                                   <div className="flex flex-col gap-2">
@@ -629,40 +805,85 @@ const diasRestantes = calcularDiasRestantes(
     </span>
 </div>
 
-                                        {/* CONCEPTO */}
-                                        <div className="flex flex-col gap-2">
-                                            <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2">
-                                                Concepto
-                                            </label>
+                                    {/* CONCEPTO / PRODUCTOS */}
+<div className="flex flex-col gap-2 md:col-span-2">
+    <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2">
+        Productos de {selectedCategory}
+    </label>
 
-                                            {selectedCategory === 'Servicios' ? (
-                                                <select
-                                                    name="concepto"
-                                                    value={formValues.concepto}
-                                                    onChange={handleInputChange}
-                                                    className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20"
-                                                    required
-                                                >
-                                                    <option value="">Seleccionar...</option>
-                                                    {conceptosServicios.map((c) => (
-                                                        <option key={c} value={c}>
-                                                            {c}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            ) : (
-                                                <input
-                                                    type="text"
-                                                    name="concepto"
-                                                    value={formValues.concepto}
-                                                    onChange={handleInputChange}
-                                                    className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20"
-                                                    placeholder="Ej: Tarima Reforzada"
-                                                    required
-                                                />
-                                            )}
-                                        </div>
+    <div className="space-y-3">
+        <div className="relative">
+            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
 
+            <input
+                type="text"
+                value={productSearch}
+                onChange={(e) => setProductSearch(e.target.value)}
+                placeholder={`Buscar producto de ${selectedCategory}...`}
+                className="w-full bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 pl-12 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20"
+            />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[260px] overflow-y-auto pr-2">
+            {filteredProductsByUnit.length > 0 ? (
+                filteredProductsByUnit.map((product) => {
+                    const selected = saleItems.some(
+                        (item) => item.productId === product.id
+                    );
+
+                    return (
+                        <button
+                            type="button"
+                            key={product.id}
+                            onClick={() => handleAddProduct(product)}
+                            disabled={selected || isEditing}
+                            className={`text-left p-4 rounded-2xl border transition-all ${
+                                selected
+                                    ? 'bg-blue-600 border-blue-500 text-white'
+                                    : 'bg-gray-50 dark:bg-[#0e1624] border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-blue-500'
+                            } ${isEditing ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        >
+                            <p className="text-xs font-black uppercase">
+                                {product.name}
+                            </p>
+
+                            <p className={`text-[9px] font-bold mt-1 ${
+                                selected ? 'text-blue-100' : 'text-gray-400'
+                            }`}>
+                                Código: {product.code || 'S/C'} | Precio: ${product.price || '0'}
+                            </p>
+
+                            <p className={`text-[9px] mt-1 ${
+                                selected ? 'text-blue-100' : 'text-gray-400'
+                            }`}>
+                                Medida: {product.unitMeasure || 'Sin medida'}
+                            </p>
+                        </button>
+                    );
+                })
+            ) : (
+                <div className="md:col-span-2 p-5 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 text-center text-gray-400 text-xs font-bold uppercase">
+                    No hay productos registrados en {selectedCategory}
+                </div>
+            )}
+        </div>
+
+        <textarea
+            name="concepto"
+            value={formValues.concepto}
+            onChange={handleInputChange}
+            className="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-500 dark:text-gray-400 outline-none resize-none"
+            placeholder="Productos seleccionados..."
+            rows="2"
+            readOnly
+            required
+        />
+
+        <span className="text-[9px] text-gray-400 dark:text-gray-500 uppercase font-bold ml-2">
+            Puedes seleccionar uno o varios productos de esta unidad.
+        </span>
+    </div>
+</div>
                                         {/* CANTIDAD */}
                                         <div className="flex flex-col gap-2">
                                             <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2">
@@ -670,13 +891,22 @@ const diasRestantes = calcularDiasRestantes(
                                             </label>
 
                                             <input
-                                                type="number"
-                                                name="cantidad"
-                                                value={formValues.cantidad}
-                                                onChange={handleInputChange}
-                                                className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20"
-                                                required
-                                            />
+                                            type="number"
+                                            name="cantidad"
+                                            value={formValues.cantidad}
+                                            onChange={handleInputChange}
+                                            disabled={isEditing}
+                                            className={`bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20 ${
+                                                isEditing ? 'opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-800' : ''
+                                            }`}
+                                            required
+                                        />
+
+                                        {isEditing && (
+                                            <span className="text-[9px] text-gray-400 dark:text-gray-500 uppercase font-bold ml-2">
+                                                Este campo no se puede modificar
+                                            </span>
+                                        )}
                                         </div>
 
                                         {/* PRECIO */}
@@ -694,11 +924,97 @@ const diasRestantes = calcularDiasRestantes(
                                                     name="precioUnitario"
                                                     value={formValues.precioUnitario}
                                                     onChange={handleInputChange}
-                                                    className="w-full bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 pl-10 text-sm text-green-600 dark:text-green-400 font-bold outline-none focus:ring-2 ring-blue-500/20"
+                                                    disabled={isEditing}
+                                                    className={`w-full bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 pl-10 text-sm text-green-600 dark:text-green-400 font-bold outline-none focus:ring-2 ring-blue-500/20 ${
+                                                        isEditing ? 'opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-800' : ''
+                                                    }`}
                                                     required
                                                 />
                                             </div>
+                                            {isEditing && (
+                                                <span className="text-[9px] text-gray-400 dark:text-gray-500 uppercase font-bold ml-2">
+                                                    Este campo no se puede modificar
+                                                </span>
+                                            )}
                                         </div>
+
+                                        <div className="md:col-span-2 bg-gray-50 dark:bg-[#0e1624] rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <table className="w-full text-xs">
+        <thead className="bg-gray-100 dark:bg-gray-800 text-gray-500 uppercase text-[9px]">
+            <tr>
+                <th className="p-3 text-left">Producto</th>
+                <th className="p-3 text-center">Cantidad</th>
+                <th className="p-3 text-right">Precio Unitario</th>
+                <th className="p-3 text-right">Subtotal</th>
+                <th className="p-3 text-center">Quitar</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {saleItems.map((item) => (
+                <tr key={item.productId} className="border-t border-gray-200 dark:border-gray-700">
+                    <td className="p-3">
+                        <p className="font-black uppercase text-gray-800 dark:text-white">
+                            {item.productName}
+                        </p>
+                        <p className="text-[9px] text-gray-400">
+                            {item.productCode} | {item.unitMeasure}
+                        </p>
+                    </td>
+
+                    <td className="p-3 text-center">
+                        <input
+                            type="number"
+                            min="1"
+                            value={item.quantity}
+                            onChange={(e) =>
+                                handleItemQuantityChange(item.productId, e.target.value)
+                            }
+                            className="w-20 bg-white dark:bg-[#1f2937] border border-gray-200 dark:border-gray-700 rounded-xl p-2 text-center"
+                        />
+                    </td>
+
+                    <td className="p-3 text-right font-bold text-green-600">
+                        ${Number(item.unitPrice).toLocaleString('es-MX', {
+                            minimumFractionDigits: 2,
+                        })}
+                    </td>
+
+                    <td className="p-3 text-right font-black text-green-600">
+                        ${Number(item.subtotal).toLocaleString('es-MX', {
+                            minimumFractionDigits: 2,
+                        })}
+                    </td>
+
+                    <td className="p-3 text-center">
+                        <button
+                            type="button"
+                            onClick={() =>
+                                setSaleItems((prev) =>
+                                    prev.filter((p) => p.productId !== item.productId)
+                                )
+                            }
+                            className="text-red-500 font-black"
+                        >
+                            X
+                        </button>
+                    </td>
+                </tr>
+            ))}
+        </tbody>
+    </table>
+
+    <div className="p-4 text-right border-t border-gray-200 dark:border-gray-700">
+        <p className="text-[10px] uppercase font-black text-gray-400">
+            Total venta
+        </p>
+        <p className="text-2xl font-black text-green-600">
+            ${totalVenta.toLocaleString('es-MX', {
+                minimumFractionDigits: 2,
+            })}
+        </p>
+    </div>
+</div>
 
                                         {/* ESTADO DE PAGO */}
                                         <div className="flex flex-col gap-2">
@@ -734,9 +1050,18 @@ const diasRestantes = calcularDiasRestantes(
                                                 name="fechaOperacion"
                                                 value={formValues.fechaOperacion}
                                                 onChange={handleInputChange}
-                                                className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20"
+                                                disabled={isEditing}
+                                                className={`bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20 ${
+                                                    isEditing ? 'opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-800' : ''
+                                                }`}
                                                 required
                                             />
+
+                                            {isEditing && (
+                                                <span className="text-[9px] text-gray-400 dark:text-gray-500 uppercase font-bold ml-2">
+                                                    Este campo no se puede modificar
+                                                </span>
+                                            )}
                                         </div>
 
                                         {/* TRANSPORTE */}
@@ -764,7 +1089,7 @@ const diasRestantes = calcularDiasRestantes(
                                     </div>
 
                                     {/* RESUMEN DE CRÉDITO */}
-                                  {fechaBasePlazo && formValues.plazoCredito && (
+                                  {formValues.requiereFactura !== 'No' && fechaBasePlazo && formValues.plazoCredito && (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-blue-50 dark:bg-blue-600/10 border border-blue-200 dark:border-blue-500/20 p-4 rounded-2xl">
             <p className="text-[9px] font-black uppercase text-gray-500 dark:text-gray-400 mb-1">

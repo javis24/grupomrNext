@@ -22,100 +22,98 @@ export default async function handler(req, res) {
                 });
             }
 
-            if (method === 'PUT') {
-                const {
-                    noRemision,
-                    requiereFactura,
-                    numeroFactura,
-                    plazoCredito,
-                    fechaCotizacion,
-                    fechaEstimadaPago,
-                    diasRestantes,
-                    unitBusiness,
-                    concepto,
-                    equipo,
-                    cantidad,
-                    precioUnitario,
-                    transporte,
-                    estadoPago,
-                    fechaOperacion,
-                    observaciones,
-                    clientId,
-                } = req.body;
+           if (method === 'PUT') {
+    const {
+        noRemision,
+        requiereFactura,
+        numeroFactura,
+        plazoCredito,
+        fechaCotizacion,
+        fechaEstimadaPago,
+        diasRestantes,
+        unitBusiness,
+        concepto,
+        equipo,
+        transporte,
+        estadoPago,
+        observaciones,
+        clientId,
+    } = req.body;
 
-                const noRemisionLimpio =
-                    noRemision && String(noRemision).trim() !== ''
-                        ? String(noRemision).trim()
-                        : null;
+    const noRemisionLimpio =
+        noRemision && String(noRemision).trim() !== ''
+            ? String(noRemision).trim()
+            : null;
 
-                let noRemisionFinal = sale.noRemision;
+    let noRemisionFinal = sale.noRemision;
 
-                // Si la venta todavía no tiene remisión, permite capturarla una sola vez
-                if (!sale.noRemision && noRemisionLimpio) {
-                    const existingRemision = await SalesBusiness.findOne({
-                        where: { noRemision: noRemisionLimpio },
-                    });
+    // Si la venta todavía no tiene remisión, permite capturarla una sola vez
+    if (!sale.noRemision && noRemisionLimpio) {
+        const existingRemision = await SalesBusiness.findOne({
+            where: { noRemision: noRemisionLimpio },
+        });
 
-                    if (existingRemision) {
-                        return res.status(400).json({
-                            message: "El No. Remisión ya existe. Debe ser único.",
-                        });
-                    }
+        if (existingRemision) {
+            return res.status(400).json({
+                message: "El No. Remisión ya existe. Debe ser único.",
+            });
+        }
 
-                    noRemisionFinal = noRemisionLimpio;
-                }
+        noRemisionFinal = noRemisionLimpio;
+    }
 
-                // Si ya tenía remisión y quieren cambiarla, bloquear
-                if (
-                    sale.noRemision &&
-                    noRemisionLimpio &&
-                    sale.noRemision !== noRemisionLimpio
-                ) {
-                    return res.status(400).json({
-                        message: "El No. Remisión ya fue capturado y no puede modificarse.",
-                    });
-                }
+    // Si ya tenía remisión y quieren cambiarla, bloquear
+    if (
+        sale.noRemision &&
+        noRemisionLimpio &&
+        sale.noRemision !== noRemisionLimpio
+    ) {
+        return res.status(400).json({
+            message: "El No. Remisión ya fue capturado y no puede modificarse.",
+        });
+    }
 
-                // Si ya tenía remisión y mandan vacío, no permitir borrarlo
-                if (sale.noRemision && !noRemisionLimpio) {
-                    noRemisionFinal = sale.noRemision;
-                }
+    // Si ya tenía remisión y mandan vacío, no permitir borrarlo
+    if (sale.noRemision && !noRemisionLimpio) {
+        noRemisionFinal = sale.noRemision;
+    }
 
-                await sale.update({
-                    noRemision: noRemisionFinal,
+    await sale.update({
+        noRemision: noRemisionFinal,
 
-                    requiereFactura: requiereFactura || 'Pendiente',
+        requiereFactura: requiereFactura || 'Pendiente',
 
-                    numeroFactura:
-                        numeroFactura && String(numeroFactura).trim() !== ''
-                            ? String(numeroFactura).trim()
-                            : null,
+        numeroFactura:
+            numeroFactura && String(numeroFactura).trim() !== ''
+                ? String(numeroFactura).trim()
+                : null,
 
-                    plazoCredito: plazoCredito ? parseInt(plazoCredito) : null,
+        plazoCredito: plazoCredito ? parseInt(plazoCredito) : null,
 
-                    fechaCotizacion: fechaCotizacion || null,
+        fechaCotizacion: fechaCotizacion || null,
 
-                    fechaEstimadaPago: fechaEstimadaPago || null,
+        fechaEstimadaPago: fechaEstimadaPago || null,
 
-                    diasRestantes: diasRestantes ?? null,
+        diasRestantes: diasRestantes ?? null,
 
-                    unitBusiness,
-                    concepto,
-                    equipo: equipo || null,
-                    cantidad: parseFloat(cantidad),
-                    precioUnitario: parseFloat(precioUnitario),
-                    transporte,
-                    estadoPago,
-                    fechaOperacion,
-                    observaciones,
-                    clientId,
-                });
+        unitBusiness,
+        concepto,
+        equipo: equipo || null,
 
-                return res.status(200).json({
-                    message: "Venta actualizada correctamente",
-                    sale,
-                });
-            }
+        // IMPORTANTE:
+        // cantidad, precioUnitario y fechaOperacion NO se actualizan en edición.
+
+        transporte,
+        estadoPago,
+        observaciones,
+        clientId,
+    });
+
+    return res.status(200).json({
+        message: "Venta actualizada correctamente",
+        sale,
+    });
+}
 
             if (method === 'DELETE') {
                 if (role !== 'admin' && role !== 'gerencia') {
