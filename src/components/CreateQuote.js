@@ -110,12 +110,10 @@ const CreateQuote = () => {
     // ==========================================
     // CARGA INICIAL Y FETCH
     // ==========================================
-    useEffect(() => {
-        fetchInitialData();
-        const lastQuoteNumber = localStorage.getItem('quoteNumber');
-        if (lastQuoteNumber) setQuoteNumber(parseInt(lastQuoteNumber) + 1);
-        setCurrentDate(new Date().toLocaleDateString('es-MX'));
-    }, []);
+   useEffect(() => {
+    fetchInitialData();
+    setCurrentDate(new Date().toLocaleDateString('es-MX'));
+}, []);
 
     useEffect(() => {
     setHistoryPage(1);
@@ -132,7 +130,16 @@ const CreateQuote = () => {
         ]);
 
         setAllClients(clientsRes.data);
-        setUserQuotes(quotesRes.data);
+
+const quotes = Array.isArray(quotesRes.data) ? quotesRes.data : [];
+setUserQuotes(quotes);
+
+const maxQuoteNumber = quotes.reduce((max, quote) => {
+    const num = Number(quote.quoteNumber || 0);
+    return num > max ? num : max;
+}, 0);
+
+setQuoteNumber(maxQuoteNumber + 1);
         setProducts(Array.isArray(productsRes.data) ? productsRes.data : []);
         } catch (err) { console.error("Error al cargar datos iniciales", err); }
     };
@@ -144,7 +151,7 @@ const CreateQuote = () => {
             return (quote.companyName || "").toLowerCase().includes(search) || 
                    quote.items?.some(item => (item.description || "").toLowerCase().includes(search));
         })
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        .sort((a, b) => Number(b.quoteNumber || b.id) - Number(a.quoteNumber || a.id));
 
     const totalHistoryPages = Math.ceil(filteredQuotes.length / historyItemsPerPage);
 
@@ -265,33 +272,58 @@ const CreateQuote = () => {
     };
 
     const generatePDF = async () => {
-        if (!clientData.companyName) return alert("Ingresa el nombre de la empresa");
-        setIsSaving(true);
-        try {
-            const token = localStorage.getItem('token');
-            const changed = hasChanges();
-            const finalNum = (changed || !originalQuoteLoaded) ? quoteNumber : originalQuoteLoaded.quoteNumber;
+    if (!clientData.companyName) return alert("Ingresa el nombre de la empresa");
 
-            if (changed || !originalQuoteLoaded) {
-                await axios.post('/api/quotes', {
-                    ...clientData, quoteNumber: finalNum, total: globalTotal, items: serviceRows, 
-                    descripcionGeneral, observaciones: observacionesSeleccionadas
-                }, { headers: { Authorization: `Bearer ${token}` } });
-                toast.success("Cotización guardada exitosamente");
-                setQuoteNumber(prev => prev + 1);
-            }
+    setIsSaving(true);
 
-            const doc = new jsPDF();
-            renderPDFContent(doc, clientData, serviceRows, finalNum, currentDate, descripcionGeneral, observacionesSeleccionadas);
-            setOriginalQuoteLoaded(null);
-            fetchInitialData();
-            setIsSaving(false);
-        } catch (error) { 
-            console.error(error); 
-            setIsSaving(false);
-            toast.error("Error al guardar");
+    try {
+        const token = localStorage.getItem('token');
+        const changed = hasChanges();
+
+        let quoteNumberForPDF = originalQuoteLoaded
+            ? originalQuoteLoaded.quoteNumber
+            : quoteNumber;
+
+        if (changed || !originalQuoteLoaded) {
+            const res = await axios.post('/api/quotes', {
+                ...clientData,
+                total: globalTotal,
+                items: serviceRows,
+                descripcionGeneral,
+                observaciones: observacionesSeleccionadas
+            }, { 
+                headers: { Authorization: `Bearer ${token}` } 
+            });
+
+            const savedQuote = res.data;
+
+            quoteNumberForPDF = savedQuote.quoteNumber;
+
+            toast.success("Cotización guardada exitosamente");
         }
-    };
+
+        const doc = new jsPDF();
+
+        renderPDFContent(
+            doc,
+            clientData,
+            serviceRows,
+            quoteNumberForPDF,
+            currentDate,
+            descripcionGeneral,
+            observacionesSeleccionadas
+        );
+
+        setOriginalQuoteLoaded(null);
+        fetchInitialData();
+        setIsSaving(false);
+
+    } catch (error) { 
+        console.error(error); 
+        setIsSaving(false);
+        toast.error("Error al guardar");
+    }
+};
 
 
     const filteredProducts = products.filter((product) => {

@@ -9,57 +9,85 @@ export default async function handler(req, res) {
 
         try {
             if (method === 'GET') {
-                const whereClause = (role === 'admin' || role === 'gerencia') ? {} : { userId: loggedUserId };
+                const whereClause =
+                    role === 'admin' || role === 'gerencia'
+                        ? {}
+                        : { userId: loggedUserId };
+
                 const quotes = await Quotes.findAll({
                     where: whereClause,
-                    include: [{ model: Users, as: 'assignedUser', attributes: ['name'] }],
-                    order: [['createdAt', 'DESC']]
+                    include: [
+                        {
+                            model: Users,
+                            as: 'assignedUser',
+                            attributes: ['name'],
+                        },
+                    ],
+                    order: [
+                        ['quoteNumber', 'DESC'],
+                        ['createdAt', 'DESC'],
+                    ],
                 });
+
                 return res.status(200).json(quotes);
             }
 
             if (method === 'POST') {
-                // RECIBIMOS LOS NUEVOS CAMPOS DEL BODY
-                const { 
-                    companyName, 
-                    attentionTo, 
-                    email, 
-                    phone, 
-                    total, 
-                    quoteNumber,
-                    address,          // <--- NUEVO
-                    department,       // <--- NUEVO
-                    supervisor,       // <--- NUEVO
-                    descripcionGeneral, // <--- NUEVO
-                    items,            // <--- NUEVO
-                    observaciones     // <--- NUEVO
+                const {
+                    companyName,
+                    attentionTo,
+                    email,
+                    phone,
+                    total,
+                    address,
+                    department,
+                    supervisor,
+                    descripcionGeneral,
+                    items,
+                    observaciones,
                 } = req.body;
 
+                if (!companyName) {
+                    return res.status(400).json({
+                        message: 'El nombre de la empresa es obligatorio',
+                    });
+                }
+
+                const maxQuoteNumber = await Quotes.max('quoteNumber');
+
+                const nextQuoteNumber = maxQuoteNumber
+                    ? Number(maxQuoteNumber) + 1
+                    : 1;
+
                 const newQuote = await Quotes.create({
-                    quoteNumber, 
-                    companyName, 
-                    address,          // Guardamos domicilio
-                    attentionTo, 
-                    department,       // Guardamos departamento
-                    email, 
-                    phone, 
-                    supervisor,       // Guardamos asesor
-                    descripcionGeneral, // Guardamos descripción larga
-                    items,            // Sequelize hará el JSON.stringify automáticamente por el modelo
-                    observaciones,    // Sequelize hará el JSON.stringify automáticamente por el modelo
+                    quoteNumber: nextQuoteNumber,
+                    companyName,
+                    address,
+                    attentionTo,
+                    department,
+                    email,
+                    phone,
+                    supervisor,
+                    descripcionGeneral,
+                    items,
+                    observaciones,
                     total,
-                    userId: loggedUserId
+                    userId: loggedUserId,
                 });
-                
+
                 return res.status(201).json(newQuote);
             }
 
-            // Opcional: Manejar otros métodos
-            return res.status(405).json({ message: "Method not allowed" });
+            return res.status(405).json({
+                message: 'Method not allowed',
+            });
 
         } catch (error) {
-            console.error("API ERROR:", error);
-            return res.status(500).json({ message: error.message });
+            console.error('API ERROR QUOTES:', error);
+
+            return res.status(500).json({
+                message: error.message,
+            });
         }
     });
 }
