@@ -117,20 +117,33 @@ export default function CobranzaTable() {
             const diasMasOMenos = calcularDiasMasOMenos(fechaEstimada);
 
             return {
-                id: sale.id,
-                fechaFactura: sale.fechaCotizacion || sale.fechaOperacion,
-                cliente: getClienteNombre(sale),
-                plazoCredito: sale.plazoCredito,
-                factura: sale.numeroFactura,
-                planta: sale.unitBusiness,
-                descripcion: sale.concepto,
-                total: getTotal(sale),
-                estadoPago: sale.estadoPago,
-                fechaEstimada,
-                diasMasOMenos,
-                requiereFactura: sale.requiereFactura,
-                noRemision: sale.noRemision,
-            };
+    id: sale.id,
+    fechaFactura: sale.fechaCotizacion || sale.fechaOperacion,
+    cliente: getClienteNombre(sale),
+    plazoCredito: sale.plazoCredito,
+    factura: sale.numeroFactura,
+
+    // En Excel esto saldrá como PLANTA
+    planta: sale.unitBusiness,
+
+    descripcion: sale.concepto,
+
+    // Si ya agregaste totalVenta en ventas, usa ese total
+    total: sale.totalVenta
+        ? Number(sale.totalVenta)
+        : getTotal(sale),
+
+    estadoPago: sale.estadoPago,
+
+    // Nuevos campos
+    fechaPago: sale.fechaPago,
+    tiempoPagoRealizado: sale.tiempoPagoRealizado,
+
+    fechaEstimada,
+    diasMasOMenos,
+    requiereFactura: sale.requiereFactura,
+    noRemision: sale.noRemision,
+};
         });
     }, [sales]);
 
@@ -166,36 +179,42 @@ export default function CobranzaTable() {
     }
 
     const dataToExport = filteredRows.map((row) => ({
-        'FECHA DE FACTURA': formatDate(row.fechaFactura),
-        'CLIENTE': row.cliente,
-        'PLAZO CRÉDITO': row.plazoCredito ? Number(row.plazoCredito) : 0,
-        'FACTURA': row.factura || 'Sin factura',
-        'PLANTA': row.planta || 'Sin planta',
-        'DESCRIPCIÓN': row.descripcion || 'Sin descripción',
-        'TOTAL': Number(row.total || 0),
-        'ESTADO PAGO': row.estadoPago || 'Sin estado',
-        'FECHA ESTIMADA': formatDate(row.fechaEstimada),
-        'DÍAS MÁS O MENOS': row.diasMasOMenos === null ? 'Sin plazo' : row.diasMasOMenos,
-        'NO. REMISIÓN': row.noRemision || 'Sin remisión',
-        '¿SE FACTURA?': row.requiereFactura || 'Sin definir',
-    }));
+    'FECHA DE FACTURA': formatDate(row.fechaFactura),
+    'CLIENTE': row.cliente,
+    'PLAZO CRÉDITO': row.plazoCredito ? Number(row.plazoCredito) : 0,
+    'FACTURA': row.factura || 'Sin factura',
+    'PLANTA': row.planta || 'Sin planta',
+    'DESCRIPCIÓN': row.descripcion || 'Sin descripción',
+    'TOTAL': Number(row.total || 0),
+    'ESTADO PAGO': row.estadoPago || 'Sin estado',
+    'FECHA DE PAGO': formatDate(row.fechaPago),
+    'TIEMPO DE PAGO REALIZADO': row.tiempoPagoRealizado === null || row.tiempoPagoRealizado === undefined
+        ? 'Sin pago'
+        : `${row.tiempoPagoRealizado} días`,
+    'FECHA ESTIMADA': formatDate(row.fechaEstimada),
+    'DÍAS MÁS O MENOS': row.diasMasOMenos === null ? 'Sin plazo' : row.diasMasOMenos,
+    'NO. REMISIÓN': row.noRemision || 'Sin remisión',
+    '¿SE FACTURA?': row.requiereFactura || 'Sin definir',
+}));
 
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
 
     worksheet['!cols'] = [
-        { wch: 18 },
-        { wch: 35 },
-        { wch: 14 },
-        { wch: 18 },
-        { wch: 16 },
-        { wch: 35 },
-        { wch: 14 },
-        { wch: 18 },
-        { wch: 18 },
-        { wch: 18 },
-        { wch: 18 },
-        { wch: 15 },
-    ];
+    { wch: 18 }, // A FECHA DE FACTURA
+    { wch: 35 }, // B CLIENTE
+    { wch: 14 }, // C PLAZO CRÉDITO
+    { wch: 18 }, // D FACTURA
+    { wch: 16 }, // E PLANTA
+    { wch: 35 }, // F DESCRIPCIÓN
+    { wch: 14 }, // G TOTAL
+    { wch: 18 }, // H ESTADO PAGO
+    { wch: 18 }, // I FECHA DE PAGO
+    { wch: 26 }, // J TIEMPO DE PAGO REALIZADO
+    { wch: 18 }, // K FECHA ESTIMADA
+    { wch: 18 }, // L DÍAS MÁS O MENOS
+    { wch: 18 }, // M NO. REMISIÓN
+    { wch: 15 }, // N ¿SE FACTURA?
+];
 
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Cobranza');
@@ -334,8 +353,9 @@ export default function CobranzaTable() {
                                 </div>
 
                                 <div className="text-[9px] text-gray-500 dark:text-gray-400 mt-2 space-y-1 font-bold uppercase">
-                                    <p>Factura: {formatDate(row.fechaFactura)}</p>
+                                  <p>Factura: {formatDate(row.fechaFactura)}</p>
                                     <p>Estimada: {formatDate(row.fechaEstimada)}</p>
+                                    <p>Pago: {formatDate(row.fechaPago)}</p>
                                 </div>
                             </td>
 
@@ -377,6 +397,12 @@ export default function CobranzaTable() {
                                         {row.diasMasOMenos < 0 && `${row.diasMasOMenos} días`}
                                     </span>
                                 )}
+                                <div className="mt-2 text-[9px] text-gray-500 dark:text-gray-400 font-black uppercase">
+    Pago realizado:{' '}
+    {row.tiempoPagoRealizado === null || row.tiempoPagoRealizado === undefined
+        ? 'Sin pago'
+        : `${row.tiempoPagoRealizado} días`}
+</div>
                             </td>
 
                             {/* TOTAL */}
