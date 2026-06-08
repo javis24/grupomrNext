@@ -61,6 +61,15 @@ diasRestantes: {
     allowNull: true,
     defaultValue: 0,
 },
+    fechaPago: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+    },
+
+    tiempoPagoRealizado: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+    },
     clientId: { type: DataTypes.INTEGER, allowNull: false },
     userId: { type: DataTypes.INTEGER, allowNull: false }
 }, {

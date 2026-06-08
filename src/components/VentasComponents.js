@@ -52,6 +52,8 @@ const SalesPage = () => {
             numeroFactura: '',
             plazoCredito: '',
             fechaCotizacion: '',
+            fechaPago: '',
+            tiempoPagoRealizado: '',
             concepto: '',
             equipo: '',
             cantidad: '',
@@ -353,6 +355,8 @@ useEffect(() => {
     numeroFactura: sale.numeroFactura || '',
     plazoCredito: sale.plazoCredito || client?.billingDepartment || '',
     fechaCotizacion: sale.fechaCotizacion ? sale.fechaCotizacion.split('T')[0] : '',
+    fechaPago: sale.fechaPago ? sale.fechaPago.split('T')[0] : '',
+    tiempoPagoRealizado: sale.tiempoPagoRealizado || '',
     concepto: sale.concepto || '',
     equipo: sale.equipo || '',
     cantidad: sale.cantidad || '',
@@ -389,6 +393,24 @@ useEffect(() => {
         }
     };
 
+    const calcularTiempoPagoRealizado = (fechaBase, fechaPago) => {
+    if (!fechaBase || !fechaPago) return null;
+
+    const base = new Date(`${fechaBase.split('T')[0]}T00:00:00`);
+    const pago = new Date(`${fechaPago.split('T')[0]}T00:00:00`);
+
+    base.setHours(0, 0, 0, 0);
+    pago.setHours(0, 0, 0, 0);
+
+    const diffMs = pago - base;
+
+    return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+};
+
+const tiempoPagoRealizado = calcularTiempoPagoRealizado(
+    formValues.fechaCotizacion || formValues.fechaOperacion,
+    formValues.fechaPago
+);
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -410,31 +432,41 @@ useEffect(() => {
 
         const dataToSend = {
     ...formValues,
+
     noRemision: formValues.noRemision
         ? formValues.noRemision.trim()
         : '',
+
     numeroFactura: formValues.numeroFactura
         ? formValues.numeroFactura.trim()
         : '',
+
     plazoCredito: formValues.plazoCredito
         ? parseInt(formValues.plazoCredito)
         : null,
-    fechaCotizacion:
-    formValues.requiereFactura === 'No'
-        ? null
-        : formValues.fechaCotizacion || null,
-    fechaEstimadaPago:
-    formValues.requiereFactura === 'No'
-        ? null
-        : fechaEstimadaPago || null,
 
-diasRestantes:
-    formValues.requiereFactura === 'No'
-        ? null
-        : diasRestantes ?? null,
+    fechaCotizacion:
+        formValues.requiereFactura === 'No'
+            ? null
+            : formValues.fechaCotizacion || null,
+
+    fechaPago: formValues.fechaPago || null,
+
+    fechaEstimadaPago:
+        formValues.requiereFactura === 'No'
+            ? null
+            : fechaEstimadaPago || null,
+
+    diasRestantes:
+        formValues.requiereFactura === 'No'
+            ? null
+            : diasRestantes ?? null,
+
+    tiempoPagoRealizado: tiempoPagoRealizado ?? null,
+
     unitBusiness: selectedCategory,
     clientId: selectedClient.id,
-    
+
     items: saleItems,
     totalVenta,
 };
@@ -478,6 +510,8 @@ diasRestantes:
         numeroFactura: '',
         plazoCredito: '',
         fechaCotizacion: '',
+        fechaPago: '',
+        tiempoPagoRealizado: '',
         concepto: '',
         equipo: '',
         cantidad: '',
@@ -1066,6 +1100,37 @@ diasRestantes:
                                                 </span>
                                             )}
                                         </div>
+                                        <div className="flex flex-col gap-2">
+    <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2">
+        Fecha de Pago
+    </label>
+
+    <input
+        type="date"
+        name="fechaPago"
+        value={formValues.fechaPago}
+        onChange={handleInputChange}
+        className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20"
+    />
+
+    <span className="text-[9px] text-gray-400 dark:text-gray-500 uppercase font-bold ml-2">
+        Fecha en que el cliente realizó el pago.
+    </span>
+</div>
+
+{formValues.fechaPago && (
+    <div className="flex flex-col gap-2">
+        <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2">
+            Tiempo de pago realizado
+        </label>
+
+        <div className="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm font-black text-gray-700 dark:text-gray-300">
+            {tiempoPagoRealizado !== null
+                ? `${tiempoPagoRealizado} días`
+                : 'Sin calcular'}
+        </div>
+    </div>
+)}
 
                                         {/* TRANSPORTE */}
                                         <div className="flex flex-col gap-2">

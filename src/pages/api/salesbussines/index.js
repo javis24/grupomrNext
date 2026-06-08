@@ -37,6 +37,8 @@ export default async function handler(req, res) {
                         numeroFactura,
                         plazoCredito,
                         fechaCotizacion,
+                        fechaPago,
+                        tiempoPagoRealizado,
                         fechaEstimadaPago,
                         diasRestantes,
                         unitBusiness, 
@@ -89,6 +91,8 @@ export default async function handler(req, res) {
     fechaCotizacion: fechaCotizacion || null,
     fechaEstimadaPago: fechaEstimadaPago || null,
     diasRestantes: diasRestantes ?? null,
+    fechaPago: fechaPago || null,
+tiempoPagoRealizado: tiempoPagoRealizado ?? null,
 
     unitBusiness,
     concepto,
