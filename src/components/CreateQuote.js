@@ -119,6 +119,36 @@ const CreateQuote = () => {
     setHistoryPage(1);
 }, [listSearchTerm]);
 
+useEffect(() => {
+    if (!router.isReady) return;
+
+    const {
+        fromAppointment,
+        companyName,
+        address,
+        attentionTo,
+        email,
+        phone,
+        supervisor,
+    } = router.query;
+
+    if (fromAppointment === '1') {
+        setClientData((prev) => ({
+            ...prev,
+            companyName: companyName || '',
+            address: address || '',
+            attentionTo: attentionTo || '',
+            department: 'COMPRAS',
+            email: email || '',
+            phone: phone || '',
+            supervisor: supervisor || '',
+        }));
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        toast.info('Datos de la cita cargados en cotización');
+    }
+}, [router.isReady, router.query]);
+
     const fetchInitialData = async () => {
         try {
             const token = localStorage.getItem('token');

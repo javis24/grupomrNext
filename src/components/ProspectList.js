@@ -107,6 +107,34 @@ export default function ProspectList() {
         fetchUsers();
     }, []);
 
+    useEffect(() => {
+    if (!router.isReady) return;
+
+    const {
+        fromAppointment,
+        contactName,
+        company,
+        phone,
+        email,
+        planta,
+        saleProcess,
+    } = router.query;
+
+    if (fromAppointment === '1') {
+        setFormData({
+            saleProcess: saleProcess || 'Contacto inicial',
+            contactName: contactName || '',
+            company: company || '',
+            phone: phone || '',
+            email: email || '',
+            planta: planta ? String(planta).split(',').map(p => p.trim()) : [],
+        });
+
+        setModalType('createProspect');
+        setModalIsOpen(true);
+    }
+}, [router.isReady, router.query]);
+
     const fetchProspects = async () => {
         try {
             const token = localStorage.getItem('token');

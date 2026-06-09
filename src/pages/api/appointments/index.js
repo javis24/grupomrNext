@@ -19,7 +19,20 @@ export default async function handler(req, res) {
         { 
           model: Clients, 
           as: 'datosCliente', 
-          attributes: ['contactPhone'] 
+          attributes: [
+            'id',
+            'fullName',
+            'companyName',
+            'businessTurn',
+            'address',
+            'contactName',
+            'companyPhone',
+            'contactPhone',
+            'email',
+            'position',
+            'planta',
+            'assignedUser'
+          ] 
         }               
       ],           
     };
@@ -53,7 +66,24 @@ export default async function handler(req, res) {
       include: [
         { model: Users, attributes: ['id', 'name', 'email'] },
         { model: Users, as: 'assignedUser', attributes: ['id', 'name', 'email'] },
-        { model: Clients, as: 'datosCliente', attributes: ['contactPhone'] }
+        { 
+  model: Clients, 
+  as: 'datosCliente', 
+  attributes: [
+    'id',
+    'fullName',
+    'companyName',
+    'businessTurn',
+    'address',
+    'contactName',
+    'companyPhone',
+    'contactPhone',
+    'email',
+    'position',
+    'planta',
+    'assignedUser'
+  ] 
+}
       ],
     });
 

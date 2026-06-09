@@ -380,15 +380,41 @@ const handleDeleteAppointment = async (id) => {
                     >WhatsApp</a>
                   )}
 
-                  <button 
-                    onClick={() => router.push({ pathname: '/prospectos', query: { name: appo.clientName, phone: appo.datosCliente?.contactPhone || '' } })}
-                    className="text-[10px] bg-purple-100 dark:bg-purple-600/20 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-500/30 px-2 py-0.5 rounded hover:bg-purple-600 hover:text-white transition-all font-bold uppercase"
-                  >+ Prospecto</button>
+                 <button 
+                  onClick={() => router.push({
+                    pathname: '/prospectos',
+                    query: {
+                      fromAppointment: '1',
+                      contactName: appo.datosCliente?.contactName || appo.clientName || '',
+                      company: appo.datosCliente?.companyName || appo.clientName || '',
+                      phone: appo.datosCliente?.contactPhone || appo.datosCliente?.companyPhone || '',
+                      email: appo.datosCliente?.email || '',
+                      planta: appo.datosCliente?.planta || '',
+                      saleProcess: 'Contacto inicial',
+                    }
+                  })}
+                  className="text-[10px] bg-purple-100 dark:bg-purple-600/20 text-purple-700 dark:text-purple-400 border border-purple-200 dark:border-purple-500/30 px-2 py-0.5 rounded hover:bg-purple-600 hover:text-white transition-all font-bold uppercase"
+                >
+                  + Prospecto
+                </button>
 
-                  <button 
-                    onClick={() => router.push({ pathname: '/cotizacion', query: { client: appo.clientName, phone: appo.datosCliente?.contactPhone || '' } })}
-                    className="text-[10px] bg-orange-100 dark:bg-orange-600/20 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-500/30 px-2 py-0.5 rounded hover:bg-orange-600 hover:text-white transition-all font-bold uppercase"
-                  >+ Cotizar</button>
+                 <button 
+  onClick={() => router.push({
+    pathname: '/cotizacion',
+    query: {
+      fromAppointment: '1',
+      companyName: appo.datosCliente?.companyName || appo.clientName || '',
+      address: appo.datosCliente?.address || '',
+      attentionTo: appo.datosCliente?.contactName || appo.clientName || '',
+      email: appo.datosCliente?.email || '',
+      phone: appo.datosCliente?.contactPhone || appo.datosCliente?.companyPhone || '',
+      supervisor: appo.assignedUser?.name || '',
+    }
+  })}
+  className="text-[10px] bg-orange-100 dark:bg-orange-600/20 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-500/30 px-2 py-0.5 rounded hover:bg-orange-600 hover:text-white transition-all font-bold uppercase"
+>
+  + Cotizar
+</button>
                 </div>
               </div>
             ))}
