@@ -19,12 +19,12 @@ const File = db.define('files', {
     },
   },
   filepath: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    validate: {
-      notEmpty: true,
-    },
+  type: DataTypes.STRING(1000),
+  allowNull: false,
+  validate: {
+    notEmpty: true,
   },
+},
   userId: {
     type: DataTypes.INTEGER,
     allowNull: false,
