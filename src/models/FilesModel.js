@@ -1,4 +1,3 @@
-// models/File.js
 import { Sequelize } from "sequelize";
 import db from "../config/Database";
 import Users from './UserModel.js';
@@ -19,12 +18,12 @@ const File = db.define('files', {
     },
   },
   filepath: {
-  type: DataTypes.STRING(1000),
-  allowNull: false,
-  validate: {
-    notEmpty: true,
+    type: DataTypes.STRING(1000),
+    allowNull: false,
+    validate: {
+      notEmpty: true,
+    },
   },
-},
   userId: {
     type: DataTypes.INTEGER,
     allowNull: false,
@@ -33,11 +32,10 @@ const File = db.define('files', {
     },
   },
 }, {
-  timestamps: false, 
+  timestamps: true,
   freezeTableName: true,
 });
 
-// Relación entre Users y Files
 Users.hasMany(File, { foreignKey: 'userId' });
 File.belongsTo(Users, { foreignKey: 'userId' });
 
