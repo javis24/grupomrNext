@@ -8,6 +8,7 @@ import {
     FiPhone 
 } from 'react-icons/fi';
 import { toast, ToastContainer } from 'react-toastify';
+import { useRouter } from 'next/router';
 
 const customStyles = {
     content: {
@@ -32,6 +33,7 @@ export default function ClientList() {
     const [isLoading, setIsLoading] = useState(true);
     const [currentUser, setCurrentUser] = useState({ id: null, role: '', email: '', name: '' });
     const itemsPerPage = 6;
+    const router = useRouter();
 
     const PalletIcon = () => (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10">
@@ -91,21 +93,44 @@ export default function ClientList() {
         }
     };
 
-    const fetchUsers = async () => {
-        try {
-            const token = localStorage.getItem('token');
-            const decoded = jwt.decode(token);
-            
-            // FIX ERROR 403: Si no es admin, no pedimos la lista. Solo nos usamos a nosotros mismos.
-            if (decoded.role !== 'admin') {
-                setActiveUsers([{ id: decoded.id, name: decoded.name, email: decoded.email }]);
-                return;
-            }
+   const fetchUsers = async () => {
+    try {
+        const token = localStorage.getItem('token');
 
-            const res = await axios.get('/api/users', { headers: { Authorization: `Bearer ${token}` } });
-            setActiveUsers(res.data);
-        } catch (e) { console.error("Error usuarios", e); }
-    };
+        if (!token) {
+            router.push('/login');
+            return;
+        }
+
+        const decoded = jwt.decode(token);
+
+        if (!decoded) {
+            localStorage.removeItem('token');
+            router.push('/login');
+            return;
+        }
+
+        if (decoded.role !== 'admin' && decoded.role !== 'gerencia') {
+            setActiveUsers([
+                {
+                    id: decoded.id,
+                    name: decoded.name,
+                    email: decoded.email,
+                },
+            ]);
+            return;
+        }
+
+        const response = await axios.get('/api/users', {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+
+        setActiveUsers(response.data);
+    } catch (err) {
+        console.error('Error cargando usuarios:', err);
+        toast.error('Error al cargar usuarios');
+    }
+};
 
  const handleSubmit = async (e) => {
     e.preventDefault();

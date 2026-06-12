@@ -50,10 +50,26 @@ export default async function handler(req, res) {
                         break;
 
                     case 'POST':
-                        // Al crear, seguimos vinculando quién lo registró originalmente
-                        const newClient = await Clients.create({ ...req.body, userId });
-                        res.status(201).json(newClient);
-                        break;
+                        const cleanClientData = {
+                        ...req.body,
+
+                        email: req.body.email?.trim() || null,
+                        billingEmail: req.body.billingEmail?.trim() || null,
+
+                        contactPhone: req.body.contactPhone?.trim() || null,
+                        companyPhone: req.body.companyPhone?.trim() || null,
+                        billingPhone: req.body.billingPhone?.trim() || null,
+
+                        assignedUser: req.body.assignedUser || null,
+                        billingDepartment: req.body.billingDepartment || null,
+
+                        userId,
+                        };
+
+                        const newClient = await Clients.create(cleanClientData);
+
+                        return res.status(201).json(newClient);
+                      
 
                     default:
                         res.setHeader('Allow', ['GET', 'POST']);

@@ -91,13 +91,13 @@ const Clients = db.define('clients', {
         type: DataTypes.STRING,
         allowNull: true,
         },
-        assignedUser: { 
-            type: DataTypes.STRING,
-            allowNull: true, 
-            validate: {
-              isEmail: true, 
-            },
-        },
+       assignedUser: { 
+    type: DataTypes.STRING,
+    allowNull: true,
+    validate: {
+        len: [0, 100],
+    },
+},
         billingContactName: {
             type: DataTypes.STRING,
             allowNull: true,
