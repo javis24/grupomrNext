@@ -37,9 +37,9 @@ const CreateQuote = () => {
         "INCLUYE GASTOS DE ENTREGA", "LAB NUESTRA BODEGA", "TERMINOS DE ENTREGA 4 SEMANAS",
         "TERMINOS DE ENTREGA 15 DIAS", "TERMINOS DE ENTREGA 8 DIAS",
         "TIEMPO DE RESPUESTA: CON PROGRAMAMCION DE 24 HRS.", "CONDICIONES DE PAGO: CREDITO",
-        "CONDICIONES DE PAGO: CONTADO", "CONDICIONES DE PAGO: CON ANTICIPO",
+        "CONDICIONES DE PAGO: CONTADO", "CONDICIONES DE PAGO: CON ANTICIPO", "CONDICIONES DE PAGO: NEGOCIABLE",
         "VIGENCIA DE LA COTIZACION: 15 DIAS",
-        "CONTAMOS CON LOS PERMISOS Y AUORIZACIONES NECESARIOS PARA EL DESARROLLO DE NUESTRAS ACTIVIDADES",
+        "CONTAMOS CON LOS PERMISOS Y AUTORIZACIONES NECESARIOS PARA EL DESARROLLO DE NUESTRAS ACTIVIDADES",
         "INCLUYE ELABORACION Y ENTREGA DE MANIFIESTOS. SOLICITARLO AL CONTRATAR SERVICIOS."
     ];
 
@@ -559,6 +559,42 @@ const addProductToQuote = (product) => {
     setProductSearch('');
     setShowProductSuggestions(false);
 };
+
+
+useEffect(() => {
+    if (!router.isReady) return;
+
+    const {
+        fromClient,
+        clientId,
+        companyName,
+        fullName,
+        address,
+        attentionTo,
+        email,
+        phone,
+        businessTurn,
+        planta,
+        supervisor,
+    } = router.query;
+
+    if (fromClient === '1') {
+        setClientData((prev) => ({
+            ...prev,
+            clientId: clientId || '',
+            companyName: companyName || fullName || '',
+            address: address || '',
+            attentionTo: attentionTo || '',
+            department: businessTurn || '',
+            email: email || '',
+            phone: phone || '',
+            planta: planta || '',
+            supervisor: supervisor || '',
+        }));
+    }
+}, [router.isReady, router.query]);
+
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-[#0e1624] dark:text-white p-4 md:p-8 font-sans flex flex-col gap-10 transition-colors duration-300">
       <ToastContainer theme="dark" position="bottom-right" />

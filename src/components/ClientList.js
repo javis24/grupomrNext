@@ -256,6 +256,28 @@ const handleClientPlantaToggle = (unidad) => {
         </div>
     );
 
+
+
+
+        const handleCreateQuote = (client) => {
+    router.push({
+        pathname: '/cotizacion',
+        query: {
+            fromClient: '1',
+            clientId: client.id,
+            companyName: client.companyName || '',
+            fullName: client.fullName || '',
+            address: client.address || '',
+            attentionTo: client.contactName || client.fullName || '',
+            email: client.email || '',
+            phone: client.contactPhone || client.companyPhone || '',
+            businessTurn: client.businessTurn || '',
+            planta: client.planta || '',
+            supervisor: client.assignedUser || '',
+        },
+    });
+};
+
  return (
         <div className="p-4 md:p-8 bg-gray-50 dark:bg-[#0e1624] min-h-screen text-gray-900 dark:text-white font-sans transition-colors duration-300">
             <ToastContainer theme="colored" />
@@ -335,13 +357,36 @@ const handleClientPlantaToggle = (unidad) => {
                                         {client.address || 'Sin dirección'}
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-3 gap-2 pt-4 border-t border-gray-100 dark:border-gray-800">
-                                    <button onClick={() => openModal(client)} className="bg-gray-100 dark:bg-gray-800 hover:bg-blue-600 p-3 rounded-xl transition-all flex justify-center text-gray-600 dark:text-white hover:text-white"><FiEdit2 size={16}/></button>
-                                    <button className="bg-gray-100 dark:bg-gray-800 hover:bg-yellow-600 p-3 rounded-xl transition-all flex justify-center text-gray-600 dark:text-white hover:text-white"><FiFileText size={16}/></button>
-                                    {currentUser.role === 'admin' && (
-                                        <button onClick={() => handleDelete(client.id)} className="bg-gray-100 dark:bg-gray-800 hover:bg-red-600 p-3 rounded-xl transition-all flex justify-center text-gray-600 dark:text-white hover:text-white"><FiTrash2 size={16}/></button>
-                                    )}
-                                </div>
+                               <div className={`grid ${currentUser.role === 'admin' ? 'grid-cols-3' : 'grid-cols-2'} gap-2 pt-4 border-t border-gray-100 dark:border-gray-800`}>
+    <button
+        type="button"
+        title="Editar cliente"
+        onClick={() => openModal(client)}
+        className="bg-gray-100 dark:bg-gray-800 hover:bg-blue-600 p-3 rounded-xl transition-all flex justify-center text-gray-600 dark:text-white hover:text-white"
+    >
+        <FiEdit2 size={16} />
+    </button>
+
+    <button
+        type="button"
+        title="Crear cotización"
+        onClick={() => handleCreateQuote(client)}
+        className="bg-gray-100 dark:bg-gray-800 hover:bg-yellow-600 p-3 rounded-xl transition-all flex justify-center text-gray-600 dark:text-white hover:text-white"
+    >
+        <FiFileText size={16} />
+    </button>
+
+    {currentUser.role === 'admin' && (
+        <button
+            type="button"
+            title="Eliminar cliente"
+            onClick={() => handleDelete(client.id)}
+            className="bg-gray-100 dark:bg-gray-800 hover:bg-red-600 p-3 rounded-xl transition-all flex justify-center text-gray-600 dark:text-white hover:text-white"
+        >
+            <FiTrash2 size={16} />
+        </button>
+    )}
+</div>
                             </div>
                         ))}
                     </div>
