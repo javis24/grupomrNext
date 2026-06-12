@@ -7,18 +7,13 @@ export default async function handler(req, res) {
   return new Promise((resolve) => {
     authenticateToken(req, res, async () => {
       const { method } = req;
-      const { role: userRole, id: userId } = req.user;
+      const { role: userRole } = req.user;
 
       try {
         const client = await Clients.findByPk(id);
 
         if (!client) {
           res.status(404).json({ message: 'Cliente no encontrado' });
-          return resolve();
-        }
-
-        if (userRole === 'vendedor' && client.userId !== userId) {
-          res.status(403).json({ message: 'No tienes permiso' });
           return resolve();
         }
 
@@ -46,25 +41,30 @@ export default async function handler(req, res) {
           } = req.body;
 
           const payload = {
-            fullName,
-            companyName,
-            businessTurn,
-            address,
-            contactName,
-            companyPhone: companyPhone ? String(companyPhone).trim() : null,
-            contactPhone: contactPhone ? String(contactPhone).trim() : null,
-            email: email ? String(email).trim() : null,
-            position,
-            planta,
-            producto,
-            assignedUser: assignedUser ? String(assignedUser).trim() : null,
-            billingContactName,
-            billingPhone: billingPhone ? String(billingPhone).trim() : null,
-            billingEmail: billingEmail ? String(billingEmail).trim() : null,
-            usoCFDI,
-            paymentMethod,
-            paymentConditions,
-            billingDepartment,
+            fullName: fullName?.trim() || client.fullName,
+            companyName: companyName?.trim() || client.companyName,
+            businessTurn: businessTurn?.trim() || client.businessTurn,
+            address: address?.trim() || client.address,
+
+            contactName: contactName?.trim() || null,
+            companyPhone: companyPhone?.trim() || null,
+            contactPhone: contactPhone?.trim() || null,
+            email: email?.trim() || null,
+            position: position?.trim() || null,
+
+            planta: planta?.trim() || null,
+            producto: producto?.trim() || null,
+
+            assignedUser: assignedUser?.trim() || null,
+
+            billingContactName: billingContactName?.trim() || null,
+            billingPhone: billingPhone?.trim() || null,
+            billingEmail: billingEmail?.trim() || null,
+
+            usoCFDI: usoCFDI?.trim() || null,
+            paymentMethod: paymentMethod?.trim() || null,
+            paymentConditions: paymentConditions?.trim() || null,
+            billingDepartment: billingDepartment?.trim() || null,
           };
 
           await client.update(payload);
@@ -87,7 +87,7 @@ export default async function handler(req, res) {
 
           await client.destroy();
 
-          res.status(200).json({ message: 'Eliminado' });
+          res.status(200).json({ message: 'Cliente eliminado correctamente' });
           return resolve();
         }
 
