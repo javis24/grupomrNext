@@ -1,6 +1,11 @@
 import { authenticateToken } from '../../../lib/auth';
 import Quotes from '../../../models/QuoteModel';
 import Users from '../../../models/UserModel';
+import {
+    buildQuoteCreatePayload,
+    buildQuotesWhereClause,
+    validateQuotePayload,
+} from '../../../lib/quotes/quoteService';
 
 export default async function handler(req, res) {
     return authenticateToken(req, res, async () => {
@@ -9,10 +14,10 @@ export default async function handler(req, res) {
 
         try {
             if (method === 'GET') {
-                const whereClause =
-                    role === 'admin' || role === 'gerencia'
-                        ? {}
-                        : { userId: loggedUserId };
+                const whereClause = buildQuotesWhereClause({
+                    role,
+                    userId: loggedUserId,
+                });
 
                 const quotes = await Quotes.findAll({
                     where: whereClause,
@@ -33,47 +38,22 @@ export default async function handler(req, res) {
             }
 
             if (method === 'POST') {
-                const {
-                    companyName,
-                    attentionTo,
-                    email,
-                    phone,
-                    total,
-                    address,
-                    department,
-                    supervisor,
-                    descripcionGeneral,
-                    items,
-                    observaciones,
-                } = req.body;
+                const validationError = validateQuotePayload(req.body);
 
-                if (!companyName) {
+                if (validationError) {
                     return res.status(400).json({
-                        message: 'El nombre de la empresa es obligatorio',
+                        message: validationError,
                     });
                 }
 
                 const maxQuoteNumber = await Quotes.max('quoteNumber');
-
-                const nextQuoteNumber = maxQuoteNumber
-                    ? Number(maxQuoteNumber) + 1
-                    : 1;
-
-                const newQuote = await Quotes.create({
-                    quoteNumber: nextQuoteNumber,
-                    companyName,
-                    address,
-                    attentionTo,
-                    department,
-                    email,
-                    phone,
-                    supervisor,
-                    descripcionGeneral,
-                    items,
-                    observaciones,
-                    total,
+                const quotePayload = buildQuoteCreatePayload({
+                    body: req.body,
                     userId: loggedUserId,
+                    maxQuoteNumber,
                 });
+
+                const newQuote = await Quotes.create(quotePayload);
 
                 return res.status(201).json(newQuote);
             }

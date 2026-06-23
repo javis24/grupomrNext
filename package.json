@@ -8,7 +8,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "test": "node --test",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@material-tailwind/html": "^2.3.2",

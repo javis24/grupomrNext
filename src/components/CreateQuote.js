@@ -5,6 +5,7 @@ import { useRouter } from 'next/router';
 import axios from 'axios'; 
 import { toast, ToastContainer } from 'react-toastify';
 import { FiCheckSquare, FiSquare, FiFileText, FiPlus, FiTrash2, FiSearch, FiDownload, FiEdit3 } from 'react-icons/fi';
+import { calculateQuoteTotals, calculateRowTotals } from '../lib/quotes/quoteCalculations';
 
 const CreateQuote = () => {
     const router = useRouter();
@@ -221,10 +222,8 @@ setQuoteNumber(maxQuoteNumber + 1);
         const updatedRows = [...serviceRows];
         updatedRows[index][name] = value;
         if (name === 'cantidad' || name === 'pu') {
-            const subtotal = (parseFloat(updatedRows[index].cantidad) || 0) * (parseFloat(updatedRows[index].pu) || 0);
-            updatedRows[index].subtotal = subtotal.toFixed(2);
-            updatedRows[index].iva = (subtotal * 0.16).toFixed(2);
-            updatedRows[index].total = (subtotal * 1.16).toFixed(2);
+            const totals = calculateRowTotals(updatedRows[index]);
+            updatedRows[index] = { ...updatedRows[index], ...totals };
         }
         setServiceRows(updatedRows);
     };
@@ -233,9 +232,10 @@ setQuoteNumber(maxQuoteNumber + 1);
     const removeRow = (index) => { if (serviceRows.length > 1) setServiceRows(serviceRows.filter((_, i) => i !== index)); };
     const toggleObservacion = (op) => setObservacionesSeleccionadas(prev => prev.includes(op) ? prev.filter(i => i !== op) : [...prev, op]);
 
-    const globalSubtotal = serviceRows.reduce((acc, row) => acc + parseFloat(row.subtotal || 0), 0).toFixed(2);
-    const globalIva = (globalSubtotal * 0.16).toFixed(2);
-    const globalTotal = (globalSubtotal * 1.16).toFixed(2);
+    const quoteTotals = calculateQuoteTotals(serviceRows);
+    const globalSubtotal = quoteTotals.subtotal;
+    const globalIva = quoteTotals.iva;
+    const globalTotal = quoteTotals.total;
 
     // ==========================================
     // LÓGICA DE PDF (COMPARTIDA)

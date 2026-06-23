@@ -220,6 +220,40 @@ const handleDeleteAppointment = async (id) => {
 
   const canDeleteAppointment = userRole === 'admin';
 
+
+  const sendAppointmentByEmail = (appo) => {
+  const clientEmail = appo.datosCliente?.email || '';
+  const asesorEmail = appo.assignedUser?.email || '';
+
+  const fecha = format(new Date(appo.date), "eeee d 'de' MMMM yyyy", { locale: es });
+
+  const subject = `Resumen de cita - ${appo.clientName}`;
+
+  const body = `
+Hola,
+
+Te comparto el resumen de la cita programada:
+
+Cliente: ${appo.clientName}
+Fecha: ${fecha}
+Hora: ${appo.appointmentTime || 'N/A'}
+Asesor: ${appo.assignedUser?.name || 'N/A'}
+Estatus: ${appo.clientStatus}
+Teléfono: ${appo.datosCliente?.contactPhone || appo.datosCliente?.companyPhone || 'N/A'}
+Correo del cliente: ${appo.datosCliente?.email || 'N/A'}
+
+Comentarios:
+${appo.comments || 'Sin comentarios'}
+
+Saludos.
+`;
+
+  const outlookUrl = `https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(clientEmail)}&cc=${encodeURIComponent(asesorEmail)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+  window.open(outlookUrl, '_blank');
+};
+
+
   return (
     /* 1. CONTENEDOR PRINCIPAL: Adaptable */
     <div className="flex flex-col lg:flex-row p-2 md:p-6 bg-gray-50 dark:bg-[#0e1624] gap-6 min-h-screen text-gray-900 dark:text-white font-sans transition-colors duration-300">
@@ -353,7 +387,7 @@ const handleDeleteAppointment = async (id) => {
                     </div>
                     <h4 className="font-bold text-lg mt-1 uppercase leading-tight text-gray-900 dark:text-white">{appo.clientName}</h4>
                     <p className="text-xs text-gray-500 dark:text-gray-400">👤 {appo.assignedUser?.name || 'Sin asesor'}</p>
-                    {appo.comments && <p className="text-[11px] text-gray-600 dark:text-gray-500 mt-2 italic line-clamp-2">"{appo.comments}"</p>}
+                    {appo.comments && <p className="text-[11px] text-gray-600 dark:text-gray-500 mt-2 italic line-clamp-2">&quot;{appo.comments}&quot;</p>}
                   </div>
                   <span className="text-[9px] uppercase font-black bg-white dark:bg-gray-900 px-2 py-1 rounded text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30">{appo.clientStatus}</span>
                 </div>
@@ -371,6 +405,12 @@ const handleDeleteAppointment = async (id) => {
                       </button>
                     )}
                   <button onClick={() => exportToPDF(appo)} className="text-[10px] text-blue-600 dark:text-blue-500 font-bold uppercase hover:underline">PDF</button>
+                  <button
+                    onClick={() => sendAppointmentByEmail(appo)}
+                    className="text-[10px] text-sky-600 dark:text-sky-400 font-bold uppercase hover:underline"
+                  >
+                    Correo
+                  </button>
 
                   {appo.datosCliente?.contactPhone && (
                     <a 
