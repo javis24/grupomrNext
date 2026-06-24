@@ -20,7 +20,11 @@ const Products = db.define('Products', {
     leadTime: { type: DataTypes.STRING },
     cost: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
     price: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
-    businessUnit: { type: DataTypes.STRING }, // <--- AGREGAR ESTO
+    businessUnit: { type: DataTypes.STRING }, 
+    imageUrl: {
+    type: DataTypes.STRING(1000),
+    allowNull: true,
+},
     userId: { type: DataTypes.INTEGER, allowNull: false }
 }, {
     freezeTableName: true

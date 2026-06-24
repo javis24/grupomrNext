@@ -15,12 +15,20 @@ const ProductCatalog = () => {
     const [selectedId, setSelectedId] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [isLoading, setIsLoading] = useState(true);
-    const [userRole, setUserRole] = useState('');
-    
+    const [userRole, setUserRole] = useState('');    
     const [formData, setFormData] = useState({
-        code: '', name: '', description: '', unitMeasure: 'Pieza', 
-        leadTime: '', cost: '', price: '', businessUnit: ''
-    });
+    code: '',
+    name: '',
+    description: '',
+    unitMeasure: 'Pieza',
+    leadTime: '',
+    cost: '',
+    price: '',
+    businessUnit: '',
+    imageUrl: '',
+        });
+        const [selectedImage, setSelectedImage] = useState(null);
+        const [previewImage, setPreviewImage] = useState('');
 
     const PalletIcon = () => (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
@@ -65,14 +73,49 @@ const ProductCatalog = () => {
         setFormData(prev => ({ ...prev, businessUnit: cat }));
     };
 
-    const handleEdit = (product) => {
-        if (userRole !== 'admin') return; 
-        setFormData({ ...product });
-        setSelectedId(product.id);
-        setIsEditing(true);
-        setShowForm(true);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
+   const handleEdit = (product) => {
+    if (userRole !== 'admin') return;
+
+    setFormData({
+        code: product.code || '',
+        name: product.name || '',
+        description: product.description || '',
+        unitMeasure: product.unitMeasure || 'Pieza',
+        leadTime: product.leadTime || '',
+        cost: product.cost || '',
+        price: product.price || '',
+        businessUnit: product.businessUnit || selectedCategory,
+        imageUrl: product.imageUrl || '',
+    });
+
+    setPreviewImage(product.imageUrl || '');
+    setSelectedImage(null);
+
+    setSelectedId(product.id);
+    setIsEditing(true);
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+    const handleImageChange = (e) => {
+    const file = e.target.files[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+        toast.error('Solo se permiten imágenes');
+        return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+        toast.error('La imagen no debe pesar más de 5MB');
+        return;
+    }
+
+    setSelectedImage(file);
+    setPreviewImage(URL.createObjectURL(file));
+};
+
 
     const handleDelete = async (id) => {
         if (userRole !== 'admin') return; 
@@ -86,29 +129,81 @@ const ProductCatalog = () => {
     };
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (userRole !== 'admin') return toast.error("No tienes permisos");
-        const token = localStorage.getItem('token');
-        try {
-            const dataToSave = { ...formData, businessUnit: selectedCategory };
-            if (isEditing) {
-                await axios.put(`/api/products/${selectedId}`, dataToSave, { headers: { Authorization: `Bearer ${token}` } });
-                toast.success("Producto actualizado");
-            } else {
-                await axios.post('/api/products', dataToSave, { headers: { Authorization: `Bearer ${token}` } });
-                toast.success("Producto creado");
-            }
-            resetForm();
-            fetchProducts();
-        } catch (err) { toast.error("Error en la operación"); }
-    };
+    e.preventDefault();
+
+    if (userRole !== 'admin') {
+        return toast.error("No tienes permisos");
+    }
+
+    const token = localStorage.getItem('token');
+
+    try {
+        const dataToSave = new FormData();
+
+        dataToSave.append('code', formData.code || '');
+        dataToSave.append('name', formData.name || '');
+        dataToSave.append('description', formData.description || '');
+        dataToSave.append('unitMeasure', formData.unitMeasure || 'Pieza');
+        dataToSave.append('leadTime', formData.leadTime || '');
+        dataToSave.append('cost', formData.cost || '');
+        dataToSave.append('price', formData.price || '');
+        dataToSave.append('businessUnit', selectedCategory || formData.businessUnit || '');
+
+        if (selectedImage) {
+            dataToSave.append('image', selectedImage);
+        }
+
+        if (isEditing) {
+            await axios.put(`/api/products/${selectedId}`, dataToSave, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
+            toast.success("Producto actualizado");
+        } else {
+            await axios.post('/api/products', dataToSave, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
+            toast.success("Producto creado");
+        }
+
+        resetForm();
+        fetchProducts();
+    } catch (err) {
+        console.error('Error producto:', err.response?.data || err);
+        toast.error(
+            err.response?.data?.message ||
+            err.response?.data?.error ||
+            "Error en la operación"
+        );
+    }
+};
 
     const resetForm = () => {
-        setFormData({ code: '', name: '', description: '', unitMeasure: 'Pieza', leadTime: '', cost: '', price: '', businessUnit: selectedCategory });
-        setIsEditing(false);
-        setShowForm(false);
-        setSelectedId(null);
-    };
+    setFormData({
+        code: '',
+        name: '',
+        description: '',
+        unitMeasure: 'Pieza',
+        leadTime: '',
+        cost: '',
+        price: '',
+        businessUnit: selectedCategory,
+        imageUrl: '',
+    });
+
+    setSelectedImage(null);
+    setPreviewImage('');
+    setIsEditing(false);
+    setShowForm(false);
+    setSelectedId(null);
+};
 
     const filteredProducts = products.filter(p => 
         p.businessUnit === selectedCategory && 
@@ -186,6 +281,28 @@ const ProductCatalog = () => {
                                     <ModalInput label="Lead Time" placeholder="Ej: 3-5 días" value={formData.leadTime} onChange={(v)=>setFormData({...formData, leadTime: v})} />
                                     <ModalInput label="Costo Interno" type="number" value={formData.cost} onChange={(v)=>setFormData({...formData, cost: v})} />
                                     <ModalInput label="Precio Venta" type="number" value={formData.price} onChange={(v)=>setFormData({...formData, price: v})} />
+                                    <div className="flex flex-col gap-2">
+    <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2 tracking-widest">
+        Imagen del Producto
+    </label>
+
+    <input
+        type="file"
+        accept="image/*"
+        onChange={handleImageChange}
+        className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white outline-none focus:ring-2 ring-blue-500/20 transition-all"
+    />
+
+    {previewImage && (
+        <div className="mt-3">
+            <img
+                src={previewImage}
+                alt="Vista previa"
+                className="w-full h-40 object-cover rounded-2xl border border-gray-200 dark:border-gray-700"
+            />
+        </div>
+    )}
+</div>
                                     <div className="md:col-span-3">
                                         <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-2 tracking-widest">Descripción</label>
                                         <textarea rows="3" value={formData.description} onChange={(e)=>setFormData({...formData, description: e.target.value})} className="w-full bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-900 dark:text-white outline-none focus:border-blue-500 resize-none" />
@@ -206,7 +323,17 @@ const ProductCatalog = () => {
                             {filteredProducts.map(product => (
                                 <div key={product.id} className="bg-white dark:bg-[#1f2937] rounded-[2.5rem] border border-gray-200 dark:border-gray-700 p-8 hover:border-blue-500/50 transition-all shadow-lg group">
                                     <div className="flex justify-between items-start mb-6">
-                                        <div className="bg-blue-500/10 p-4 rounded-2xl text-blue-600 dark:text-blue-500 text-3xl transition-colors"><FiPackage /></div>
+                                      <div className="w-20 h-20 bg-blue-500/10 rounded-2xl overflow-hidden flex items-center justify-center text-blue-600 dark:text-blue-500 text-3xl transition-colors border border-gray-100 dark:border-gray-700">
+    {product.imageUrl ? (
+        <img
+            src={product.imageUrl}
+            alt={product.name}
+            className="w-full h-full object-cover"
+        />
+    ) : (
+        <FiPackage />
+    )}
+</div>
                                         {userRole === 'admin' && (
                                             <div className="flex gap-2">
                                                 <button onClick={() => handleEdit(product)} className="bg-gray-100 dark:bg-gray-800 p-3 rounded-xl hover:text-blue-600 dark:hover:text-blue-400 transition-all shadow-sm"><FiEdit2 size={16}/></button>
