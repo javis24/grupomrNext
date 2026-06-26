@@ -32,6 +32,7 @@ const CreateQuote = () => {
     const [productSearch, setProductSearch] = useState('');
     const [selectedBusinessUnit, setSelectedBusinessUnit] = useState('');
     const [showProductSuggestions, setShowProductSuggestions] = useState(false);
+    const [includeProductImages, setIncludeProductImages] = useState(false);
 
     const opcionesObservaciones = [
         "PRECIO DURANTE EL PRESENTE AÑO", "PRECIOS MAS IVA", "PRECIOS ANTES DE IMPUESTOS",
@@ -342,123 +343,273 @@ setQuoteNumber(maxQuoteNumber + 1);
     return `${letras} PESOS ${String(centavos).padStart(2, '0')}/100 M.N.`;
 };
 
-    const renderPDFContent = (doc, client, rows, quoteNum, dateStr, descGen, obsSel) => {
-        const image = new Image();
-        image.src = '/logo_mr.png';
-        image.onload = () => {
-            doc.addImage(image, 'PNG', 17, 7, 35, 0);
-            doc.setFontSize(22); doc.setTextColor(0, 0, 0); doc.setFont("helvetica", "bold");
-            doc.text("Cotización", 195, 20, { align: 'right' });
-            doc.setFontSize(11); doc.text(`NUM: ${String(quoteNum).padStart(3, '0')}`, 195, 28, { align: 'right' });
-            
-            doc.setFontSize(8); doc.text("EMISOR:", 15, 45); doc.setFont("helvetica", "normal");
-            doc.text("Materiales Reutilizables SA de CV\nBenito Juárez 112 sur\nCol. 1° de Mayo, Lerdo. Dgo\nC.P. 35169", 15, 50);
-            doc.setFont("helvetica", "bold"); doc.text(`SUPERVISOR: ${client.supervisor || "N/A"}`, 15, 70); doc.text(`FECHA: ${dateStr}`, 15, 75);
-            
-            const rightCol = 110; doc.text("CLIENTE:", rightCol, 45); doc.setFont("helvetica", "normal");
-            doc.text((client.companyName || "").toUpperCase(), rightCol + 15, 45);
-            doc.text(`ATENCIÓN A: ${(client.attentionTo || "").toUpperCase()}`, rightCol, 52);
-            doc.text(`DEPARTAMENTO: ${(client.department || "COMPRAS").toUpperCase()}`, rightCol, 59);
-            const splitAddress = doc.splitTextToSize((client.address || "").toUpperCase(), 70);
-            doc.text("DOMICILIO: ", rightCol, 66); doc.text(splitAddress, rightCol + 18, 66);
-            doc.text(`CELULAR: ${client.phone || "N/A"}`, rightCol, 82); doc.text(`CORREO: ${client.email || "N/A"}`, rightCol, 88);
+const loadImageAsBase64 = async (url) => {
+    if (!url) return null;
 
-            let currentY = 95;
-            if (descGen) {
-                doc.setFont("helvetica", "bold"); doc.text("DESCRIPCIÓN DEL SERVICIO / PRODUCTO:", 15, currentY);
-                doc.setFont("helvetica", "normal"); const splitDesc = doc.splitTextToSize(descGen, 180);
-                doc.text(splitDesc, 15, currentY + 5); currentY += 10 + (splitDesc.length * 4);
-            }
+    try {
+        const response = await fetch(url);
 
-            const tableData = rows.map(row => [
-                row.cantidad, 
-                (row.um || "SERVICIO").toUpperCase(), 
-                row.description, 
-                (row.comments || "S/NOTAS").toUpperCase(), 
-                `$${Number(row.pu).toLocaleString('es-MX', {minimumFractionDigits: 2})}`, 
-                `$${Number(row.subtotal).toLocaleString('es-MX', {minimumFractionDigits: 2})}`
-            ]);
-
-            doc.autoTable({
-                startY: currentY, head: [['CANT', 'UNIDAD', 'DESCRIPCIÓN', 'Notas', 'P. UNITARIO', 'IMPORTE']], body: tableData, theme: 'grid',
-                headStyles: { fillColor: [255, 204, 0], textColor: [0, 0, 0], fontSize: 8, halign: 'center' },
-                styles: { fontSize: 7, cellPadding: 2 },
-                columnStyles: { 0: { halign: 'center', cellWidth: 12 }, 1: { halign: 'center', cellWidth: 18 }, 4: { halign: 'right', cellWidth: 22 }, 5: { halign: 'right', cellWidth: 22 } }
-            });
-
-            const finalY = doc.lastAutoTable.finalY;
-           doc.autoTable({
-    startY: finalY + 1,
-    body: [
-        [
-            'SUBTOTAL:',
-            `$${Number(globalSubtotal).toLocaleString('es-MX', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            })}`
-        ],
-        [
-            'IVA (16%):',
-            `$${Number(globalIva).toLocaleString('es-MX', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            })}`
-        ],
-        [
-            'TOTAL:',
-            `$${Number(globalTotal).toLocaleString('es-MX', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            })}`
-        ],
-    ],
-    theme: 'grid',
-    styles: {
-        fontSize: 8,
-        halign: 'right',
-        fontStyle: 'bold',
-        cellPadding: 2,
-    },
-    columnStyles: {
-        0: {
-            cellWidth: 28,
-            fillColor: [245, 245, 245],
-        },
-        1: {
-            cellWidth: 30,
-        },
-    },
-    margin: {
-        left: 137,
-    },
-    didParseCell: (data) => {
-        if (data.row.index === 2) {
-            data.cell.styles.fillColor = [255, 204, 0];
-            data.cell.styles.textColor = [0, 0, 0];
-            data.cell.styles.fontSize = 9;
+        if (!response.ok) {
+            return null;
         }
-    },
-});
-const totalEnLetra = convertirNumeroALetras(Number(globalTotal));
 
-let totalLetraY = doc.lastAutoTable.finalY + 8;
+        const blob = await response.blob();
 
-doc.setFont("helvetica", "bold");
-doc.setFontSize(8);
-doc.text("IMPORTE TOTAL CON LETRA:", 15, totalLetraY);
+        return await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    } catch (error) {
+        console.warn('No se pudo cargar imagen del producto:', error);
+        return null;
+    }
+};
 
-doc.setFont("helvetica", "normal");
-doc.setFontSize(8);
+  const renderPDFContent = async (
+    doc,
+    client,
+    rows,
+    quoteNum,
+    dateStr,
+    descGen,
+    obsSel,
+    includeImages = false
+) => {
+    const logo = await loadImageAsBase64('/logo_mr.png');
 
-const totalLetraSplit = doc.splitTextToSize(totalEnLetra, 180);
-doc.text(totalLetraSplit, 15, totalLetraY + 5);
-            let notesY = totalLetraY + 12 + (totalLetraSplit.length * 4);
-            doc.setFont("helvetica", "bold"); doc.text("NOTAS Y CONDICIONES", 15, notesY); doc.setFont("helvetica", "normal");
-            obsSel.forEach((obs, index) => doc.text(`• ${obs}`, 15, notesY + 6 + (index * 5)));
-            
-            doc.save(`Cotizacion_${client.companyName || 'Sin_Nombre'}.pdf`);
-        };
-    };
+    if (logo) {
+        doc.addImage(logo, 'PNG', 17, 7, 35, 0);
+    }
+
+    doc.setFontSize(22);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Cotización', 195, 20, { align: 'right' });
+
+    doc.setFontSize(11);
+    doc.text(`NUM: ${String(quoteNum).padStart(3, '0')}`, 195, 28, { align: 'right' });
+
+    doc.setFontSize(8);
+    doc.text('EMISOR:', 15, 45);
+
+    doc.setFont('helvetica', 'normal');
+    doc.text(
+        'Materiales Reutilizables SA de CV\nBenito Juárez 112 sur\nCol. 1° de Mayo, Lerdo. Dgo\nC.P. 35169',
+        15,
+        50
+    );
+
+    doc.setFont('helvetica', 'bold');
+    doc.text(`SUPERVISOR: ${client.supervisor || 'N/A'}`, 15, 70);
+    doc.text(`FECHA: ${dateStr}`, 15, 75);
+
+    const rightCol = 110;
+
+    doc.text('CLIENTE:', rightCol, 45);
+
+    doc.setFont('helvetica', 'normal');
+    doc.text((client.companyName || '').toUpperCase(), rightCol + 15, 45);
+    doc.text(`ATENCIÓN A: ${(client.attentionTo || '').toUpperCase()}`, rightCol, 52);
+    doc.text(`DEPARTAMENTO: ${(client.department || 'COMPRAS').toUpperCase()}`, rightCol, 59);
+
+    const splitAddress = doc.splitTextToSize((client.address || '').toUpperCase(), 70);
+
+    doc.text('DOMICILIO: ', rightCol, 66);
+    doc.text(splitAddress, rightCol + 18, 66);
+    doc.text(`CELULAR: ${client.phone || 'N/A'}`, rightCol, 82);
+    doc.text(`CORREO: ${client.email || 'N/A'}`, rightCol, 88);
+
+    let currentY = 95;
+
+    if (descGen) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('DESCRIPCIÓN DEL SERVICIO / PRODUCTO:', 15, currentY);
+
+        doc.setFont('helvetica', 'normal');
+
+        const splitDesc = doc.splitTextToSize(descGen, 180);
+        doc.text(splitDesc, 15, currentY + 5);
+
+        currentY += 10 + splitDesc.length * 4;
+    }
+
+    const productImages = {};
+
+    if (includeImages) {
+        for (let index = 0; index < rows.length; index++) {
+            const imageUrl = rows[index]?.productImageUrl;
+
+            if (imageUrl) {
+                const imageBase64 = await loadImageAsBase64(imageUrl);
+
+                if (imageBase64) {
+                    productImages[index] = imageBase64;
+                }
+            }
+        }
+    }
+
+    const tableHead = includeImages
+        ? [['FOTO', 'CANT', 'UNIDAD', 'DESCRIPCIÓN', 'NOTAS', 'P. UNITARIO', 'IMPORTE']]
+        : [['CANT', 'UNIDAD', 'DESCRIPCIÓN', 'NOTAS', 'P. UNITARIO', 'IMPORTE']];
+
+    const tableData = rows.map((row) => {
+        const baseData = [
+            row.cantidad,
+            (row.um || 'SERVICIO').toUpperCase(),
+            row.description || '',
+            (row.comments || 'S/NOTAS').toUpperCase(),
+            `$${Number(row.pu || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`,
+            `$${Number(row.subtotal || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`,
+        ];
+
+        return includeImages ? ['', ...baseData] : baseData;
+    });
+
+    doc.autoTable({
+        startY: currentY,
+        head: tableHead,
+        body: tableData,
+        theme: 'grid',
+        headStyles: {
+            fillColor: [255, 204, 0],
+            textColor: [0, 0, 0],
+            fontSize: 7,
+            halign: 'center',
+        },
+        styles: {
+            fontSize: 6.5,
+            cellPadding: 2,
+            minCellHeight: includeImages ? 18 : 8,
+            valign: 'middle',
+        },
+        columnStyles: includeImages
+            ? {
+                  0: { halign: 'center', cellWidth: 18 },
+                  1: { halign: 'center', cellWidth: 12 },
+                  2: { halign: 'center', cellWidth: 18 },
+                  3: { cellWidth: 50 },
+                  4: { cellWidth: 42 },
+                  5: { halign: 'right', cellWidth: 22 },
+                  6: { halign: 'right', cellWidth: 22 },
+              }
+            : {
+                  0: { halign: 'center', cellWidth: 12 },
+                  1: { halign: 'center', cellWidth: 18 },
+                  2: { cellWidth: 65 },
+                  3: { cellWidth: 45 },
+                  4: { halign: 'right', cellWidth: 22 },
+                  5: { halign: 'right', cellWidth: 22 },
+              },
+        didDrawCell: (data) => {
+            if (!includeImages) return;
+
+            if (data.section === 'body' && data.column.index === 0) {
+                const imageBase64 = productImages[data.row.index];
+
+                if (imageBase64) {
+                    const x = data.cell.x + 2;
+                    const y = data.cell.y + 2;
+                    const size = 14;
+
+                    try {
+                        doc.addImage(imageBase64, 'JPEG', x, y, size, size);
+                    } catch (error) {
+                        try {
+                            doc.addImage(imageBase64, 'PNG', x, y, size, size);
+                        } catch (imgError) {
+                            console.warn('No se pudo insertar imagen en PDF:', imgError);
+                        }
+                    }
+                }
+            }
+        },
+    });
+
+    const finalY = doc.lastAutoTable.finalY;
+
+    doc.autoTable({
+        startY: finalY + 1,
+        body: [
+            [
+                'SUBTOTAL:',
+                `$${Number(globalSubtotal).toLocaleString('es-MX', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                })}`,
+            ],
+            [
+                'IVA (16%):',
+                `$${Number(globalIva).toLocaleString('es-MX', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                })}`,
+            ],
+            [
+                'TOTAL:',
+                `$${Number(globalTotal).toLocaleString('es-MX', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                })}`,
+            ],
+        ],
+        theme: 'grid',
+        styles: {
+            fontSize: 8,
+            halign: 'right',
+            fontStyle: 'bold',
+            cellPadding: 2,
+        },
+        columnStyles: {
+            0: {
+                cellWidth: 28,
+                fillColor: [245, 245, 245],
+            },
+            1: {
+                cellWidth: 30,
+            },
+        },
+        margin: {
+            left: 137,
+        },
+        didParseCell: (data) => {
+            if (data.row.index === 2) {
+                data.cell.styles.fillColor = [255, 204, 0];
+                data.cell.styles.textColor = [0, 0, 0];
+                data.cell.styles.fontSize = 9;
+            }
+        },
+    });
+
+    const totalEnLetra = convertirNumeroALetras(Number(globalTotal));
+
+    let totalLetraY = doc.lastAutoTable.finalY + 8;
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.text('IMPORTE TOTAL CON LETRA:', 15, totalLetraY);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+
+    const totalLetraSplit = doc.splitTextToSize(totalEnLetra, 180);
+    doc.text(totalLetraSplit, 15, totalLetraY + 5);
+
+    let notesY = totalLetraY + 12 + totalLetraSplit.length * 4;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('NOTAS Y CONDICIONES', 15, notesY);
+
+    doc.setFont('helvetica', 'normal');
+
+    obsSel.forEach((obs, index) => {
+        doc.text(`• ${obs}`, 15, notesY + 6 + index * 5);
+    });
+
+    doc.save(`Cotizacion_${client.companyName || 'Sin_Nombre'}.pdf`);
+};
 
     const generatePDF = async () => {
     if (!clientData.companyName) return alert("Ingresa el nombre de la empresa");
@@ -479,7 +630,8 @@ doc.text(totalLetraSplit, 15, totalLetraY + 5);
                 total: globalTotal,
                 items: serviceRows,
                 descripcionGeneral,
-                observaciones: observacionesSeleccionadas
+                observaciones: observacionesSeleccionadas,
+                includeProductImages,
             }, { 
                 headers: { Authorization: `Bearer ${token}` } 
             });
@@ -493,15 +645,16 @@ doc.text(totalLetraSplit, 15, totalLetraY + 5);
 
         const doc = new jsPDF();
 
-        renderPDFContent(
-            doc,
-            clientData,
-            serviceRows,
-            quoteNumberForPDF,
-            currentDate,
-            descripcionGeneral,
-            observacionesSeleccionadas
-        );
+        await renderPDFContent(
+                doc,
+                clientData,
+                serviceRows,
+                quoteNumberForPDF,
+                currentDate,
+                descripcionGeneral,
+                observacionesSeleccionadas,
+                includeProductImages
+            );
 
         setOriginalQuoteLoaded(null);
         fetchInitialData();
@@ -542,6 +695,7 @@ const addProductToQuote = (product) => {
         iva: (subtotal * 0.16).toFixed(2),
         total: (subtotal * 1.16).toFixed(2),
         comments: product.description || '',
+        productImageUrl: product.imageUrl || '',
     };
 
     setServiceRows((prev) => {
@@ -593,6 +747,37 @@ useEffect(() => {
         }));
     }
 }, [router.isReady, router.query]);
+
+
+const handleDeleteQuote = async (quoteId) => {
+    if (!quoteId) {
+        return toast.error('No se encontró el ID de la cotización');
+    }
+
+    if (!window.confirm('¿Estás seguro de eliminar esta cotización?')) {
+        return;
+    }
+
+    try {
+        const token = localStorage.getItem('token');
+
+        await axios.delete(`/api/quotes/${quoteId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+
+        toast.success('Cotización eliminada correctamente');
+
+        setUserQuotes((prev) => prev.filter((quote) => quote.id !== quoteId));
+    } catch (error) {
+        console.error('Error eliminando cotización:', error.response?.data || error);
+
+        toast.error(
+            error.response?.data?.message ||
+            error.response?.data?.error ||
+            'Error al eliminar cotización'
+        );
+    }
+};
 
 
   return (
@@ -728,6 +913,28 @@ useEffect(() => {
         </div>
     </div>
 </div>
+<div className="mb-8 bg-white dark:bg-[#1f2937] p-5 rounded-2xl border border-gray-200 dark:border-gray-700 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+        <h2 className="text-sm font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">
+            Fotos de productos en PDF
+        </h2>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            Activa esta opción si deseas que la cotización incluya las imágenes registradas en el catálogo de productos.
+        </p>
+    </div>
+
+    <button
+        type="button"
+        onClick={() => setIncludeProductImages((prev) => !prev)}
+        className={`px-5 py-3 rounded-2xl font-black text-xs uppercase transition-all border ${
+            includeProductImages
+                ? 'bg-blue-600 text-white border-blue-500'
+                : 'bg-gray-100 dark:bg-[#0e1624] text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-700'
+        }`}
+    >
+        {includeProductImages ? 'Incluir fotos: Sí' : 'Incluir fotos: No'}
+    </button>
+</div>
 
         {/* TABLA DE PRODUCTOS/SERVICIOS */}
         <div className="space-y-4 mb-8">
@@ -851,16 +1058,43 @@ useEffect(() => {
                   <td className="p-4">{new Date(q.createdAt).toLocaleDateString()}</td>
                   <td className="p-4 text-green-600 dark:text-green-500 font-black">${q.total}</td>
                   <td className="p-4 text-center flex justify-center gap-2">
-                    <button className="p-2 bg-blue-50 dark:bg-blue-600/10 text-blue-600 dark:text-blue-500 rounded-lg hover:bg-blue-600 hover:text-white transition-all" onClick={() => {
-                      const doc = new jsPDF();
-                      renderPDFContent(doc, q, q.items, q.quoteNumber, new Date(q.createdAt).toLocaleDateString(), q.descripcionGeneral, q.observaciones);
-                    }} title="Descargar PDF">
-                      <FiDownload />
-                    </button>
-                    <button className="p-2 bg-yellow-50 dark:bg-yellow-600/10 text-yellow-600 dark:text-yellow-500 rounded-lg hover:bg-yellow-600 hover:text-white transition-all" onClick={() => loadQuoteToForm(q)} title="Cargar para Modificar">
-                      <FiEdit3 />
-                    </button>
-                  </td>
+    <button
+        className="p-2 bg-blue-50 dark:bg-blue-600/10 text-blue-600 dark:text-blue-500 rounded-lg hover:bg-blue-600 hover:text-white transition-all"
+        onClick={async () => {
+            const doc = new jsPDF();
+
+            await renderPDFContent(
+                doc,
+                q,
+                q.items,
+                q.quoteNumber,
+                new Date(q.createdAt).toLocaleDateString(),
+                q.descripcionGeneral,
+                q.observaciones,
+                q.includeProductImages || false
+            );
+        }}
+        title="Descargar PDF"
+    >
+        <FiDownload />
+    </button>
+
+    <button
+        className="p-2 bg-yellow-50 dark:bg-yellow-600/10 text-yellow-600 dark:text-yellow-500 rounded-lg hover:bg-yellow-600 hover:text-white transition-all"
+        onClick={() => loadQuoteToForm(q)}
+        title="Cargar para Modificar"
+    >
+        <FiEdit3 />
+    </button>
+
+    <button
+        className="p-2 bg-red-50 dark:bg-red-600/10 text-red-600 dark:text-red-500 rounded-lg hover:bg-red-600 hover:text-white transition-all"
+        onClick={() => handleDeleteQuote(q.id)}
+        title="Eliminar cotización"
+    >
+        <FiTrash2 />
+    </button>
+</td>
                 </tr>
               ))}
             </tbody>
