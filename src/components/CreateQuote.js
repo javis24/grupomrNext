@@ -377,8 +377,32 @@ const loadImageAsBase64 = async (url) => {
     obsSel,
     includeImages = false
 ) => {
+    const cleanNumber = (value) => {
+        if (value === null || value === undefined || value === '') return 0;
+
+        if (typeof value === 'number') return value;
+
+        return Number(
+            String(value)
+                .replace(/,/g, '')
+                .replace(/\$/g, '')
+                .trim()
+        ) || 0;
+    };
+
+    const subtotalPDF = rows.reduce((acc, row) => {
+        const cantidad = cleanNumber(row.cantidad);
+        const precioUnitario = cleanNumber(row.pu);
+
+        return acc + cantidad * precioUnitario;
+    }, 0);
+
+    const ivaPDF = subtotalPDF * 0.16;
+    const totalPDF = subtotalPDF + ivaPDF;
+
     const logo = await loadImageAsBase64('/logo_mr.png');
 
+    
     if (logo) {
         doc.addImage(logo, 'PNG', 17, 7, 35, 0);
     }
@@ -452,21 +476,31 @@ const loadImageAsBase64 = async (url) => {
     }
 
     const tableHead = includeImages
-        ? [['FOTO', 'CANT', 'UNIDAD', 'DESCRIPCIÓN', 'NOTAS', 'P. UNITARIO', 'IMPORTE']]
-        : [['CANT', 'UNIDAD', 'DESCRIPCIÓN', 'NOTAS', 'P. UNITARIO', 'IMPORTE']];
+    ? [['FOTO', 'CANT', 'UNIDAD', 'DESCRIPCIÓN', 'NOTAS', 'P. UNITARIO', 'IMPORTE']]
+    : [['CANT', 'UNIDAD', 'DESCRIPCIÓN', 'NOTAS', 'P. UNITARIO', 'IMPORTE']];
 
-    const tableData = rows.map((row) => {
-        const baseData = [
-            row.cantidad,
-            (row.um || 'SERVICIO').toUpperCase(),
-            row.description || '',
-            (row.comments || 'S/NOTAS').toUpperCase(),
-            `$${Number(row.pu || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`,
-            `$${Number(row.subtotal || 0).toLocaleString('es-MX', { minimumFractionDigits: 2 })}`,
-        ];
+const tableData = rows.map((row) => {
+    const cantidad = cleanNumber(row.cantidad);
+    const precioUnitario = cleanNumber(row.pu);
+    const importe = cantidad * precioUnitario;
 
-        return includeImages ? ['', ...baseData] : baseData;
-    });
+    const baseData = [
+        cantidad,
+        (row.um || 'SERVICIO').toUpperCase(),
+        row.description || '',
+        (row.comments || 'S/NOTAS').toUpperCase(),
+        `$${precioUnitario.toLocaleString('es-MX', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        })}`,
+        `$${importe.toLocaleString('es-MX', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        })}`,
+    ];
+
+    return includeImages ? ['', ...baseData] : baseData;
+});
 
     doc.autoTable({
         startY: currentY,
@@ -531,59 +565,59 @@ const loadImageAsBase64 = async (url) => {
     const finalY = doc.lastAutoTable.finalY;
 
     doc.autoTable({
-        startY: finalY + 1,
-        body: [
-            [
-                'SUBTOTAL:',
-                `$${Number(globalSubtotal).toLocaleString('es-MX', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                })}`,
-            ],
-            [
-                'IVA (16%):',
-                `$${Number(globalIva).toLocaleString('es-MX', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                })}`,
-            ],
-            [
-                'TOTAL:',
-                `$${Number(globalTotal).toLocaleString('es-MX', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                })}`,
-            ],
+    startY: finalY + 1,
+    body: [
+        [
+            'SUBTOTAL:',
+            `$${subtotalPDF.toLocaleString('es-MX', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            })}`,
         ],
-        theme: 'grid',
-        styles: {
-            fontSize: 8,
-            halign: 'right',
-            fontStyle: 'bold',
-            cellPadding: 2,
+        [
+            'IVA (16%):',
+            `$${ivaPDF.toLocaleString('es-MX', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            })}`,
+        ],
+        [
+            'TOTAL:',
+            `$${totalPDF.toLocaleString('es-MX', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            })}`,
+        ],
+    ],
+    theme: 'grid',
+    styles: {
+        fontSize: 8,
+        halign: 'right',
+        fontStyle: 'bold',
+        cellPadding: 2,
+    },
+    columnStyles: {
+        0: {
+            cellWidth: 28,
+            fillColor: [245, 245, 245],
         },
-        columnStyles: {
-            0: {
-                cellWidth: 28,
-                fillColor: [245, 245, 245],
-            },
-            1: {
-                cellWidth: 30,
-            },
+        1: {
+            cellWidth: 30,
         },
-        margin: {
-            left: 137,
-        },
-        didParseCell: (data) => {
-            if (data.row.index === 2) {
-                data.cell.styles.fillColor = [255, 204, 0];
-                data.cell.styles.textColor = [0, 0, 0];
-                data.cell.styles.fontSize = 9;
-            }
-        },
-    });
+    },
+    margin: {
+        left: 137,
+    },
+    didParseCell: (data) => {
+        if (data.row.index === 2) {
+            data.cell.styles.fillColor = [255, 204, 0];
+            data.cell.styles.textColor = [0, 0, 0];
+            data.cell.styles.fontSize = 9;
+        }
+    },
+});
 
-    const totalEnLetra = convertirNumeroALetras(Number(globalTotal));
+    const totalEnLetra = convertirNumeroALetras(totalPDF);
 
     let totalLetraY = doc.lastAutoTable.finalY + 8;
 
@@ -624,16 +658,39 @@ const loadImageAsBase64 = async (url) => {
             ? originalQuoteLoaded.quoteNumber
             : quoteNumber;
 
+        const cleanNumber = (value) => {
+            if (value === null || value === undefined || value === '') return 0;
+
+            if (typeof value === 'number') return value;
+
+            return Number(
+                String(value)
+                    .replace(/,/g, '')
+                    .replace(/\$/g, '')
+                    .trim()
+            ) || 0;
+        };
+
+        const subtotalToSave = serviceRows.reduce((acc, row) => {
+            const cantidad = cleanNumber(row.cantidad);
+            const precioUnitario = cleanNumber(row.pu);
+
+            return acc + cantidad * precioUnitario;
+        }, 0);
+
+        const ivaToSave = subtotalToSave * 0.16;
+        const totalToSave = subtotalToSave + ivaToSave;
+
         if (changed || !originalQuoteLoaded) {
             const res = await axios.post('/api/quotes', {
                 ...clientData,
-                total: globalTotal,
+                total: totalToSave,
                 items: serviceRows,
                 descripcionGeneral,
                 observaciones: observacionesSeleccionadas,
                 includeProductImages,
-            }, { 
-                headers: { Authorization: `Bearer ${token}` } 
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
             });
 
             const savedQuote = res.data;
@@ -646,22 +703,22 @@ const loadImageAsBase64 = async (url) => {
         const doc = new jsPDF();
 
         await renderPDFContent(
-                doc,
-                clientData,
-                serviceRows,
-                quoteNumberForPDF,
-                currentDate,
-                descripcionGeneral,
-                observacionesSeleccionadas,
-                includeProductImages
-            );
+            doc,
+            clientData,
+            serviceRows,
+            quoteNumberForPDF,
+            currentDate,
+            descripcionGeneral,
+            observacionesSeleccionadas,
+            includeProductImages
+        );
 
         setOriginalQuoteLoaded(null);
         fetchInitialData();
         setIsSaving(false);
 
-    } catch (error) { 
-        console.error(error); 
+    } catch (error) {
+        console.error(error);
         setIsSaving(false);
         toast.error("Error al guardar");
     }
@@ -748,6 +805,9 @@ useEffect(() => {
     }
 }, [router.isReady, router.query]);
 
+
+
+    
 
 const handleDeleteQuote = async (quoteId) => {
     if (!quoteId) {
@@ -960,7 +1020,12 @@ const handleDeleteQuote = async (quoteId) => {
               </div>
               <div className="md:col-span-1 flex flex-col gap-1">
                 <label className="text-[9px] font-bold text-gray-400 dark:text-gray-600 uppercase text-right">Importe</label>
-                <div className="bg-blue-100 dark:bg-[#1f2937]/30 p-2 rounded-lg text-sm font-black text-blue-600 dark:text-blue-400 text-right">$ {row.subtotal}</div>
+                <div className="bg-blue-100 dark:bg-[#1f2937]/30 p-2 rounded-lg text-sm font-black text-blue-600 dark:text-blue-400 text-right">
+                    ${Number((Number(row.cantidad || 0) * Number(row.pu || 0)) || 0).toLocaleString('es-MX', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                    })}
+                </div>
               </div>
               <div className="md:col-span-4 flex flex-col gap-1">
                 <label className="text-[9px] font-bold text-yellow-600 dark:text-yellow-600/60 uppercase">Notas del producto</label>
