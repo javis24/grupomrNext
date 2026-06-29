@@ -5,14 +5,14 @@ import jwt from 'jsonwebtoken';
 import '../app/globals.css';
 
 export default function Login() {
-    const [name, setName] = useState('');  // Cambiar email por name
+    const [name, setName] = useState('');  
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const router = useRouter();
 
    const handleLogin = async (e) => {
     e.preventDefault();
-    setError(''); // Limpiar errores previos
+    setError(''); 
     try {
       const { data } = await axios.post('/api/login', { name, password });
       
@@ -27,7 +27,7 @@ export default function Login() {
       localStorage.setItem('userName', decodedToken.name);
 
       if (decodedToken.role === 'admin' || decodedToken.role === 'gerencia') {
-        router.push('/calendario'); // Tu nuevo componente maestro
+        router.push('/calendario'); 
       } else if (decodedToken.name.includes('Logistica')) {
         router.push('/servicios');
       } else {

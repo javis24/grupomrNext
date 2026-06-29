@@ -69,20 +69,28 @@ export default function UserList() {
   };
 
   const handleDelete = async (userId) => {
-    if (!confirm("¿Estás seguro de que deseas eliminar este usuario?")) return;
-    const previousUsers = [...users];
-    setUsers(users.filter(u => u.id !== userId));
+  if (!confirm("¿Deseas dar de baja este usuario? Ya no aparecerá en asesores ni podrá iniciar sesión, pero sus registros históricos se conservarán.")) return;
 
-    try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`/api/users/${userId}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-    } catch (error) {
-      setUsers(previousUsers);
-      setError('Error al eliminar. El usuario podría estar vinculado a otros registros.');
-    }
-  };
+  const previousUsers = [...users];
+
+  setUsers(users.filter(u => u.id !== userId));
+
+  try {
+    const token = localStorage.getItem('token');
+
+    await axios.delete(`/api/users/${userId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    setError('');
+  } catch (error) {
+    setUsers(previousUsers);
+    setError(
+      error.response?.data?.message ||
+      'Error al dar de baja el usuario.'
+    );
+  }
+};
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -193,7 +201,12 @@ if (userRole !== 'admin' && userRole !== 'gerencia') {
                 </td>
                 <td className="px-6 py-4 text-right space-x-2">
                   <button onClick={() => openModal(user)} className="text-sm bg-green-100 dark:bg-green-600/10 text-green-600 dark:text-green-500 hover:bg-green-600 hover:text-white px-3 py-1.5 rounded-md transition-all">Editar</button>
-                  <button onClick={() => handleDelete(user.id)} className="text-sm bg-red-100 dark:bg-red-600/10 text-red-600 dark:text-red-500 hover:bg-red-600 hover:text-white px-3 py-1.5 rounded-md transition-all">Eliminar</button>
+                  <button
+                    onClick={() => handleDelete(user.id)}
+                    className="text-sm bg-red-100 dark:bg-red-600/10 text-red-600 dark:text-red-500 hover:bg-red-600 hover:text-white px-3 py-1.5 rounded-md transition-all"
+                  >
+                    Dar de baja
+                  </button>
                 </td>
               </tr>
             ))}
