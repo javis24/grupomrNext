@@ -14,6 +14,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, 
   Cell, PieChart, Pie, Legend 
 } from 'recharts';
+import * as XLSX from 'xlsx';
 
 const AdvisorReports = () => {
   const [activeTab, setActiveTab] = useState('calendario');
@@ -26,6 +27,8 @@ const AdvisorReports = () => {
   const itemsPerPage = 10;
   const [darkMode, setDarkMode] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
@@ -75,29 +78,54 @@ const AdvisorReports = () => {
     return isValid(d) ? format(d, formatStr, { locale: es }) : '---';
   };
 
-  // --- PROCESAMIENTO DE GRÁFICAS ---
-  const chartData = useMemo(() => {
-    if (activeTab !== 'clientes' && activeTab !== 'ventas') return { units: [], products: [] };
-    const unitMap = {};
-    const productMap = {};
+ const getItemDate = (item) => {
+  let fullData = {};
 
-    data.forEach(item => {
-      const unit = item.planta || "General";
-      const product = item.concepto || item.producto || "Varios";
-      const amount = parseFloat(item.ventaTotal) || (parseFloat(item.cantidad) * parseFloat(item.precioUnitario)) || 0;
+  try {
+    fullData =
+      typeof item.fullData === 'string'
+        ? JSON.parse(item.fullData || '{}')
+        : item.fullData || {};
+  } catch (error) {
+    fullData = {};
+  }
 
-      if(amount > 0) {
-        unitMap[unit] = (unitMap[unit] || 0) + amount;
-        productMap[product] = (productMap[product] || 0) + amount;
-      }
-    });
+  return (
+    item.date ||
+    item.appointmentDate ||
+    item.fechaOperacion ||
+    item.incidentDate ||
+    item.fecha ||
+    fullData.fecha ||
+    item.createdAt ||
+    item.updatedAt ||
+    null
+  );
+};
 
-    const units = Object.keys(unitMap).map(name => ({ name, total: unitMap[name] }));
-    const products = Object.keys(productMap).map(name => ({ name, total: productMap[name] }))
-                     .sort((a,b) => b.total - a.total).slice(0, 5);
+const isWithinDateRange = (item) => {
+  const rawDate = getItemDate(item);
 
-    return { units, products };
-  }, [data, activeTab]);
+  if (!rawDate) return true;
+
+  const itemDate = new Date(rawDate);
+
+  if (!isValid(itemDate)) return true;
+
+  if (startDate) {
+    const start = new Date(`${startDate}T00:00:00`);
+    if (itemDate < start) return false;
+  }
+
+  if (endDate) {
+    const end = new Date(`${endDate}T23:59:59`);
+    if (itemDate > end) return false;
+  }
+
+  return true;
+};
+
+
 
   // --- EFECTOS Y FETCH ---
   useEffect(() => {
@@ -157,9 +185,9 @@ const AdvisorReports = () => {
 
   useEffect(() => { fetchData(); }, [activeTab]);
 
-  useEffect(() => {
+ useEffect(() => {
   setCurrentPage(1);
-}, [activeTab, selectedAdvisor, selectedStatus, searchTerm]);
+}, [activeTab, selectedAdvisor, selectedStatus, searchTerm, startDate, endDate]);
 
 const filteredData = useMemo(() => {
   return data.filter(item => {
@@ -172,6 +200,8 @@ const filteredData = useMemo(() => {
       activeTab !== 'calendario' ||
       selectedStatus === 'all' ||
       item.clientStatus === selectedStatus;
+
+    const matchesDate = isWithinDateRange(item);
 
     const searchStr = searchTerm.toLowerCase();
 
@@ -187,15 +217,249 @@ const filteredData = useMemo(() => {
       (item.status || '')
     ).toLowerCase().includes(searchStr);
 
-    return matchesAdvisor && matchesStatus && matchesSearch;
+    return matchesAdvisor && matchesStatus && matchesDate && matchesSearch;
   });
-}, [data, selectedAdvisor, selectedStatus, searchTerm, activeTab]);
+}, [data, selectedAdvisor, selectedStatus, searchTerm, activeTab, startDate, endDate]);
+
+const chartData = useMemo(() => {
+  if (activeTab !== 'clientes' && activeTab !== 'ventas') {
+    return { units: [], products: [] };
+  }
+
+  const unitMap = {};
+  const productMap = {};
+
+  filteredData.forEach((item) => {
+    const unit = item.planta || 'General';
+    const product = item.concepto || item.producto || 'Varios';
+    const amount =
+      parseFloat(item.ventaTotal) ||
+      (parseFloat(item.cantidad) * parseFloat(item.precioUnitario)) ||
+      0;
+
+    if (amount > 0) {
+      unitMap[unit] = (unitMap[unit] || 0) + amount;
+      productMap[product] = (productMap[product] || 0) + amount;
+    }
+  });
+
+  const units = Object.keys(unitMap).map((name) => ({
+    name,
+    total: unitMap[name],
+  }));
+
+  const products = Object.keys(productMap)
+    .map((name) => ({
+      name,
+      total: productMap[name],
+    }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 5);
+
+  return { units, products };
+}, [filteredData, activeTab]);
+
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const paginatedData = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredData.slice(start, start + itemsPerPage);
   }, [filteredData, currentPage]);
+
+  const getAdvisorName = (advisorId) => {
+  if (!advisorId) return 'Sistema';
+
+  return advisors.find(a => Number(a.id) === Number(advisorId))?.name || 'Sistema';
+};
+
+
+
+const normalizeRowsForExcel = (items, type = activeTab) => {
+  return items.map((item) => {
+    const advisorId = item.userId || item.assignedTo;
+
+    if (type === 'calendario') {
+      return {
+        Fecha: safeFormatDate(item.date || item.createdAt),
+        Asesor: getAdvisorName(advisorId),
+        Cliente: item.clientName || item.datosCliente?.companyName || item.companyName || '',
+        Estatus: item.clientStatus || item.status || '',
+        Hora: item.appointmentTime || '',
+        Comentarios: item.comments || '',
+      };
+    }
+
+    if (type === 'prospectos') {
+      return {
+        Fecha: safeFormatDate(item.createdAt),
+        Asesor: getAdvisorName(advisorId),
+        Contacto: item.contactName || '',
+        Empresa: item.company || item.companyName || '',
+        Teléfono: item.phone || '',
+        Correo: item.email || '',
+        Proceso: item.saleProcess || item.status || '',
+      };
+    }
+
+    if (type === 'ventas') {
+      const total = Number(item.cantidad || 0) * Number(item.precioUnitario || 0);
+
+      return {
+        Fecha: safeFormatDate(item.fechaOperacion || item.createdAt),
+        Asesor: getAdvisorName(advisorId),
+        Cliente: item.Client?.companyName || item.clientName || item.companyName || '',
+        Concepto: item.concepto || '',
+        Cantidad: item.cantidad || 0,
+        'Precio Unitario': Number(item.precioUnitario || 0),
+        Total: total,
+        'Estado Pago': item.estadoPago || '',
+        Factura: item.numeroFactura || '',
+      };
+    }
+
+    if (type === 'cotizaciones') {
+      return {
+        Fecha: safeFormatDate(item.createdAt),
+        Folio: item.quoteNumber || item.id,
+        Asesor: getAdvisorName(advisorId),
+        Empresa: item.companyName || '',
+        Atención: item.attentionTo || '',
+        Correo: item.email || '',
+        Total: Number(item.total || 0),
+        Estatus: item.status || '',
+      };
+    }
+
+    if (type === 'clientes') {
+      return {
+        Fecha: safeFormatDate(item.createdAt),
+        Asesor: getAdvisorName(advisorId),
+        Empresa: item.companyName || item.fullName || '',
+        Contacto: item.contactName || '',
+        Teléfono: item.contactPhone || item.companyPhone || '',
+        Correo: item.email || '',
+        Giro: item.businessTurn || '',
+        Planta: item.planta || '',
+        'Venta Total': Number(item.ventaTotal || 0),
+      };
+    }
+
+    if (type === 'creditos') {
+      let fullData = {};
+          try {
+            fullData =
+              typeof item.fullData === 'string'
+                ? JSON.parse(item.fullData || '{}')
+                : item.fullData || {};
+          } catch (error) {
+            fullData = {};
+          }
+
+      return {
+        Fecha: safeFormatDate(fullData.fecha || item.createdAt),
+        Empresa: item.nombreComercial || fullData.nombreComercial || '',
+        RFC: item.rfc || fullData.rfc || '',
+        'Razón Social': fullData.razonSocial || '',
+        'Límite Crédito': fullData.solicitud?.limiteCredito || '',
+        'Plazo Pago': fullData.solicitud?.plazoPago || '',
+        Estatus: item.status || '',
+      };
+    }
+
+    if (type === 'incidencias') {
+      return {
+        Fecha: safeFormatDate(item.incidentDate || item.createdAt),
+        Asesor: getAdvisorName(advisorId),
+        Título: item.title || item.entityName || '',
+        Empresa: item.companyName || item.clientName || '',
+        Estatus: item.status || '',
+        Descripción: item.description || item.comments || '',
+      };
+    }
+
+    return {
+      Fecha: safeFormatDate(getItemDate(item)),
+      Asesor: getAdvisorName(advisorId),
+      Empresa: item.companyName || item.fullName || item.clientName || '',
+      Estatus: item.status || item.clientStatus || item.saleProcess || '',
+    };
+  });
+};
+
+const handleExportExcelCurrent = () => {
+  if (filteredData.length === 0) {
+    return toast.warning('No hay datos para exportar con los filtros actuales');
+  }
+
+  const rows = normalizeRowsForExcel(filteredData, activeTab);
+
+  const worksheet = XLSX.utils.json_to_sheet(rows);
+  const workbook = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(workbook, worksheet, activeTab.toUpperCase());
+
+  XLSX.writeFile(
+    workbook,
+    `reporte_${activeTab}_${startDate || 'inicio'}_${endDate || 'fin'}.xlsx`
+  );
+};
+
+
+
+const handleExportExcelGeneral = async () => {
+  try {
+    setIsLoading(true);
+
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+
+    const endpoints = {
+      calendario: '/api/appointments',
+      prospectos: '/api/prospects',
+      ventas: '/api/salesbussines',
+      cotizaciones: '/api/quotes',
+      clientes: '/api/clients',
+      creditos: '/api/credits',
+      incidencias: '/api/incidents',
+    };
+
+    const workbook = XLSX.utils.book_new();
+
+    for (const [type, endpoint] of Object.entries(endpoints)) {
+      try {
+        const res = await axios.get(endpoint, { headers });
+        let items = Array.isArray(res.data) ? res.data : [];
+
+        items = items.filter((item) => isWithinDateRange(item));
+
+        const rows = normalizeRowsForExcel(items, type);
+
+        const worksheet = XLSX.utils.json_to_sheet(rows.length ? rows : [{ Mensaje: 'Sin registros en este rango' }]);
+
+        const sheetName = type.charAt(0).toUpperCase() + type.slice(1);
+        XLSX.utils.book_append_sheet(workbook, worksheet, sheetName.substring(0, 31));
+      } catch (error) {
+        const worksheet = XLSX.utils.json_to_sheet([
+          { Error: `No se pudo cargar ${type}` },
+        ]);
+
+        XLSX.utils.book_append_sheet(workbook, worksheet, type.substring(0, 31));
+      }
+    }
+
+    XLSX.writeFile(
+      workbook,
+      `reporte_general_${startDate || 'inicio'}_${endDate || 'fin'}.xlsx`
+    );
+
+    toast.success('Excel general descargado');
+  } catch (error) {
+    console.error(error);
+    toast.error('Error al generar Excel general');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   // --- PDF ---
   const handleExportPDF = (isAll = true, singleItem = null) => {
@@ -265,38 +529,125 @@ const filteredData = useMemo(() => {
 
       <main className="flex-1 p-4 md:p-8 space-y-6 overflow-y-auto">
         {/* BARRA FILTROS */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4 bg-white dark:bg-[#1f2937] p-6 rounded-[2.5rem] border border-gray-200 dark:border-gray-800 shadow-xl transition-colors">
-          <div className="relative md:col-span-2">
-            <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input type="text" placeholder="Buscar registros..." className="w-full bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 pl-12 text-sm outline-none focus:border-blue-500 transition-all text-gray-900 dark:text-white" value={searchTerm} onChange={(e)=>setSearchTerm(e.target.value)} />
-          </div>
-          <select value={selectedAdvisor} onChange={(e)=>setSelectedAdvisor(e.target.value)} className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-700 dark:text-gray-300 outline-none focus:border-blue-500 cursor-pointer">
-            <option value="all">📊 Todos los Asesores</option>
-            {advisors.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-          </select>
-          {activeTab === 'calendario' && (
-              <select
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-700 dark:text-gray-300 outline-none focus:border-blue-500 cursor-pointer"
-              >
-                <option value="all">📌 Todos los estatus</option>
-                {appointmentStatuses.map((status) => (
-                  <option key={status} value={status}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-            )}
-          <div className="xl:col-span-2 flex gap-3">
-            <button onClick={fetchData} className="flex-1 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 p-4 rounded-2xl text-blue-600 dark:text-blue-500 flex items-center justify-center gap-3 text-[10px] font-black uppercase transition-all border border-gray-200 dark:border-gray-700">
-              <FiRefreshCw className={isLoading ? "animate-spin" : ""}/> Sync
-            </button>
-            <button onClick={() => handleExportPDF(true)} className="flex-1 bg-red-50 dark:bg-red-600/10 hover:bg-red-100 dark:hover:bg-red-600/20 p-4 rounded-2xl text-red-600 dark:text-red-500 flex items-center justify-center gap-3 text-[10px] font-black uppercase border border-red-200 dark:border-red-500/20 shadow-lg">
-              <FiDownload size={18}/> PDF
-            </button>
-          </div>
-        </div>
+<div className="bg-white dark:bg-[#1f2937] p-5 md:p-6 rounded-[2rem] border border-gray-200 dark:border-gray-800 shadow-xl transition-colors">
+  
+  {/* Filtros */}
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+    
+    <div className="relative sm:col-span-2 xl:col-span-1">
+      <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-1">
+        Buscar
+      </label>
+      <div className="relative mt-1">
+        <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Buscar registros..."
+          className="w-full bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 pl-12 text-sm outline-none focus:border-blue-500 transition-all text-gray-900 dark:text-white"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+    </div>
+
+    <div className="flex flex-col gap-1">
+      <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-1">
+        Fecha inicio
+      </label>
+      <input
+        type="date"
+        value={startDate}
+        onChange={(e) => setStartDate(e.target.value)}
+        className="w-full bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-700 dark:text-gray-300 outline-none focus:border-blue-500"
+      />
+    </div>
+
+    <div className="flex flex-col gap-1">
+      <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-1">
+        Fecha fin
+      </label>
+      <input
+        type="date"
+        value={endDate}
+        onChange={(e) => setEndDate(e.target.value)}
+        className="w-full bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-700 dark:text-gray-300 outline-none focus:border-blue-500"
+      />
+    </div>
+
+    <div className="flex flex-col gap-1">
+      <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-1">
+        Asesor
+      </label>
+      <select
+        value={selectedAdvisor}
+        onChange={(e) => setSelectedAdvisor(e.target.value)}
+        className="w-full bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-700 dark:text-gray-300 outline-none focus:border-blue-500 cursor-pointer"
+      >
+        <option value="all">📊 Todos</option>
+        {advisors.map((a) => (
+          <option key={a.id} value={a.id}>
+            {a.name}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    {activeTab === 'calendario' && (
+      <div className="flex flex-col gap-1">
+        <label className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase ml-1">
+          Estatus
+        </label>
+        <select
+          value={selectedStatus}
+          onChange={(e) => setSelectedStatus(e.target.value)}
+          className="w-full bg-gray-50 dark:bg-[#0e1624] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 text-sm text-gray-700 dark:text-gray-300 outline-none focus:border-blue-500 cursor-pointer"
+        >
+          <option value="all">📌 Todos</option>
+          {appointmentStatuses.map((status) => (
+            <option key={status} value={status}>
+              {status}
+            </option>
+          ))}
+        </select>
+      </div>
+    )}
+  </div>
+
+  {/* Botones */}
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5">
+    <button
+      onClick={fetchData}
+      className="w-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 p-4 rounded-2xl text-blue-600 dark:text-blue-500 flex items-center justify-center gap-2 text-[10px] font-black uppercase transition-all border border-gray-200 dark:border-gray-700"
+    >
+      <FiRefreshCw className={isLoading ? 'animate-spin' : ''} />
+      Sync
+    </button>
+
+    <button
+      onClick={() => handleExportPDF(true)}
+      className="w-full bg-red-50 dark:bg-red-600/10 hover:bg-red-100 dark:hover:bg-red-600/20 p-4 rounded-2xl text-red-600 dark:text-red-500 flex items-center justify-center gap-2 text-[10px] font-black uppercase border border-red-200 dark:border-red-500/20 shadow-lg"
+    >
+      <FiDownload size={18} />
+      PDF
+    </button>
+
+    <button
+      onClick={handleExportExcelCurrent}
+      className="w-full bg-green-50 dark:bg-green-600/10 hover:bg-green-100 dark:hover:bg-green-600/20 p-4 rounded-2xl text-green-600 dark:text-green-500 flex items-center justify-center gap-2 text-[10px] font-black uppercase border border-green-200 dark:border-green-500/20 shadow-lg"
+    >
+      <FiDownload size={18} />
+      Excel
+    </button>
+
+    <button
+      onClick={handleExportExcelGeneral}
+      className="w-full bg-emerald-50 dark:bg-emerald-600/10 hover:bg-emerald-100 dark:hover:bg-emerald-600/20 p-4 rounded-2xl text-emerald-600 dark:text-emerald-500 flex items-center justify-center gap-2 text-[10px] font-black uppercase border border-emerald-200 dark:border-emerald-500/20 shadow-lg"
+    >
+      <FiDownload size={18} />
+      General
+    </button>
+  </div>
+</div>
 
         {/* SECCIÓN DE GRÁFICAS */}
         {(activeTab === 'clientes' || activeTab === 'ventas') && chartData.units.length > 0 && (
