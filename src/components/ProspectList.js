@@ -111,6 +111,42 @@ export default function ProspectList() {
     if (!router.isReady) return;
 
     const {
+        fromProspect,
+        companyName,
+        attentionTo,
+        email,
+        phone,
+        planta,
+    } = router.query;
+
+    if (fromProspect === '1') {
+        setClientData((prev) => ({
+            ...prev,
+            companyName: companyName || '',
+            address: '',
+            attentionTo: attentionTo || '',
+            department: 'COMPRAS',
+            email: email || '',
+            phone: phone || '',
+            planta: planta || '',
+            supervisor: '',
+        }));
+
+        setDescripcionGeneral(
+            planta
+                ? `Cotización solicitada para unidad de negocio: ${planta}`
+                : ''
+        );
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        toast.info('Datos del prospecto cargados en cotización');
+    }
+}, [router.isReady, router.query]);
+
+    useEffect(() => {
+    if (!router.isReady) return;
+
+    const {
         fromAppointment,
         contactName,
         company,
@@ -341,6 +377,23 @@ export default function ProspectList() {
         p.saleProcess?.toLowerCase().includes(searchProcess.toLowerCase())
     );
 
+
+
+    const handleCreateQuoteFromProspect = (prospect) => {
+    router.push({
+        pathname: '/cotizacion',
+        query: {
+            fromProspect: '1',
+            companyName: prospect.company || '',
+            attentionTo: prospect.contactName || '',
+            email: prospect.email || '',
+            phone: prospect.phone || '',
+            planta: prospect.planta || '',
+            saleProcess: prospect.saleProcess || '',
+        },
+    });
+};
+
    return (
         <div className="p-4 md:p-8 bg-gray-50 dark:bg-[#0e1624] text-gray-900 dark:text-white min-h-screen font-sans transition-colors duration-300">
             <ToastContainer theme="colored" position="bottom-right" />
@@ -401,6 +454,13 @@ export default function ProspectList() {
                                     <FiEdit size={18}/>
                                 </button>
                                 {userRole === 'admin' && <button onClick={() => handleDelete(prospect.id)} className="p-3 bg-gray-100 dark:bg-gray-800 rounded-xl text-gray-400 hover:bg-red-600 hover:text-white transition-all shadow-sm"><FiX size={18}/></button>}
+                                <button
+                                        onClick={() => handleCreateQuoteFromProspect(prospect)}
+                                        className="p-3 bg-gray-100 dark:bg-gray-800 rounded-xl text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                                        title="Crear cotización"
+                                    >
+                                        <FiFileText size={18} />
+                                    </button>
                                 {prospect.saleProcess === "Cerrado" && (
                                     <button onClick={() => handleConvertClick(prospect)} className="bg-green-600 hover:bg-green-500 text-white px-4 py-3 rounded-xl font-black text-[9px] uppercase tracking-wider flex items-center gap-2 transition-all shadow-lg animate-pulse">
                                         <FiUserCheck size={14}/> Convertir

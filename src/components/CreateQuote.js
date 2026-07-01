@@ -771,6 +771,42 @@ const addProductToQuote = (product) => {
     setShowProductSuggestions(false);
 };
 
+useEffect(() => {
+    if (!router.isReady) return;
+
+    const {
+        fromProspect,
+        companyName,
+        attentionTo,
+        email,
+        phone,
+        planta,
+    } = router.query;
+
+    if (fromProspect === '1') {
+        setClientData((prev) => ({
+            ...prev,
+            companyName: companyName ? String(companyName) : '',
+            address: '',
+            attentionTo: attentionTo ? String(attentionTo) : '',
+            department: 'COMPRAS',
+            email: email ? String(email) : '',
+            phone: phone ? String(phone) : '',
+            planta: planta ? String(planta) : '',
+            supervisor: '',
+        }));
+
+        setDescripcionGeneral(
+            planta
+                ? `Cotización solicitada para unidad de negocio: ${String(planta)}`
+                : ''
+        );
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        toast.info('Datos del prospecto cargados en cotización');
+    }
+}, [router.isReady, router.query]);
+
 
 useEffect(() => {
     if (!router.isReady) return;
