@@ -37,6 +37,7 @@ export default async function handler(req, res) {
             saleProcess,
             contactName,
             company,
+            address,
             phone,
             email,
             planta,
@@ -52,6 +53,7 @@ export default async function handler(req, res) {
             saleProcess,
             contactName,
             company,
+            address,
             phone,
             email,
             planta: planta && String(planta).trim() !== ''

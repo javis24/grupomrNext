@@ -83,6 +83,7 @@ export default function ProspectList() {
         saleProcess: "",
         contactName: "",
         company: "",
+        address: "",
         phone: "",
         email: "",
         planta: [],
@@ -107,69 +108,7 @@ export default function ProspectList() {
         fetchUsers();
     }, []);
 
-    useEffect(() => {
-    if (!router.isReady) return;
-
-    const {
-        fromProspect,
-        companyName,
-        attentionTo,
-        email,
-        phone,
-        planta,
-    } = router.query;
-
-    if (fromProspect === '1') {
-        setClientData((prev) => ({
-            ...prev,
-            companyName: companyName || '',
-            address: '',
-            attentionTo: attentionTo || '',
-            department: 'COMPRAS',
-            email: email || '',
-            phone: phone || '',
-            planta: planta || '',
-            supervisor: '',
-        }));
-
-        setDescripcionGeneral(
-            planta
-                ? `Cotización solicitada para unidad de negocio: ${planta}`
-                : ''
-        );
-
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        toast.info('Datos del prospecto cargados en cotización');
-    }
-}, [router.isReady, router.query]);
-
-    useEffect(() => {
-    if (!router.isReady) return;
-
-    const {
-        fromAppointment,
-        contactName,
-        company,
-        phone,
-        email,
-        planta,
-        saleProcess,
-    } = router.query;
-
-    if (fromAppointment === '1') {
-        setFormData({
-            saleProcess: saleProcess || 'Contacto inicial',
-            contactName: contactName || '',
-            company: company || '',
-            phone: phone || '',
-            email: email || '',
-            planta: planta ? String(planta).split(',').map(p => p.trim()) : [],
-        });
-
-        setModalType('createProspect');
-        setModalIsOpen(true);
-    }
-}, [router.isReady, router.query]);
+    
 
     const fetchProspects = async () => {
         try {
@@ -277,6 +216,7 @@ export default function ProspectList() {
             ...initialClientState,
             fullName: prospect.company || "",
             companyName: prospect.company || "",
+            address: prospect.address || "",
             contactName: prospect.contactName || "",
             contactPhone: prospect.phone || "",
             companyPhone: prospect.phone || "",
@@ -338,6 +278,7 @@ export default function ProspectList() {
         saleProcess: "",
         contactName: "",
         company: "",
+        address: "",
         phone: "",
         email: "",
         planta: [],
@@ -361,6 +302,7 @@ export default function ProspectList() {
             body: [
                 ["Contacto", prospect.contactName],
                 ["Empresa", prospect.company],
+                ["Dirección", prospect.address || 'N/A'],
                 ["Teléfono", prospect.phone],
                 ["Email", prospect.email],
                 ["Estatus", prospect.saleProcess],
@@ -386,6 +328,7 @@ export default function ProspectList() {
             fromProspect: '1',
             companyName: prospect.company || '',
             attentionTo: prospect.contactName || '',
+            address: prospect.address || '',
             email: prospect.email || '',
             phone: prospect.phone || '',
             planta: prospect.planta || '',
@@ -427,7 +370,7 @@ export default function ProspectList() {
                                 <div className="flex flex-wrap justify-center md:justify-start gap-4 text-[10px] text-gray-500 font-bold uppercase">
                                     <span className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">⚙️ {prospect.saleProcess}</span>
                                     <span>📞 {prospect.phone}</span>
-
+                                    <span>📍 {prospect.address || 'Sin dirección'}</span>
                                     <span>📅 {new Date(prospect.createdAt).toLocaleDateString()}</span>
                                     <span className="bg-blue-100 dark:bg-blue-600/20 text-blue-700 dark:text-blue-400 px-2 py-1 rounded">
                                     🏭 {prospect.planta || 'Sin unidad'}
@@ -531,6 +474,12 @@ export default function ProspectList() {
                                 </div>
                                 <ModalInput label="Nombre de Contacto" name="contactName" value={formData.contactName} onChange={(v) => setFormData({...formData, contactName: v})} required />
                                 <ModalInput label="Empresa" name="company" value={formData.company} onChange={(v) => setFormData({...formData, company: v})} required />
+                                <ModalInput
+                                    label="Dirección"
+                                    name="address"
+                                    value={formData.address}
+                                    onChange={(v) => setFormData({ ...formData, address: v })}
+                                />
                                 <ModalInput label="Teléfono" name="phone" value={formData.phone} onChange={(v) => setFormData({...formData, phone: v})} required />
                                 <ModalInput label="Email" name="email" type="email" value={formData.email} onChange={(v) => setFormData({...formData, email: v})} required />
                                     <div className="md:col-span-2">

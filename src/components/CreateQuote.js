@@ -777,6 +777,7 @@ useEffect(() => {
     const {
         fromProspect,
         companyName,
+        address,
         attentionTo,
         email,
         phone,
@@ -787,7 +788,7 @@ useEffect(() => {
         setClientData((prev) => ({
             ...prev,
             companyName: companyName ? String(companyName) : '',
-            address: '',
+            address: address ? String(address) : '',
             attentionTo: attentionTo ? String(attentionTo) : '',
             department: 'COMPRAS',
             email: email ? String(email) : '',

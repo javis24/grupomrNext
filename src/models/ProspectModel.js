@@ -23,6 +23,10 @@ const Prospect = db.define('prospect', {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  address: {
+    type: DataTypes.STRING,
+    allowNull: true,
+},
   phone: {
     type: DataTypes.STRING,
     allowNull: false,
