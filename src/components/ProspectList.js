@@ -93,6 +93,10 @@ export default function ProspectList() {
     const [searchTerm, setSearchTerm] = useState("");
     const [searchProcess, setSearchProcess] = useState("");
 
+    const canViewAssignedSeller =
+    String(loggedUserEmail || '').trim().toLowerCase() ===
+    'direccion@grupomrlaguna.com';
+
     useEffect(() => {
         const token = localStorage.getItem('token');
         if (token) {
@@ -375,6 +379,14 @@ export default function ProspectList() {
                                     <span className="bg-blue-100 dark:bg-blue-600/20 text-blue-700 dark:text-blue-400 px-2 py-1 rounded">
                                     🏭 {prospect.planta || 'Sin unidad'}
                                 </span>
+                                {canViewAssignedSeller && (
+                            <span className="bg-emerald-100 dark:bg-emerald-600/20 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded">
+                                👤 Vendedor:{' '}
+                                {prospect.assignedSeller?.name ||
+                                    prospect.assignedSeller?.email ||
+                                    'Sin asignar'}
+                            </span>
+                        )}
                                 </div>
                             </div>
                             
