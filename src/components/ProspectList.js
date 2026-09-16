@@ -93,7 +93,8 @@ export default function ProspectList() {
     const [searchTerm, setSearchTerm] = useState("");
     const [searchProcess, setSearchProcess] = useState("");
     const canViewAssignedSeller =
-        loggedUserEmail.trim().toLowerCase() === 'direccion@grupomrlaguna.com';
+        String(loggedUserEmail || '').trim().toLowerCase() ===
+        'direccion@grupomrlaguna.com';
 
     useEffect(() => {
         const token = localStorage.getItem('token');
