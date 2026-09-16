@@ -1,10 +1,12 @@
 import { authenticateToken } from '../../../lib/auth';
 import Prospect from '../../../models/ProspectModel';
+import Users from '../../../models/UserModel';
+import { Op } from 'sequelize';
 
 export default async function handler(req, res) {
   return authenticateToken(req, res, async () => {
     const { method } = req;
-    const { id: loggedUserId, role } = req.user;
+    const { id: loggedUserId, role, email: loggedUserEmail } = req.user;
 
     try {
       switch (method) {
@@ -19,7 +21,43 @@ export default async function handler(req, res) {
             order: [['createdAt', 'DESC']],
           });
 
-          return res.status(200).json(prospects);
+          const canViewAssignedSeller =
+            String(loggedUserEmail || '').trim().toLowerCase() ===
+            'direccion@grupomrlaguna.com';
+
+          if (!canViewAssignedSeller) {
+            return res.status(200).json(prospects);
+          }
+
+          const sellerIds = [
+            ...new Set(
+              prospects
+                .map((prospect) => prospect.userId)
+                .filter((userId) => userId !== null && userId !== undefined)
+            ),
+          ];
+
+          const sellers = sellerIds.length > 0
+            ? await Users.findAll({
+                where: {
+                  id: {
+                    [Op.in]: sellerIds,
+                  },
+                },
+                attributes: ['id', 'name', 'email'],
+              })
+            : [];
+
+          const sellersById = new Map(
+            sellers.map((seller) => [Number(seller.id), seller.toJSON()])
+          );
+
+          const prospectsWithSeller = prospects.map((prospect) => ({
+            ...prospect.toJSON(),
+            assignedSeller: sellersById.get(Number(prospect.userId)) || null,
+          }));
+
+          return res.status(200).json(prospectsWithSeller);
         }
 
         case 'POST': {
